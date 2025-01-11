@@ -23,6 +23,7 @@ jobs:
         run: npm run lint
   test:
     name: Run Tests
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -37,6 +38,7 @@ jobs:
         run: npm test
   build:
     name: Build Project
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
