@@ -1,4 +1,4 @@
-name: Deploy F2expert site to Pages
+name: F2expert
 on: workflow_dispatch
 jobs:
   first-job:
