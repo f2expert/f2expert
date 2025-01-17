@@ -64,3 +64,60 @@ body {
   background-color: rgb(255, 188, 59);
   display: inline-block;
 }
+
+.join{
+  color: white;
+  text-align: center;
+  padding: 90px 0px;
+}
+.join h3{
+  font-size: 16px;
+}
+.join h1{
+  font-size: 40px;
+}
+.join button{
+  background-color: white;
+  border: none;
+  color: #ffc107;
+  font-size: 16px;
+  font-weight: 500px;
+  padding: 15px 40px;
+  margin-top: 30px;
+}
+
+.story{
+  background-image: url(/success-story.jpg);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 75px 75px;
+}
+.story a i{
+  color: white;
+  border-radius: 50%;
+  background-color: #ffbc3b;
+  padding: 30px;
+}
+.text{
+  margin-left: auto;
+  background-color: white;
+  width: 480px;
+  height: 519px;
+  padding: 30px;
+}
+.text h1{
+  width: 440px;
+  font-size: 40px;
+  color: #1e1e4b;
+  margin-bottom: 30px;
+}
+.text p{
+  width: 440px;
+  color: #5c5c77;
+  margin-bottom: 30px;
+  line-height: 30px;
+}

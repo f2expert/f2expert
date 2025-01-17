@@ -7,6 +7,7 @@ import Header from "@/_core/Header";
 import Navbar from "@/_core/Navbar";
 import CardTitle from "@/_core/CardTitle";
 import Card from "@/_core/Card";
+import Footer from "@/_core/Footer";
 
 
 import { ICourse, ICourseRes, fetchCourses } from "../app/api/courses/coures";
@@ -200,9 +201,8 @@ export default function Home() {
             ))}
           </ul>
         </div>
-
-
       </main>
+      <Footer />
     </>
   );
 }
