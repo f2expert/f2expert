@@ -5,7 +5,7 @@ import Button from "./Button";
 
 test("renders Button component", () => {
   const handleClick = vi.fn();
-  render(<Button text="Click me" onClick={handleClick} />);
+  render(<Button classes="h-1" text="Click me" onClick={handleClick} />);
 
   const button = screen.getByText("Click me");
   expect(button).toBeTruthy();
