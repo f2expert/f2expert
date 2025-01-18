@@ -121,3 +121,9 @@ body {
   margin-bottom: 30px;
   line-height: 30px;
 }
+
+.fb-post.fb_iframe_widget{
+  display: flex;
+  justify-content: left;
+  width: 100%;
+}
