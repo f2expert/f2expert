@@ -2,6 +2,7 @@
   "name": "f2expert",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://f2expert.github.io/f2expert",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

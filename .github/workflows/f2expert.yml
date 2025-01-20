@@ -7,7 +7,9 @@ on:
     branches:
       - main
   workflow_dispatch:
-
+permissions:
+  pages: write
+  id-token: write
 jobs:
   lint:
     name: Lint Code
@@ -71,18 +73,41 @@ jobs:
       - name: Build Next.js
         run: npm run build
 
+  #deploy:
+  #  name: Deploy to F2expert
+  #  needs: build
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    - name: Checkout Code
+  #      uses: actions/checkout@v3
+  #    - name: Setup Node.js
+  #      uses: actions/setup-node@v3
+  #      with:
+  #        node-version: 18
+  #    - name: Deployment
+  #      env:
+  #        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  #
   deploy:
-    name: Deploy to F2expert
-    needs: build
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout the repository
         uses: actions/checkout@v3
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
-      - name: Deployment
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: echo "vercels --prod"
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the project
+        run: npm run build
+
+      - name: Export static files
+        run: npm run export
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v3
