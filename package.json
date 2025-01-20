@@ -8,8 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest --run",
-    "export": "next export"
+    "test": "vitest --run"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
