@@ -4,18 +4,54 @@ import Footer from "@/_core/Footer";
 import Header from "@/_core/Header";
 import Navbar from "@/_core/Navbar";
 import Card from "@/_core/Card";
-import {
+/*import {
   fetchCourses,
   ICourse,
   ICourseRes,
-} from "../../app/api/courses/coures";
-
+} from "../__apis__/courses/coures";*/
+interface ICourse {
+  id: number;
+  name: string;
+  description: string;
+  duration: string;
+  imgUrl: string;
+  title: string;
+  alt: string;
+}
 export default function Home() {
   const [courses, setCourses] = useState<ICourse[]>([]);
   useEffect(() => {
-    fetchCourses().then((res: ICourseRes) => {
-      setCourses(res.data);
-    });
+    //fetchCourses().then((res: ICourseRes) => {
+      setCourses([
+        {
+          id:1,
+          imgUrl:"/course-1.jpg",
+          alt:"Advance HTML5",
+          title:"Advance HTML5",
+          description:"Master the latest features of HTML5 to create dynamic, responsive, and cutting-edge web experiences.",
+          name: "HTML5 Course",
+          duration: "3 months"
+        },
+        {
+          id:2,
+          imgUrl:"/course-1.jpg",
+          alt:"Advance CSS3",
+          title:"Advance CSS3",
+          description:"Unlock the power of CSS3 to design visually stunning, responsive, and modern web interfaces.",
+          name: "CSS3 Course",
+          duration: "3 months"
+        },
+        {
+          id:3,
+          imgUrl:"/course-1.jpg",
+          alt:"Java Script",
+          title:"Java Script",
+          description:"Elevate your coding skills with advanced JavaScript techniques to build dynamic and interactive web applications.",
+          name: "JavaScript Course",
+          duration: "3 months"
+        }
+      ]);
+    //});
   }, []);
   return (
     <Fragment>

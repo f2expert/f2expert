@@ -10,20 +10,87 @@ import Card from "@/_core/Card";
 import Footer from "@/_core/Footer";
 
 
-import { ICourse, ICourseRes, fetchCourses } from "../app/api/courses/coures";
-import { IlatestNews, INewsRes, fetchLatestNews } from "../app/api/latestNews/latestNews";
+//import { ICourse, ICourseRes, fetchCourses } from "../app/api/courses/coures";
+//import { IlatestNews, INewsRes, fetchLatestNews } from "../app/api/latestNews/latestNews";
 
 
+interface IlatestNews {
+  id: number;
+  name: string;
+  description: string;
+  duration: string;
+  image: string;
+}
+
+interface ICourse {
+  id: number;
+  name: string;
+  description: string;
+  duration: string;
+  imgUrl: string;
+  title: string;
+  alt: string;
+}
 export default function Home() {
   const [courses, setCourses] = useState<ICourse[]>([]);
   const [latestNews, setLatestNews] = useState<IlatestNews[]>([]);
   useEffect(() => {
-    fetchCourses().then((res:ICourseRes) => {
-      setCourses(res.data);
-    });
-    fetchLatestNews().then((res: INewsRes) => {
-      setLatestNews(res.data);
-    });
+    //fetchCourses().then((res:ICourseRes) => {
+      setCourses([
+        {
+          id:1,
+          imgUrl:"/course-1.jpg",
+          alt:"Advance HTML5",
+          title:"Advance HTML5",
+          description:"Master the latest features of HTML5 to create dynamic, responsive, and cutting-edge web experiences.",
+          name: "HTML5 Course",
+          duration: "3 months"
+        },
+        {
+          id:2,
+          imgUrl:"/course-1.jpg",
+          alt:"Advance CSS3",
+          title:"Advance CSS3",
+          description:"Unlock the power of CSS3 to design visually stunning, responsive, and modern web interfaces.",
+          name: "CSS3 Course",
+          duration: "3 months"
+        },
+        {
+          id:3,
+          imgUrl:"/course-1.jpg",
+          alt:"Java Script",
+          title:"Java Script",
+          description:"Elevate your coding skills with advanced JavaScript techniques to build dynamic and interactive web applications.",
+          name: "JavaScript Course",
+          duration: "3 months"
+        }
+      ]);
+    //});
+    //fetchLatestNews().then((res: INewsRes) => {
+      setLatestNews([
+        {
+          id: 1,
+          name: "HTML",
+          description: "Learn the latest in HTML5.",
+          duration: "3 months",
+          image: "/html-course.jpg"
+        },
+        {
+          id: 2,
+          name: "CSS",
+          description: "Master advanced CSS3 techniques.",
+          duration: "3 months",
+          image: "/css-course.jpg"
+        },
+        {
+          id: 3,
+          name: "JS",
+          description: "Become proficient in JavaScript.",
+          duration: "3 months",
+          image: "/js-course.jpg"
+        }
+      ]);
+    //});
   }, []);
 
   return (
