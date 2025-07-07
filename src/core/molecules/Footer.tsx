@@ -3,40 +3,40 @@ export default function Footer() {
     return (
         <>
         <footer className="container px-10 py-8 bg-[#012f5c] text-white text-sm">        
-        <ul className="flex justify-between max-w-7xl mx-auto gap-3">
+        <ul className="flex justify-between max-w-7xl mx-auto gap-5">
             <li>
                 <img src="assets/f2expert.jpg" alt="F2Expert Training Center" />
-                <p>D1/450, Gali No.3, Ashok Nagar, Shahdara, Delhi-93</p>
+                <p className="py-3">D1/450, Gali No.3, Ashok Nagar, Shahdara, Delhi-93</p>
                 <a className="py-5" href="">info@f2expert.com</a>
-                <p>+919990012545</p>
+                <p className="py-3">+919990012545</p>
             </li>
             <li>
-                <h2 className="text-lg text-gray-300">Company</h2>
+                <h2 className="text-lg text-gray-300 py-3">Company</h2>
                 <ul>
-                    <li> <a href="">About</a></li>
-                    <li> <a href="">course</a></li>
-                    <li> <a href="">blog</a></li>
-                    <li> <a href="">Contact</a></li>
+                    <li className="py-1"> <a href="">About</a></li>
+                    <li className="py-1"> <a href="">course</a></li>
+                    <li className="py-1"> <a href="">blog</a></li>
+                    <li className="py-1"> <a href="">Contact</a></li>
                 </ul>
             </li>
             <li>
-                <h2 className="text-lg text-gray-300">Links</h2>
+                <h2 className="text-lg text-gray-300 py-3">Links</h2>
                 <ul>
-                    <li> <a href="">event</a></li>
-                    <li> <a href="">notice</a></li>
-                    <li> <a href="">research</a></li>
-                    <li> <a href="">scholarship</a></li>
-                    <li> <a href="">teacher</a></li>
+                    <li className="py-1"> <a href="">event</a></li>
+                    <li className="py-1"> <a href="">notice</a></li>
+                    <li className="py-1"> <a href="">research</a></li>
+                    <li className="py-1"> <a href="">scholarship</a></li>
+                    <li className="py-1"> <a href="">teacher</a></li>
                 </ul>
             </li>
             <li>
-                <h2 className="text-lg text-gray-300">Courses</h2>
+                <h2 className="text-lg text-gray-300 py-3">Courses</h2>
                 <ul>
-                    <li> <a href="">Algorithm</a></li>
-                    <li> <a href="">Artificial Intelligence</a></li>
-                    <li> <a href="">JavaScript</a></li>
-                    <li> <a href="">Mathematics</a></li>
-                    <li> <a href="">Photography</a></li>
+                    <li className="py-1"> <a href="">Algorithm</a></li>
+                    <li className="py-1"> <a href="">Artificial Intelligence</a></li>
+                    <li className="py-1"> <a href="">JavaScript</a></li>
+                    <li className="py-1"> <a href="">Mathematics</a></li>
+                    <li className="py-1"> <a href="">Photography</a></li>
                 </ul>
             </li>                
         </ul>
