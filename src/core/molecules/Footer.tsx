@@ -11,7 +11,7 @@ export default function Footer() {
                 <p className="py-3">+919990012545</p>
             </li>
             <li>
-                <h2 className="text-lg text-gray-300 py-3">Company</h2>
+                <h2 className="text-lg text-gray-300 py-2">Company</h2>
                 <ul>
                     <li className="py-1"> <a href="">About</a></li>
                     <li className="py-1"> <a href="">course</a></li>
@@ -20,7 +20,7 @@ export default function Footer() {
                 </ul>
             </li>
             <li>
-                <h2 className="text-lg text-gray-300 py-3">Links</h2>
+                <h2 className="text-lg text-gray-300 py-2">Links</h2>
                 <ul>
                     <li className="py-1"> <a href="">event</a></li>
                     <li className="py-1"> <a href="">notice</a></li>
@@ -30,7 +30,7 @@ export default function Footer() {
                 </ul>
             </li>
             <li>
-                <h2 className="text-lg text-gray-300 py-3">Courses</h2>
+                <h2 className="text-lg text-gray-300 py-2">Courses</h2>
                 <ul>
                     <li className="py-1"> <a href="">Algorithm</a></li>
                     <li className="py-1"> <a href="">Artificial Intelligence</a></li>
