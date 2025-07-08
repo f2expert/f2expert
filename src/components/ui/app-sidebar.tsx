@@ -75,7 +75,7 @@ const data = {
       items: [
         {
           title: "History",
-          url: "#",
+          url: "/dashboard/react",
         },
         {
           title: "Starred",
