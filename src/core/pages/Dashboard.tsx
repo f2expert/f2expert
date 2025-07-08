@@ -16,6 +16,35 @@ import {
   ChartTooltipContent,
 } from "../../components/ui/chart";
 
+import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import { format, parse, startOfWeek, getDay } from "date-fns";
+
+import { enUS } from "date-fns/locale/en-US";
+
+const locales = {
+  "en-US": enUS,
+};
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
+
+const events = [
+  {
+    title: "HTML Class",
+    start: new Date(2025, 6, 8, 10, 0), // July 8, 2025, 10:00 AM
+    end: new Date(2025, 6, 8, 11, 0),
+  },
+  {
+    title: "Exam",
+    start: new Date(2025, 6, 9, 14, 0),
+    end: new Date(2025, 6, 9, 15, 0),
+  },
+];
 const chartData = [
   { month: "January", HTML: 186, CSS: 80 },
   { month: "February", HTML: 305, CSS: 200 },
@@ -34,97 +63,91 @@ const chartConfig = {
     color: "#60a5fa",
   },
 } satisfies ChartConfig;
-
 export default function Dashboard() {
   return (
-        <div className="flex flex-1 flex-col gap-4 p-4 max-h-[calc(100vh-65px)] overflow-y-auto">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
-              <CardHeader className=" p-2.5">
-                <CardTitle className="text-md text-gray-600">
-                  Course Progress
-                </CardTitle>
-              </CardHeader>
-              <Separator />
-              <CardContent className="text-sm p-2.5 text-gray-400">
-                Card Content
-              </CardContent>
-            </Card>
-            <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
-              <CardHeader className=" p-2.5">
-                <CardTitle className="text-md text-gray-600">
-                  Scheduled Classes & Exams
-                </CardTitle>
-              </CardHeader>
-              <Separator />
-              <CardContent className="text-sm p-2.5 text-gray-400">
-                Card Content
-              </CardContent>
-            </Card>
-            <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
-              <CardHeader className=" p-2.5">
-                <CardTitle className="text-md text-gray-600">
-                  Scheduled 
-                </CardTitle>
-              </CardHeader>
-              <Separator />
-              <CardContent className="text-sm p-2.5 text-gray-400">
-                Card Content
-              </CardContent>
-            </Card>
-          </div>
-          <div className="bg-muted/50  flex-1 rounded-xl ">
-            <div className="grid auto-rows-min gap-4 md:grid-cols-2">
-              <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
+    <div className="flex flex-1 flex-col gap-4 p-4 max-h-[calc(100vh-65px)] overflow-y-auto">
+      <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+        <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
+          <CardHeader className=" p-2.5">
+            <CardTitle className="text-md text-gray-600">
+              Course Progress
+            </CardTitle>
+          </CardHeader>
+          <Separator />
+          <CardContent className="text-sm p-2.5 text-gray-400">
+            Card Content
+          </CardContent>
+        </Card>
+        <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
+          <CardHeader className=" p-2.5">
+            <CardTitle className="text-md text-gray-600">
+              Scheduled Classes & Exams
+            </CardTitle>
+          </CardHeader>
+          <Separator />
+          <CardContent className="text-sm p-2.5 text-gray-400">
+            Details
+          </CardContent>
+        </Card>
+        <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
+          <CardHeader className=" p-2.5">
+            <CardTitle className="text-md text-gray-600">Suggestions</CardTitle>
+          </CardHeader>
+          <Separator />
+          <CardContent className="text-sm p-2.5 text-gray-400">
+            info
+          </CardContent>
+        </Card>
+      </div>
+      <div className="bg-muted/50  flex-1 rounded-xl ">
+        <div className="grid auto-rows-min md:grid-cols-2 gap-4">          
+          <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px] text-sm">
+            <CardHeader className=" p-2.5">
+              <CardTitle className="text-md text-gray-600">
+                Scheduled Classes & Exams
+              </CardTitle>
+            </CardHeader>
+            <Separator />
+            <CardContent className="text-sm text-gray-400 p-4 h-[400px]">
+                <Calendar
+                  localizer={localizer}
+                  events={events}
+                  startAccessor="start"
+                  endAccessor="end"
+                  style={{ height: "100%" }}
+                  views={['month']}
+                />
+            </CardContent>
+          </Card>
+            <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px] text-sm">
                 <CardHeader className=" p-2.5">
-                  <CardTitle className="text-md text-gray-600">
-                    Progress Report
-                  </CardTitle>
+                <CardTitle className="text-md text-gray-600">Progress Reports</CardTitle>
                 </CardHeader>
                 <Separator />
-                <CardContent className="text-sm p-2.5 text-gray-400">
-                  <ChartContainer
-                    config={chartConfig}
-                    className="min-h-[200px] w-full"
-                  >
-                    <BarChart accessibilityLayer data={chartData}>
-                      <CartesianGrid vertical={false} />
-                      <XAxis
-                        dataKey="month"
-                        tickLine={false}
-                        tickMargin={10}
-                        axisLine={false}
-                        tickFormatter={(value) => value.slice(0, 3)}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <ChartLegend content={<ChartLegendContent payload={[]} />} />
-                      <Bar
-                        dataKey="HTML"
-                        fill="var(--color-HTML)"
-                        radius={4}
-                      />
-                      <Bar
-                        dataKey="CSS"
-                        fill="var(--color-CSS)"
-                        radius={4}
-                      />
-                    </BarChart>
-                  </ChartContainer>
+                <CardContent className="text-sm text-gray-400 h-[400px]">
+                <ChartContainer
+                config={chartConfig}
+                className="min-h-[400px] w-full"
+              >
+                <BarChart accessibilityLayer data={chartData}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                    tickFormatter={(value) => value.slice(0, 3)}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartLegend content={<ChartLegendContent payload={[]} />} />
+                  <Bar dataKey="HTML" fill="var(--color-HTML)" radius={4} />
+                  <Bar dataKey="CSS" fill="var(--color-CSS)" radius={4} />
+                </BarChart>
+              </ChartContainer>
                 </CardContent>
-              </Card>
-              <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
-                <CardHeader className=" p-2.5">
-                  <CardTitle className="text-md text-gray-600">
-                    Useful Information
-                  </CardTitle>
-                </CardHeader>
-                <Separator />
-                <CardContent className="text-sm p-2.5 text-gray-400">
-                  Details
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+            </Card>
         </div>
+      </div>
+    </div>
   );
 }
