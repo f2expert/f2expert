@@ -33,7 +33,7 @@ export default function Dashboard() {
             <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
               <CardHeader className=" p-2.5">
                 <CardTitle className="text-md text-gray-600">
-                  Card Title
+                  Progress Details
                 </CardTitle>
               </CardHeader>
               <Separator />
@@ -44,7 +44,7 @@ export default function Dashboard() {
             <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
               <CardHeader className=" p-2.5">
                 <CardTitle className="text-md text-gray-600">
-                  Card Title
+                  Scheduled Classes
                 </CardTitle>
               </CardHeader>
               <Separator />
@@ -55,7 +55,7 @@ export default function Dashboard() {
             <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
               <CardHeader className=" p-2.5">
                 <CardTitle className="text-md text-gray-600">
-                  Card Title
+                  Fee Details
                 </CardTitle>
               </CardHeader>
               <Separator />
