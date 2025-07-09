@@ -21,6 +21,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 
 import { enUS } from "date-fns/locale/en-US";
+import { Progress } from "../../components/ui/progress";
 
 const locales = {
   "en-US": enUS,
@@ -63,6 +64,7 @@ const chartConfig = {
     color: "#60a5fa",
   },
 } satisfies ChartConfig;
+
 export default function Dashboard() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 max-h-[calc(100vh-65px)] overflow-y-auto">
@@ -75,13 +77,15 @@ export default function Dashboard() {
           </CardHeader>
           <Separator />
           <CardContent className="text-sm p-2.5 text-gray-400">
-            Card Content
+            HTML <Progress value={85} className="[&>div]:bg-green-500 bg-gray-400" />
+            CSS <Progress value={55} className="[&>div]:bg-blue-500 bg-gray-400" />
+            JS <Progress value={33} className="[&>div]:bg-red-500 bg-gray-400" />
           </CardContent>
         </Card>
         <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
           <CardHeader className=" p-2.5">
             <CardTitle className="text-md text-gray-600">
-              Scheduled Classes & Exams
+              Today Events
             </CardTitle>
           </CardHeader>
           <Separator />
@@ -121,7 +125,7 @@ export default function Dashboard() {
           </Card>
             <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px] text-sm">
                 <CardHeader className=" p-2.5">
-                <CardTitle className="text-md text-gray-600">Progress Reports</CardTitle>
+                <CardTitle className="text-md text-gray-600">Examination Reports</CardTitle>
                 </CardHeader>
                 <Separator />
                 <CardContent className="text-sm text-gray-400 h-[400px]">

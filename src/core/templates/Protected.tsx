@@ -1,3 +1,4 @@
+import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import {
   SidebarInset,
@@ -7,7 +8,6 @@ import {
 import { AppSidebar } from "../../components/ui/app-sidebar";
 import { Separator } from "../../components/ui/separator";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../../components/ui/breadcrumb";
-import React from "react";
 export default function Protected() {
   const location = useLocation();
   const pathnames = location.pathname.split("/").filter((x) => x);
