@@ -1,4 +1,8 @@
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { FaListCheck } from "react-icons/fa6";
+import { LuCalendarClock } from "react-icons/lu";
+
+
 import { Separator } from "../../components/ui/separator";
 import {
   Card,
@@ -22,6 +26,7 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 
 import { enUS } from "date-fns/locale/en-US";
 import { Progress } from "../../components/ui/progress";
+import { FaChartBar, FaRegCalendarAlt, FaRegCalendarCheck } from "react-icons/fa";
 
 const locales = {
   "en-US": enUS,
@@ -72,7 +77,10 @@ export default function Dashboard() {
         <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
           <CardHeader className=" p-2.5">
             <CardTitle className="text-md text-gray-600">
-              Course Progress
+              <div className="flex items-center space-x-2">
+                <FaListCheck />
+                <span>Course Progress</span>
+              </div>
             </CardTitle>
           </CardHeader>
           <Separator />
@@ -84,8 +92,12 @@ export default function Dashboard() {
         </Card>
         <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
           <CardHeader className=" p-2.5">
-            <CardTitle className="text-md text-gray-600">
-              Today Events
+            <CardTitle className="text-sm text-gray-600">
+              <div className="flex items-center space-x-2">
+                <FaRegCalendarCheck />
+                <span>Today Events</span>
+              </div>
+               
             </CardTitle>
           </CardHeader>
           <Separator />
@@ -95,7 +107,12 @@ export default function Dashboard() {
         </Card>
         <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
           <CardHeader className=" p-2.5">
-            <CardTitle className="text-md text-gray-600">Suggestions</CardTitle>
+            <CardTitle className="text-md text-gray-600">
+              <div className="flex items-center space-x-2">
+                <FaRegCalendarAlt />
+                <span>Plan Your Day</span>
+              </div>              
+            </CardTitle>
           </CardHeader>
           <Separator />
           <CardContent className="text-sm p-2.5 text-gray-400">
@@ -105,10 +122,14 @@ export default function Dashboard() {
       </div>
       <div className="bg-muted/50  flex-1 rounded-xl ">
         <div className="grid auto-rows-min md:grid-cols-2 gap-4">          
-          <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px] text-sm">
+          <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
             <CardHeader className=" p-2.5">
               <CardTitle className="text-md text-gray-600">
-                Scheduled Classes & Exams
+                <div className="flex items-center space-x-2">
+                    <LuCalendarClock />                    
+                    <span>Scheduled Classes & Exams</span>
+                  </div> 
+                
               </CardTitle>
             </CardHeader>
             <Separator />
@@ -123,15 +144,20 @@ export default function Dashboard() {
                 />
             </CardContent>
           </Card>
-            <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px] text-sm">
+            <Card className="bg-muted/50 aspect-video rounded-xl border-[.5px]">
                 <CardHeader className=" p-2.5">
-                <CardTitle className="text-md text-gray-600">Examination Reports</CardTitle>
+                <CardTitle className="text-md text-gray-600">                  
+                  <div className="flex items-center space-x-2">
+                    <FaChartBar />
+                    <span>Examination Reports</span>
+                  </div>                   
+                </CardTitle>
                 </CardHeader>
                 <Separator />
                 <CardContent className="text-sm text-gray-400 h-[400px]">
                 <ChartContainer
                 config={chartConfig}
-                className="min-h-[400px] w-full"
+                className="min-h-[400px] w-full text-sm"
               >
                 <BarChart accessibilityLayer data={chartData}>
                   <CartesianGrid vertical={false} />
