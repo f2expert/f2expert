@@ -5,6 +5,8 @@ import Card from "../molecules/Card";
 import { useEffect, useState } from "react";
 import { fetchCourses } from "../../api/courses/courses";
 import { fetchLatestNews } from "../../api/latestNews/latestNews";
+import { CardContent } from "../../components/ui/card";
+import { GrWorkshop, GrSystem, GrServices, GrProjects } from "react-icons/gr";
 
 //import { useAppDispatch, useAppSelector } from "../store/hooks";
 //import { login } from "../store/slices/auth";
@@ -43,25 +45,68 @@ const Home = () => {
     <>
 <Carousel />
       <main>
+         <div className="container mx-auto px-10 py-10 bg-[#f3f3f3]">
+        <div className="max-w-5xl  mx-auto min-h-52 text-center">
+          <div className="w-full py-2">Training we’re offering</div>
+          <h1 className="text-5xl w-full font-bold text-gray-800 leading-tight">
+            We Provide our Students <br />
+            Best IT Content
+          </h1>
+          </div>
+          <div className="flex justify-between max-w-5xl gap-6 mx-auto min-h-60 text-center">
+              <CardContent className="bg-[#fbfbfb] text-gray-800 p-6  w-full border-t-8 border-yellow-400">
+                <span className="w-24 h-24 bg-gray-100 inline-block rounded-full p-4">
+                  <GrWorkshop className="text-6xl text-blue-900 mb-3 m-auto" />
+                </span>                
+                <h2 className="text-xl font-semibold p-3">UX Design</h2>
+                <p className="text-gray-600">
+                  Master the art of creating intuitive and visually appealing user interfaces.
+                </p>
+              </CardContent>
+              <CardContent className="bg-[#fbfbfb] text-gray-800 p-5 w-full border-t-8 border-yellow-400">
+                <span className="w-24 h-24 bg-gray-100 inline-block rounded-full p-4">
+                  <GrSystem className="text-6xl text-blue-900 mb-3 m-auto" />
+                </span>                
+                <h2 className="text-xl font-semibold p-3">UI Development</h2>
+                <p className="text-gray-600">
+                  Learn to build responsive and dynamic web applications with modern technologies.
+                </p>
+              </CardContent>
+              <CardContent className="bg-[#fbfbfb] text-gray-800 p-5 w-full border-t-8 border-yellow-400">
+                <span className="w-24 h-24 bg-gray-100 inline-block rounded-full p-4">
+                  <GrServices className="text-6xl text-blue-900 mb-3 m-auto" />
+                </span>                
+                <h2 className="text-xl font-semibold p-3">Backend</h2>
+                <p className="text-gray-600">
+                  Dive into server-side programming and learn how to manage databases and APIs.
+                </p>
+              </CardContent>
+              <CardContent className="bg-[#fbfbfb] text-gray-800 p-5 w-full  border-t-8 border-yellow-400">
+                <span className="w-24 h-24 bg-gray-100 inline-block rounded-full p-4">
+                  <GrProjects className="text-6xl text-blue-900 mb-3 m-auto" />
+                </span>                
+                <h2 className="text-xl font-semibold p-3">Project Management</h2>
+                <p className="text-gray-600">
+                  Gain skills in managing projects effectively, from planning to execution.
+                </p>
+              </CardContent>
+          </div>
+        </div>
+
         <div className="container mx-auto px-10 py-10">
           <div className="flex justify-between max-w-5xl gap-y-10 mx-auto">
             <div>
               <h1 className="text-xl font-semibold text-gray-800">
-                About F2Expert
+                What We Offer
               </h1>
-              <p>
-                Welcome to F2Expert, where creativity meets functionality, and
-                passion for design transforms into expertise. We are a leading
-                UI/UX training institute dedicated to empowering individuals
-                with the skills and knowledge needed to excel in the dynamic
-                world of user interface and user experience design.
+              <p className="text-gray-600 py-2">
+                F2Expert is a premier UI/UX training institute that specializes
+                in providing top-notch education and hands-on experience in the
+                field of user interface and user experience design.
+                
+Whether you're a beginner looking to start a tech career or a developer aiming to upgrade your skills, our expert-led courses, live projects, and personalized mentorship will guide you every step of the way.
               </p>
               <p className="pb-5">
-                <strong className="text-xl font-semibold text-gray-800 py-2">
-                  What We Offer
-                </strong>
-                Our comprehensive curriculum is tailored to equip you with
-                in-demand skills and tools, covering topics such as: <br />
                 <strong>UI Design:</strong>
                 Mastering tools like Figma, Sketch, and Adobe XD to create
                 stunning interfaces. <br />

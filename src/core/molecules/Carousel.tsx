@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 
 const slides = [
   { id: 1, image: "/assets/banner.jpg", title:"Your bright future is our missionsdf", caption: "Lorem ipsusfdm dolor sit amet, consectetur adipisicing elit" },
-  { id: 2, image: "/assets/banner.jpg", title:"Your bright future is our missionwer666", caption: "Lorem ipsurwem dolor sit amet, consectetur " },
-  { id: 3, image: "/assets/banner.jpg", title:"Your bright future is our mission342", caption: "Lorem ipsfdsum dolor sit amet, consectetur " },
+  { id: 2, image: "/assets/banner1.jpg", title:"Your bright future is our missionwer666", caption: "Lorem ipsurwem dolor sit amet, consectetur " },
+  { id: 3, image: "/assets/banner2.jpg", title:"Your bright future is our mission342", caption: "Lorem ipsfdsum dolor sit amet, consectetur " },
 ];
 
 export default function Carousel() {
@@ -25,12 +25,12 @@ export default function Carousel() {
   };
 
   return (
-    <div className="relative w-full mx-auto overflow-hidden">
+    <div className="relative w-full mx-auto overflow-hidden bg-black">
       {/* Slides */}
       <div className="flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${current * 100}%)` }}>
         {slides.map((slide) => (
           <div key={slide.id} className="relative w-full min-h-screen flex-shrink-0">
-            <img src={slide.image} alt={slide.caption} className="w-full object-cover rounded" />
+            <img src={slide.image} alt={slide.caption} className="w-full object-cover rounded opacity-45" />
             <p className="absolute top-1/2 left-4 transform -translate-y-1/2 max-w-3xl text-white bg-black bg-opacity-20 py-2">
               <strong className="text-5xl">{slide.title}</strong><br />
               {slide.caption}

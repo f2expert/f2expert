@@ -424,3 +424,25 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.services-section-three {
+    position: relative;
+    padding: 120px 0 90px;
+    z-index: 2;
+}
+.auto-container {
+    position: static;
+    max-width: var(--container-width);
+    padding: 0px 15px;
+    margin: 0 auto;
+    width: 100%;
+}
+.sec-title {
+    margin-bottom: 40px;
+    position: relative;
+}
+.service-block-three {
+    position: relative;
+    margin-bottom: 30px;
+    z-index: 1;
+}
