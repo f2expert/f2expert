@@ -311,7 +311,7 @@ body {
   padding: 10px 35px;
   border: 1px rgb(255, 188, 59) solid;
   color: white;
-  background-color: rgb(255, 188, 59);
+  background-color: hsl(var(--secondary));
 }
 
 /* For modern browsers */
@@ -350,9 +350,9 @@ body {
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
-    --primary: 220.9 39.3% 11%;
+    --primary: 210, 100%, 10%;
     --primary-foreground: 210 20% 98%;
-    --secondary: 220 14.3% 95.9%;
+    --secondary: 41, 100%, 62%;
     --secondary-foreground: 220.9 39.3% 11%;
     --muted: 220 14.3% 95.9%;
     --muted-foreground: 220 8.9% 46.1%;

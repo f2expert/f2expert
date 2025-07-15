@@ -135,11 +135,11 @@ const Home = () => {
             </div>
           </div>
         </div>
-        <div className="container mx-auto bg-yellow-400">
+        <div className="container mx-auto bg-primary text-white px-10 py-10">
           <div className="join">
             <h3>Click to Join the Advance Workshop</h3>
             <h1>Training In Advannce UI</h1>
-            <button>Join now</button>
+            <button className="btn-yellow">Join now</button>
           </div>          
         </div>
         <div className="container mx-auto px-10 py-10">          

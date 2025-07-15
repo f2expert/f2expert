@@ -27,6 +27,7 @@
     "date-fns": "^4.1.0",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
+    "google-map-react": "^2.2.5",
     "lucide-react": "^0.525.0",
     "rc-table": "^7.32.1",
     "react": "^19.1.0",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@types/google-map-react": "^2.1.10",
     "@types/react": "^19.1.2",
     "@types/react-big-calendar": "^1.16.2",
     "@types/react-dom": "^19.1.2",
