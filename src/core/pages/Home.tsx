@@ -32,7 +32,7 @@ const Home = () => {
     <>
       <Carousel />
       <main>
-        <div className="container mx-auto px-10 py-10 bg-[#f3f3f3] bg-[url('/assets/pattern-21.png')] bg-no-repeat bg-right-top bg-[length:500px_500px]">
+        <div className="mx-auto px-10 py-10 bg-[#f3f3f3] bg-[url('/assets/pattern-21.png')] bg-no-repeat bg-right-top bg-[length:500px_500px]">
           <div className="max-w-5xl  mx-auto min-h-52 text-center">
             <div className="w-full py-2">Training we’re offering</div>
             <h1 className="text-5xl w-full font-bold text-gray-800 leading-tight">
@@ -40,8 +40,8 @@ const Home = () => {
               Best IT Content
             </h1>
           </div>
-          <div className="flex justify-between max-w-5xl gap-6 mx-auto min-h-60 text-center">
-            <CardContent className="bg-[#fbfbfb] text-gray-800 p-6  w-full border-t-8 border-primary">
+          <div className="flex justify-between flex-wrap max-w-5xl gap-6 mx-auto min-h-60 text-center">
+            <CardContent className="bg-[#fbfbfb] text-gray-800 p-6 border-t-8 border-primary sm:w-full md:w-[48%] lg:w-[23%]">
               <span className="w-24 h-24 bg-gray-100 inline-block rounded-full p-4">
                 <GrWorkshop className="text-6xl text-blue-900 mb-3 m-auto" />
               </span>
@@ -51,7 +51,7 @@ const Home = () => {
                 interfaces.
               </p>
             </CardContent>
-            <CardContent className="bg-[#fbfbfb] text-gray-800 p-5 w-full border-t-8 border-primary">
+            <CardContent className="bg-[#fbfbfb] text-gray-800 p-5 border-t-8 border-primary sm:w-full md:w-[48%] lg:w-[23%]">
               <span className="w-24 h-24 bg-gray-100 inline-block rounded-full p-4">
                 <GrSystem className="text-6xl text-blue-900 mb-3 m-auto" />
               </span>
@@ -61,7 +61,7 @@ const Home = () => {
                 modern technologies.
               </p>
             </CardContent>
-            <CardContent className="bg-[#fbfbfb] text-gray-800 p-5 w-full border-t-8 border-primary">
+            <CardContent className="bg-[#fbfbfb] text-gray-800 p-5 border-t-8 border-primary sm:w-full md:w-[48%] lg:w-[23%]">
               <span className="w-24 h-24 bg-gray-100 inline-block rounded-full p-4">
                 <GrServices className="text-6xl text-blue-900 mb-3 m-auto" />
               </span>
@@ -71,7 +71,7 @@ const Home = () => {
                 databases and APIs.
               </p>
             </CardContent>
-            <CardContent className="bg-[#fbfbfb] text-gray-800 p-5 w-full  border-t-8 border-primary-foreground">
+            <CardContent className="bg-[#fbfbfb] text-gray-800 p-5  border-t-8 border-primary-foreground sm:w-full md:w-[48%] lg:w-[23%]">
               <span className="w-24 h-24 bg-gray-100 inline-block rounded-full p-4">
                 <GrProjects className="text-6xl text-blue-900 mb-3 m-auto" />
               </span>
@@ -84,7 +84,7 @@ const Home = () => {
           </div>
         </div>
 
-        <div className="container mx-auto px-10 py-10  bg-[#f3f3f3]">
+        <div className="mx-auto px-10 py-10  bg-[#f3f3f3]">
           <div className="flex justify-between max-w-5xl gap-y-10 mx-auto">
             <div className="image-column w-1/2">
               <div className="inner-column">
@@ -135,14 +135,14 @@ const Home = () => {
             </div>
           </div>
         </div>
-        <div className="container mx-auto bg-primary text-white px-10 py-10 bg-[url('/assets/pattern-14.jpg')] bg-cover bg-center">
+        <div className="mx-auto bg-primary text-white px-10 py-10 bg-[url('/assets/pattern-14.jpg')] bg-cover bg-center">
           <div className="join">
             <h3>Click to Join the Advance Workshop</h3>
             <h1>Training In Advannce UI</h1>
             <button className="btn-yellow">Join now</button>
           </div>          
         </div>
-        <div className="container mx-auto px-10 py-10 bg-[url('/assets/pattern-7.png')] bg-no-repeat bg-left-top">          
+        <div className="mx-auto px-10 py-10 bg-[url('/assets/pattern-7.png')] bg-no-repeat bg-left-top">
           <div className="max-w-5xl mx-auto mb-10">
             <CardTitle title="Our Courses" label="See All" link="/card" />
           </div>
@@ -150,7 +150,7 @@ const Home = () => {
             {courses?.map((course: ICourse) => (
               <li
                 key={course.id}
-                className="border border-gray-300 max-w-[325px]"
+                className="border border-gray-300 max-w-[300px]"
               >
                 <Card
                   imgUrl={course.image}
@@ -158,7 +158,7 @@ const Home = () => {
                   description={course.description}
                   btnTitle="Apply Now"
                   btnClass="btn-yellow"
-                  width={325}
+                  width={300}
                   height={225}
                   alt={course.alt}
                 />

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
 const slides = [
-  { id: 1, image: "/assets/banner.jpg", title:"Your bright future is our missionsdf", caption: "Lorem ipsusfdm dolor sit amet, consectetur adipisicing elit" },
-  { id: 2, image: "/assets/banner1.jpg", title:"Your bright future is our missionwer666", caption: "Lorem ipsurwem dolor sit amet, consectetur " },
-  { id: 3, image: "/assets/banner2.jpg", title:"Your bright future is our mission342", caption: "Lorem ipsfdsum dolor sit amet, consectetur " },
+  { id: 1, image: "/assets/b1.jpg", title:"Your bright future is our missionsdf", caption: "Lorem ipsusfdm dolor sit amet, consectetur adipisicing elit" },
+  { id: 2, image: "/assets/b2.jpg", title:"Your bright future is our missionwer666", caption: "Lorem ipsurwem dolor sit amet, consectetur " },
+  { id: 3, image: "/assets/b3.jpg", title:"Your bright future is our mission342", caption: "Lorem ipsfdsum dolor sit amet, consectetur " },
 ];
 
 export default function Carousel() {
@@ -25,7 +25,7 @@ export default function Carousel() {
   };
 
   return (
-    <div className="relative w-full mx-auto overflow-hidden bg-black">
+    <div className="relative w-full max-h-[calc(100vh-120px)] mx-auto overflow-hidden bg-black">
       {/* Slides */}
       <div className="flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${current * 100}%)` }}>
         {slides.map((slide) => (

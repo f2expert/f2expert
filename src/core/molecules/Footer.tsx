@@ -3,9 +3,9 @@ import Map from "../atoms/Map";
 export default function Footer() {
   return (
     <>
-      <footer className="container px-10 py-8 bg-[#012f5c] text-white text-sm">
-        <ul className="flex justify-between max-w-7xl mx-auto gap-5">
-          <li className="w-80">
+      <footer className="px-10 py-8 bg-[#012f5c] text-white text-sm">
+        <ul className="flex justify-between flex-wrap mx-auto gap-5">
+          <li className="sm:w-full md:w-[48%] lg:w-[23%]">
             <img src="assets/f2expert.jpg" alt="F2Expert Training Center" />
             <p className="text-sm pt-3">
               F2Expert Training Center is a leading provider of professional
@@ -19,6 +19,10 @@ export default function Footer() {
               </a>
               <p className="py-2">+919990012545</p>
             </div>
+          </li>          
+          <li>
+            <h2 className="text-lg text-gray-300 py-2 w-80">Training Center</h2>
+            <Map />
           </li>
           <li>
             <h2 className="text-lg text-gray-300 py-2">Company</h2>
@@ -52,10 +56,6 @@ export default function Footer() {
                 <a href="">Dashboard</a>
               </li>
             </ul>
-          </li>
-          <li>
-            <h2 className="text-lg text-gray-300 py-2 w-80">Training Center</h2>
-            <Map />
           </li>
           <li>
             <h2 className="text-lg text-gray-300 py-2">Quick Connect</h2>
@@ -94,8 +94,8 @@ export default function Footer() {
           </li>
         </ul>
       </footer>
-      <div className="container px-10 py-4 bg-[#001a33]">
-        <div className="flex justify-between max-w-7xl mx-auto">
+      <div className="px-10 py-4 bg-[#001a33]">
+        <div className="flex justify-between mx-auto">
           <p style={{ color: "#ededf1" }}>Copyright © 2025</p>
           <ul className="flex justify-around ml-auto gap-7">
             <li>

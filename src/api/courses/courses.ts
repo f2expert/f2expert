@@ -20,8 +20,7 @@ export const fetchCourses = async (): Promise<Course[]> => {
     const response = await axios.get<Course[]>(`http://localhost:3000/api/courses.json`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching Courses:', error);
-    throw new Error('Failed to fetch Courses');
+    throw new Error(`Error fetching Courses: ${error}`);
   }
 };
 

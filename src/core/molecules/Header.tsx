@@ -15,7 +15,7 @@ export default function Header() {
   ];
 
   return (
-      <header className="max-w-7xl mx-auto flex items-center justify-between relative pl-5  bg-[#012f5c]">
+      <header className="mx-auto flex items-center justify-between relative pl-5  bg-[#012f5c]">
         {/* Logo */}
         <img src="assets/f2expert.jpg" alt="F2Expert" className="w-8 h-auto" />
         <div className="md:pr-0 px-4">

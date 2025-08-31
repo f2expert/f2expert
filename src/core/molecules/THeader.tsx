@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 export default function THeader() {
   return (
-    <div className="social bg-white border-b text-gray-700 px-5">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <div className="social bg-white border-b text-gray-700 px-5 ">
+      <div className="mx-auto flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         {/* Social Icons */}
         <div className="flex justify-center sm:justify-start gap-2">
           <Link to="">

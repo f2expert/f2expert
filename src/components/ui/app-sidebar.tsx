@@ -11,9 +11,10 @@ import {
   Home
 } from "lucide-react"
 
-import { FaNodeJs, FaReact, FaDatabase } from "react-icons/fa";
+import { FaNodeJs, FaReact } from "react-icons/fa";
 import { TbFileTypeCss } from "react-icons/tb";
 import { GrHtml5 } from "react-icons/gr";
+import { PiDatabaseThin } from "react-icons/pi";
 
 import { NavMain } from "./nav-main"
 import { TeamSwitcher } from "./team-switcher"
@@ -178,7 +179,7 @@ const data = {
     {
       title: "Mongo DB",
       url: "#",
-      icon: FaDatabase,
+      icon: PiDatabaseThin,
       items: [
         {
           title: "General",
