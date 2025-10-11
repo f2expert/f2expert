@@ -11,18 +11,12 @@ interface AppSidebarProps {
   userName?: string;
   userEmail?: string;
   onLogout?: () => void;
-  onProfile?: () => void;
-  onFeeDetails?: () => void;
-  onNotifications?: () => void;
 }
 
 export const AppSidebar: React.FC<AppSidebarProps> = ({
   userName,
   userEmail,
   onLogout,
-  onProfile,
-  onFeeDetails,
-  onNotifications
 }) => {
   const { open, isMobile, openMobile, setOpenMobile, setIsMobile } = useSidebarRedux();
   const { user, teams, navMain, updateUser } = useSidebarData();
@@ -121,9 +115,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             <NavUser 
               user={userData} 
               onLogout={onLogout}
-              onProfile={onProfile}
-              onFeeDetails={onFeeDetails}
-              onNotifications={onNotifications}
             />
           </div>
         </div>

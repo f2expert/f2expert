@@ -38,9 +38,6 @@ export function NavUser({
     avatar: string
   }
   onLogout?: () => void
-  onProfile?: () => void
-  onFeeDetails?: () => void
-  onNotifications?: () => void
 }) {
   const { isMobile } = useSidebarRedux()
 
