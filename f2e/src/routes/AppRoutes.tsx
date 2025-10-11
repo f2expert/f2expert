@@ -1,6 +1,5 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import { Public } from '../components/templates/Public';
-//import { AuthLayout } from '../components/templates/AuthLayout';
 import { ErrorHandler } from '../components/molecules/ErrorHandler';
 import { Home } from '../pages/Home';
 import { About } from '../pages/About';

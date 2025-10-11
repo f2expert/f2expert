@@ -10,7 +10,7 @@ This is a React + TypeScript + Vite app following **Atomic Design methodology** 
 - `atoms/` - Basic building blocks (Button, Logo, Text)
 - `molecules/` - Simple combinations (LogoGroup, Counter, Navigation)  
 - `organisms/` - Complex sections (Header, Footer, Sidebar)
-- `templates/` - Page layouts (Public, Protected, AuthLayout)
+- `templates/` - Page layouts (Public, Protected)
 - `pages/` - Specific instances with real content
 
 **Component Variants with CVA**: Use `class-variance-authority` for component variants:
@@ -20,7 +20,7 @@ const buttonVariants = cva("base-styles", {
 });
 ```
 
-**Smart Layout Switching**: `AuthLayout` automatically switches between `Public` and `Protected` templates based on authentication state. Most pages should use this pattern.
+**Template Usage**: Use `Public` template for unauthenticated pages and `Protected` template for authenticated dashboard pages.
 
 ### State Management
 
@@ -42,7 +42,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 
 **Context + Redux Hybrid**: Auth uses React Context (`AuthContext`) for component-level state and Redux for global state. Login/logout triggers full page reload to ensure clean state.
 
-**Template Routing**: Routes dynamically show different menu items based on auth state. Protected routes automatically redirect through `AuthLayout`.
+**Template Routing**: Routes dynamically show different menu items based on auth state. Use `Protected` template for authenticated routes.
 
 ### Styling Conventions
 

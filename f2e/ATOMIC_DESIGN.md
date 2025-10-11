@@ -28,13 +28,12 @@ Page-level objects that place organisms into a layout.
 
 - **Public** - Layout for public/marketing pages with header and footer
 - **Protected** - Dashboard layout with navbar and sidebar for authenticated users
-- **AuthLayout** - Smart wrapper that switches between public and protected templates
 
 ### 📱 **Pages** (`src/pages/`)
 Specific instances of templates with real content.
 
-- **HomePage** - Landing page using Public template via AuthLayout
-- **DashboardPage** - Protected dashboard using Protected template via AuthLayout
+- **HomePage** - Landing page using Public template
+- **DashboardPage** - Protected dashboard using Protected template
 
 ## File Structure
 
@@ -67,7 +66,6 @@ src/
 │   ├── templates/
 │   │   ├── Public/
 │   │   ├── Protected/
-│   │   ├── AuthLayout/
 │   │   └── index.ts
 │   └── index.ts
 ├── pages/
