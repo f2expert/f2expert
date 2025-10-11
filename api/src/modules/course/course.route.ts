@@ -1,12 +1,15 @@
 import { Router } from "express"
 import * as CourseController from "./course.controller"
+import { validateBody } from "../../app/middlewares/validation.middleware"
+import { createCourseSchema, updateCourseSchema } from "./course.validation"
 
 const router = Router()
 
 router.get("/", CourseController.getAll)
+router.get("/limited/:limit", CourseController.getLimited)
 router.get("/:id", CourseController.getById)
-router.post("/", CourseController.create)
-router.put("/:id", CourseController.update)
+router.post("/", validateBody(createCourseSchema), CourseController.create)
+router.put("/:id", validateBody(updateCourseSchema), CourseController.update)
 router.delete("/:id", CourseController.remove)
 
 export default router
