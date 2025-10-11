@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import { Public } from '../components/templates/Public';
 //import { AuthLayout } from '../components/templates/AuthLayout';
 import { ErrorHandler } from '../components/molecules/ErrorHandler';
@@ -20,7 +20,7 @@ import { Protected } from '../components';
 export default function AppRoutes() {
   const { isAuthenticated, logout } = useAuth();
 
-  // Handle logout properly
+  // Handle logout properly - use window.location for navigation outside router context
   const handleLogout = () => {
     try {
       logout();
@@ -89,16 +89,15 @@ export default function AppRoutes() {
     },
     {
       path: "/dashboard",
-      element: <Protected />,//<AuthLayout forceProtected />,
+      element: <>{isAuthenticated ? <Protected onLogout={handleLogout} /> : <Navigate to="/login" />}</>,
       children: [
         { index: true, element: <Dashboard /> },
         { path: "profile", element: <Profile /> },
         { path: "fee-details", element: <FeeDetails /> },
         { path: "notifications", element: <Notifications /> },
-        { path: ":lang/:topic", element: <Topic /> },
-        { path: "*", element: <Topic /> }
+        { path: ":lang/:topic", element: <Topic /> }
       ],
-      errorElement: <ErrorHandler />,
+      errorElement: <ErrorHandler />
     },
   ]);
 

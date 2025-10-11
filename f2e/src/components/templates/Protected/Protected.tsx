@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import { AppSidebar } from '../../organisms/AppSidebar';
 import { SidebarInset, SidebarTrigger } from '../../atoms';
 import { Separator } from '../../atoms/Separator';
@@ -18,18 +18,18 @@ export interface ProtectedProps {
   className?: string;
   userName?: string;
   userEmail?: string;
+  isAuthenticated?: boolean;
   onLogout?: () => void;
 }
 
 export const Protected: React.FC<ProtectedProps> = ({
-  children,
   userName = "John Doe",
   userEmail = "john@example.com",
   onLogout,
 }) => {
   const location = useLocation();
   const pathnames = location.pathname.split("/").filter((x) => x);
-
+  
   return (
     <div className="flex min-h-screen w-full">
       <AppSidebar 
@@ -48,7 +48,9 @@ export const Protected: React.FC<ProtectedProps> = ({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  <BreadcrumbLink asChild>
+                    <Link to="/">Home</Link>
+                  </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 {pathnames?.map((name, index) => {
@@ -62,7 +64,9 @@ export const Protected: React.FC<ProtectedProps> = ({
                   ) : (
                     <React.Fragment key={routeTo}>
                       <BreadcrumbItem>
-                        <BreadcrumbLink href={routeTo}>{label}</BreadcrumbLink>
+                        <BreadcrumbLink asChild>
+                          <Link to={routeTo}>{label}</Link>
+                        </BreadcrumbLink>
                       </BreadcrumbItem>
                       <BreadcrumbSeparator />
                     </React.Fragment>
@@ -73,10 +77,10 @@ export const Protected: React.FC<ProtectedProps> = ({
           </div>
         </header>
         <Separator/>
-        <div className="flex flex-1 flex-col gap-4 max-h-[calc(100vh-65px)] overflow-y-auto">
+        <div className="flex flex-1 flex-col gap-4 p-4 max-h-[calc(100vh-65px)] overflow-y-auto">
           {/* Uncomment below to show sidebar data manager for testing */}
           {/* <SidebarDataManager /> */}
-          {children || <Outlet />}          
+          <Outlet />
         </div>
       </SidebarInset>
     </div>
