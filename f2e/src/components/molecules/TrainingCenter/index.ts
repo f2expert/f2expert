@@ -1,0 +1,1 @@
+export { TrainingCenter, type TrainingCenterProps } from './TrainingCenter';

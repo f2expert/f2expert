@@ -1,0 +1,1 @@
+export { ContactInfo, type ContactInfoProps, type ContactItem } from './ContactInfo';

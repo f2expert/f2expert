@@ -1,0 +1,1 @@
+export { FooterLink, type FooterLinkProps } from './FooterLink';

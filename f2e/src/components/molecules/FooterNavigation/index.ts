@@ -1,0 +1,1 @@
+export { FooterNavigation, type FooterNavigationProps, type FooterNavItem } from './FooterNavigation';

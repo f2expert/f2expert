@@ -1,0 +1,1 @@
+export { SocialBar, type SocialBarProps, type SocialMediaItem } from './SocialBar';

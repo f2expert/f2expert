@@ -1,0 +1,1 @@
+export { QuickConnect, type QuickConnectProps, type QuickConnectFormData } from './QuickConnect';

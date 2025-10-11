@@ -1,0 +1,135 @@
+import * as React from "react"
+
+import { NavMain } from "../../molecules/NavMain/NavMain"
+import { TeamSwitcher } from "../../molecules/TeamSwitcher/TeamSwitcher"
+import { NavUser } from "../../molecules/NavUser/NavUser"
+import { Separator } from "../../atoms/Separator";
+import { useSidebarRedux, useSidebarData } from '../../../hooks';
+import { cn } from '../../../lib/utils';
+
+interface AppSidebarProps {
+  userName?: string;
+  userEmail?: string;
+  onLogout?: () => void;
+  onProfile?: () => void;
+  onFeeDetails?: () => void;
+  onNotifications?: () => void;
+}
+
+export const AppSidebar: React.FC<AppSidebarProps> = ({
+  userName,
+  userEmail,
+  onLogout,
+  onProfile,
+  onFeeDetails,
+  onNotifications
+}) => {
+  const { open, isMobile, openMobile, setOpenMobile, setIsMobile } = useSidebarRedux();
+  const { user, teams, navMain, updateUser } = useSidebarData();
+  const lastUpdateRef = React.useRef({ userName: '', userEmail: '' });
+
+  // Handle mobile detection
+  React.useEffect(() => {
+    const checkMobile = () => {
+      const isMobileScreen = window.innerWidth < 768;
+      setIsMobile(isMobileScreen);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [setIsMobile]);
+
+  // Update user data in Redux when props change
+  React.useEffect(() => {
+    if (userName || userEmail) {
+      // Only update if values actually changed since last update
+      if (userName !== lastUpdateRef.current.userName || userEmail !== lastUpdateRef.current.userEmail) {
+        const updates: { name?: string; email?: string } = {};
+        if (userName && userName !== user.name) updates.name = userName;
+        if (userEmail && userEmail !== user.email) updates.email = userEmail;
+        if (Object.keys(updates).length > 0) {
+          updateUser(updates);
+          lastUpdateRef.current = { userName: userName || '', userEmail: userEmail || '' };
+        }
+      }
+    }
+  }, [userName, userEmail, user.name, user.email, updateUser]);
+
+  // Use updated user data
+  const userData = {
+    name: userName || user.name,
+    email: userEmail || user.email,
+    avatar: user.avatar,
+  };
+
+  // Always render desktop sidebar, handle mobile with CSS
+  return (
+    <>
+      {/* Mobile overlay */}
+      {isMobile && (
+        <div 
+          className={cn(
+            "fixed inset-0 z-50 bg-black/50 transition-opacity md:hidden",
+            openMobile ? "opacity-100" : "opacity-0 pointer-events-none"
+          )}
+          onClick={() => setOpenMobile(false)}
+        >
+          <aside 
+            className={cn(
+              "fixed left-0 top-0 z-60 h-screen w-80 transform bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out flex flex-col",
+              openMobile ? "translate-x-0" : "-translate-x-full"
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col h-full">
+              <div className="p-4">
+                <TeamSwitcher teams={teams} />
+              </div>
+              <Separator />
+              <div className="flex-1 overflow-auto p-4">
+                <NavMain items={navMain} />
+              </div>
+              <Separator />
+              <div className="p-4">
+                <NavUser 
+                  user={userData} 
+                  onLogout={onLogout}
+                />
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Desktop sidebar - always visible */}
+      <aside className={cn(
+        "flex h-screen bg-white border-r border-gray-200 transition-all duration-300 ease-in-out flex-col shrink-0",
+        "hidden md:flex", // Only show on desktop
+        open ? "w-80" : "w-16"
+      )}>
+        <div className="flex flex-col h-full w-full overflow-hidden">
+          <div className="p-1">
+            <TeamSwitcher teams={teams} />
+          </div>
+          <Separator />
+          <div className="flex-1 overflow-auto p-1">
+            <NavMain items={navMain} />
+          </div>
+          <Separator />
+          <div className="p-1">
+            <NavUser 
+              user={userData} 
+              onLogout={onLogout}
+              onProfile={onProfile}
+              onFeeDetails={onFeeDetails}
+              onNotifications={onNotifications}
+            />
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+};
+
+export default AppSidebar;

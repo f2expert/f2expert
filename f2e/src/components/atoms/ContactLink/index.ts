@@ -1,0 +1,1 @@
+export { ContactLink, type ContactLinkProps } from './ContactLink';

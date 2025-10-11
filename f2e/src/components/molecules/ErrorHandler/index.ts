@@ -1,0 +1,1 @@
+export { ErrorHandler, type ErrorHandlerProps } from './ErrorHandler';

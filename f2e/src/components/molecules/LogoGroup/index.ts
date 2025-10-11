@@ -1,0 +1,1 @@
+export { LogoGroup, type LogoGroupProps } from './LogoGroup';
