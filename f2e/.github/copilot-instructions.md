@@ -40,7 +40,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 
 ### Authentication Flow
 
-**Context + Redux Hybrid**: Auth uses React Context (`AuthContext`) for component-level state and Redux for global state. Login/logout triggers full page reload to ensure clean state.
+**Redux-Based Authentication**: Auth uses Redux Toolkit (`authSlice`) for all authentication state management. Login/logout operations are handled through Redux actions with clean state management.
 
 **Template Routing**: Routes dynamically show different menu items based on auth state. Use `Protected` template for authenticated routes.
 

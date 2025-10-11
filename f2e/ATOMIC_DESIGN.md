@@ -72,8 +72,6 @@ src/
 │   ├── HomePage/
 │   ├── DashboardPage/
 │   └── index.ts
-├── contexts/
-│   └── AuthContext.tsx
 └── App.tsx
 ```
 
