@@ -3,8 +3,8 @@ import { TutorialDTO, TutorialFilters, TutorialSortOptions, TutorialStats } from
 
 export const getAllTutorials = async () => {
   return TutorialModel.find({ isPublished: true })
-    .populate('relatedCourses', 'title category level')
-    .populate('relatedTutorials', 'title category level')
+    //.populate('relatedCourses', 'title category level')
+    //.populate('relatedTutorials', 'title category level')
     .sort({ createdAt: -1 })
 }
 
@@ -317,3 +317,4 @@ export const getTutorialsByAuthor = async (author: string, limit?: number) => {
   
   return query.select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl publishedAt')
 }
+

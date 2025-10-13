@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
+import { Skeleton } from '../../components/atoms/Skeleton';
+import { useTutorials } from '../../hooks';
+import { testTutorialsApi } from '../../utils/testTutorialsApi';
+import { debugTutorialApi } from '../../utils/debugTutorialApi';
 import { 
   FaPlay, 
   FaBook, 
@@ -13,21 +17,6 @@ import {
   FaSearch
 } from 'react-icons/fa';
 
-interface Tutorial {
-  id: string;
-  title: string;
-  description: string;
-  duration: string;
-  level: string;
-  category: string;
-  thumbnail: string;
-  videoUrl: string;
-  downloadUrl?: string;
-  instructor: string;
-  rating: number;
-  views: number;
-}
-
 interface Category {
   id: string;
   name: string;
@@ -38,106 +27,77 @@ interface Category {
 export const Tutorial: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const { tutorials, isLoading, error, categories: apiCategories } = useTutorials();
 
-  const categories: Category[] = [
-    { id: 'all', name: 'All Tutorials', icon: FaBook, count: 24 },
-    { id: 'web-development', name: 'Web Development', icon: FaCode, count: 8 },
-    { id: 'data-science', name: 'Data Science', icon: FaBook, count: 6 },
-    { id: 'cloud-computing', name: 'Cloud Computing', icon: FaVideo, count: 5 },
-    { id: 'mobile-development', name: 'Mobile Development', icon: FaCode, count: 5 },
-  ];
-
-  const tutorials: Tutorial[] = [
-    {
-      id: '1',
-      title: 'Introduction to React Hooks',
-      description: 'Learn the fundamentals of React Hooks and how to use useState, useEffect, and custom hooks in your applications.',
-      duration: '45 min',
-      level: 'Beginner',
-      category: 'web-development',
-      thumbnail: '/assets/topics/react-frontend.png',
-      videoUrl: '#',
-      downloadUrl: '/downloads/react-hooks-guide.pdf',
-      instructor: 'Sarah Johnson',
-      rating: 4.8,
-      views: 1250
-    },
-    {
-      id: '2',
-      title: 'Python Data Analysis with Pandas',
-      description: 'Master data manipulation and analysis using Pandas library. Perfect for beginners in data science.',
-      duration: '60 min',
-      level: 'Intermediate',
-      category: 'data-science',
-      thumbnail: '/assets/topics/python-fundamentals.png',
-      videoUrl: '#',
-      downloadUrl: '/downloads/pandas-tutorial.pdf',
-      instructor: 'Dr. Michael Chen',
-      rating: 4.9,
-      views: 980
-    },
-    {
-      id: '3',
-      title: 'AWS EC2 Instance Setup',
-      description: 'Step-by-step guide to setting up and configuring EC2 instances on Amazon Web Services.',
-      duration: '35 min',
-      level: 'Beginner',
-      category: 'cloud-computing',
-      thumbnail: '/assets/topics/cloud.png',
-      videoUrl: '#',
-      instructor: 'Emily Rodriguez',
-      rating: 4.7,
-      views: 756
-    },
-    {
-      id: '4',
-      title: 'React Native Mobile App Development',
-      description: 'Build your first mobile app using React Native. Learn navigation, state management, and deployment.',
-      duration: '90 min',
-      level: 'Intermediate',
-      category: 'mobile-development',
-      thumbnail: '/assets/topics/mobile-app-development.png',
-      videoUrl: '#',
-      downloadUrl: '/downloads/react-native-guide.pdf',
-      instructor: 'James Wilson',
-      rating: 4.6,
-      views: 645
-    },
-    {
-      id: '5',
-      title: 'JavaScript ES6+ Features',
-      description: 'Explore modern JavaScript features including arrow functions, destructuring, promises, and async/await.',
-      duration: '50 min',
-      level: 'Intermediate',
-      category: 'web-development',
-      thumbnail: '/assets/topics/full-stack.png',
-      videoUrl: '#',
-      instructor: 'Lisa Chen',
-      rating: 4.8,
-      views: 1100
-    },
-    {
-      id: '6',
-      title: 'Machine Learning Basics with Python',
-      description: 'Introduction to machine learning concepts and implementation using Python and scikit-learn.',
-      duration: '75 min',
-      level: 'Beginner',
-      category: 'data-science',
-      thumbnail: '/assets/topics/machine-learning.png',
-      videoUrl: '#',
-      downloadUrl: '/downloads/ml-basics.pdf',
-      instructor: 'Dr. Anita Patel',
-      rating: 4.9,
-      views: 890
-    }
-  ];
-
-  const filteredTutorials = tutorials.filter(tutorial => {
-    const matchesCategory = selectedCategory === 'all' || tutorial.category === selectedCategory;
-    const matchesSearch = tutorial.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tutorial.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+  // Debug logging
+  console.log('Tutorial Component - Render State:', {
+    tutorialsCount: tutorials.length,
+    isLoading,
+    error,
+    categories: apiCategories,
+    firstTutorial: tutorials[0]
   });
+
+  // Run API debug on component mount (development only)
+  useEffect(() => {
+    if (import.meta.env?.NODE_ENV === 'development') {
+      // Test direct API connectivity
+      testTutorialsApi().then(result => {
+        console.log('🧪 Direct API Test Result:', result);
+      });
+      
+      debugTutorialApi();
+    }
+  }, []);
+
+  // Generate dynamic categories from API data
+  const categories: Category[] = useMemo(() => {
+    const categoryMap = new Map<string, number>();
+    
+    // Count tutorials per category
+    tutorials.forEach(tutorial => {
+      const categoryKey = tutorial.category.toLowerCase().replace(/\s+/g, '-');
+      categoryMap.set(categoryKey, (categoryMap.get(categoryKey) || 0) + 1);
+    });
+
+    const dynamicCategories: Category[] = [
+      { id: 'all', name: 'All Tutorials', icon: FaBook, count: tutorials.length }
+    ];
+
+    // Add categories from API data
+    apiCategories.forEach(category => {
+      const categoryId = category.toLowerCase().replace(/\s+/g, '-');
+      const count = categoryMap.get(categoryId) || 0;
+      
+      let icon = FaBook;
+      if (category.toLowerCase().includes('web')) icon = FaCode;
+      else if (category.toLowerCase().includes('cloud')) icon = FaVideo;
+      else if (category.toLowerCase().includes('mobile')) icon = FaCode;
+      else if (category.toLowerCase().includes('data')) icon = FaBook;
+      
+      dynamicCategories.push({
+        id: categoryId,
+        name: category,
+        icon,
+        count
+      });
+    });
+
+    return dynamicCategories;
+  }, [tutorials, apiCategories]);
+
+  // Mock tutorials data removed - now using API data from useTutorials hook
+
+  const filteredTutorials = useMemo(() => {
+    return tutorials.filter(tutorial => {
+      const tutorialCategoryId = tutorial.category.toLowerCase().replace(/\s+/g, '-');
+      const matchesCategory = selectedCategory === 'all' || tutorialCategoryId === selectedCategory;
+      const matchesSearch = tutorial.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           tutorial.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           tutorial.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [tutorials, selectedCategory, searchTerm]);
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (
@@ -208,19 +168,64 @@ export const Tutorial: React.FC = () => {
             </div>
           </div>
 
+          {/* Results Count */}
+          {!isLoading && !error && (
+            <div className="mb-6 text-gray-600">
+              <p>Showing {filteredTutorials.length} of {tutorials.length} tutorials</p>
+            </div>
+          )}
+
           {/* Tutorial Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredTutorials.map((tutorial) => (
-              <div key={tutorial.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                {/* Thumbnail */}
-                <div className="relative">
-                  <img
-                    src={tutorial.thumbnail}
-                    alt={tutorial.title}
-                    className="w-full h-48 object-cover bg-gray-200"
-                  />
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                  <Skeleton className="w-full h-48" />
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-3">
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-16 w-full mb-4" />
+                    <div className="flex items-center justify-between mb-4">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <Skeleton className="h-8 w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-16">
+              <i className="fas fa-exclamation-triangle text-6xl text-red-300 mb-4"></i>
+              <h3 className="text-2xl font-bold text-gray-700 mb-2">Error Loading Tutorials</h3>
+              <p className="text-gray-500 mb-6">{error}</p>
+              <Button onClick={() => window.location.reload()}>Try Again</Button>
+            </div>
+          ) : filteredTutorials.length === 0 ? (
+            <div className="text-center py-16">
+              <i className="fas fa-search text-6xl text-gray-300 mb-4"></i>
+              <h3 className="text-2xl font-bold text-gray-700 mb-2">No tutorials found</h3>
+              <p className="text-gray-500 mb-6">Try adjusting your search or category filter</p>
+              <Button onClick={() => { setSelectedCategory('all'); setSearchTerm(''); }}>Clear Filters</Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredTutorials.map((tutorial) => (
+                <div key={tutorial._id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                  {/* Thumbnail */}
+                  <div className="relative">
+                    <img
+                      src={tutorial.thumbnailUrl || '/assets/topics/default-tutorial.png'}
+                      alt={tutorial.title}
+                      className="w-full h-48 object-cover bg-gray-200"
+                    />
                   <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                     <Button
+                      as={Link}
+                      to={`/tutorials/${tutorial._id}`}
                       className="bg-white text-gray-900 hover:bg-gray-100"
                       size="sm"
                     >
@@ -250,7 +255,7 @@ export const Tutorial: React.FC = () => {
                   </h3>
                   
                   <p className="text-gray-600 mb-4 text-sm">
-                    {tutorial.description}
+                    {tutorial.shortDescription || tutorial.description}
                   </p>
 
                   <div className="flex items-center justify-between mb-4">
@@ -266,7 +271,7 @@ export const Tutorial: React.FC = () => {
                   <div className="flex gap-2">
                     <Button
                       as={Link}
-                      to={tutorial.videoUrl}
+                      to={`/tutorials/${tutorial._id}`}
                       className="flex-1"
                       size="sm"
                     >
@@ -274,8 +279,7 @@ export const Tutorial: React.FC = () => {
                     </Button>
                     {tutorial.downloadUrl && (
                       <Button
-                        as={Link}
-                        to={tutorial.downloadUrl}
+                        onClick={() => window.open(tutorial.downloadUrl, '_blank')}
                         variant="outline"
                         size="sm"
                       >
@@ -285,8 +289,9 @@ export const Tutorial: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Empty State */}
           {filteredTutorials.length === 0 && (
