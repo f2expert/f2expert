@@ -154,7 +154,7 @@ class CourseApiService {
 
     // For now, return mock data - replace with actual API call
     // const endpoint = `/courses${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    return this.makeRequest('/courses');
+    return this.makeRequest('/courses/limited/6');
   }
 
   // Fetch single course by ID
