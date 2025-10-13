@@ -1,6 +1,7 @@
 import { Router } from "express"
 import * as UserController from "./user.controller"
 import { validateBody, validateQuery } from "../../app/middlewares/validation.middleware"
+import { uploadSinglePhoto } from "../../app/middlewares/upload.middleware"
 import { 
   createUserSchema, 
   updateUserSchema, 
@@ -17,7 +18,7 @@ const router = Router()
 router.get("/", 
   validateQuery(Joi.object({
     role: Joi.string().valid('admin', 'trainer', 'student').optional(),
-    isActive: Joi.boolean().optional()
+    isActive: Joi.string().valid('true', 'false').optional()
   })), 
   UserController.getAllUsers
 )
@@ -69,6 +70,16 @@ router.put("/:id/admin-info",
 router.post("/:id/change-password", 
   validateBody(changePasswordSchema), 
   UserController.changePassword
+)
+
+// Photo management
+router.post("/:id/upload-photo", 
+  uploadSinglePhoto,
+  UserController.uploadUserPhoto
+)
+
+router.delete("/:id/delete-photo", 
+  UserController.deleteUserPhoto
 )
 
 export default router

@@ -1,21 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
+import { useTrainers } from '../../hooks';
+import { Skeleton } from '../../components/atoms/Skeleton';
 import { 
   FaLightbulb, 
   FaHandshake, 
   FaUsers, 
   FaTrophy 
 } from 'react-icons/fa';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  role: string;
-  bio: string;
-  image: string;
-  expertise: string[];
-}
 
 interface Achievement {
   year: string;
@@ -24,40 +17,7 @@ interface Achievement {
 }
 
 export const About: React.FC = () => {
-  const teamMembers: TeamMember[] = [
-    {
-      id: '1',
-      name: 'Dr. Rajesh Kumar',
-      role: 'Founder & CEO',
-      bio: 'Former Senior Software Architect with 15+ years experience at top tech companies.',
-      image: '/assets/trainer/rajesh.jpg',
-      expertise: ['Leadership', 'Software Architecture', 'AI/ML']
-    },
-    {
-      id: '2',
-      name: 'Priya Sharma',
-      role: 'Head of Curriculum',
-      bio: 'Education specialist with expertise in designing industry-relevant training programs.',
-      image: '/assets/trainer/priya.jpg',
-      expertise: ['Curriculum Design', 'Web Development', 'Data Science']
-    },
-    {
-      id: '3',
-      name: 'Michael Johnson',
-      role: 'Senior Cloud Instructor',
-      bio: 'AWS Certified Solutions Architect with 10+ years in cloud infrastructure.',
-      image: '/assets/trainer/michael.jpg',
-      expertise: ['AWS', 'DevOps', 'Kubernetes']
-    },
-    {
-      id: '4',
-      name: 'Anita Patel',
-      role: 'Data Science Lead',
-      bio: 'Former Data Scientist at leading analytics firms, specialized in machine learning.',
-      image: '/assets/trainer/anita.jpg',
-      expertise: ['Python', 'Machine Learning', 'Statistics']
-    }
-  ];
+  const { trainers, isLoading, error } = useTrainers();
 
   const achievements: Achievement[] = [
     {
@@ -287,39 +247,78 @@ export const About: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {teamMembers.map((member) => (
-              <div key={member.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                <img 
-                  src={member.image} 
-                  alt={member.name}
-                  className="w-full h-64 object-cover bg-gray-200"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">
-                    {member.name}
-                  </h3>
-                  <p className="text-indigo-600 font-semibold mb-3">
-                    {member.role}
-                  </p>
-                  <p className="text-gray-600 text-sm mb-4">
-                    {member.bio}
-                  </p>
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-gray-700">Expertise:</p>
+            {isLoading ? (
+              // Loading skeleton
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                  <Skeleton className="w-full h-64" />
+                  <div className="p-6">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-3" />
+                    <Skeleton className="h-16 w-full mb-4" />
+                    <Skeleton className="h-4 w-1/3 mb-2" />
                     <div className="flex flex-wrap gap-1">
-                      {member.expertise.map((skill, index) => (
-                        <span 
-                          key={index}
-                          className="inline-block px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded-full"
-                        >
-                          {skill}
-                        </span>
-                      ))}
+                      <Skeleton className="h-6 w-16" />
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-6 w-14" />
                     </div>
                   </div>
                 </div>
+              ))
+            ) : error ? (
+              // Error state
+              <div className="col-span-full text-center py-8">
+                <p className="text-red-600 mb-4">Error loading trainers: {error}</p>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  variant="outline"
+                >
+                  Try Again
+                </Button>
               </div>
-            ))}
+            ) : trainers.length === 0 ? (
+              // Empty state
+              <div className="col-span-full text-center py-8">
+                <p className="text-gray-600">No trainers available at the moment.</p>
+              </div>
+            ) : (
+              // Trainer data
+              trainers.map((trainer) => (
+                <div key={trainer._id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                  <img 
+                    src={'/assets/trainer/default-avatar.jpg'} 
+                    alt={trainer.fullName}
+                    className="w-full h-64 object-cover bg-gray-200"
+                  />
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">
+                      {trainer.fullName}
+                    </h3>
+                    <p className="text-indigo-600 font-semibold mb-3">
+                      {trainer.roleDisplay || 'Senior Instructor'}
+                    </p>
+                    <p className="text-gray-600 text-sm mb-4">
+                      Experienced professional dedicated to student success.
+                    </p>
+                    {trainer.trainerInfo?.expertise && trainer.trainerInfo.expertise.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-gray-700">Expertise:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {trainer.trainerInfo.expertise.map((skill: string, index: number) => (
+                            <span 
+                              key={index}
+                              className="inline-block px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded-full"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

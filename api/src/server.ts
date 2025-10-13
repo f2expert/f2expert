@@ -48,6 +48,9 @@ app.use(errorMiddleware)
 // Swagger docs route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
+// 🔹 Static file serving for uploaded photos
+app.use("/uploads", express.static("uploads"))
+
 // 🔹 API Routes
 app.use("/api", routes)
 

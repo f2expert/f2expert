@@ -3,6 +3,8 @@ import * as UserService from "./user.service"
 import { sendError, sendResponse } from "../../app/utils/response.util"
 import { HTTP_STATUS } from "../../app/constants/http-status.constant"
 import { ICreateUserRequest, IUpdateUserRequest } from "./user.types"
+import { deletePhotoFile, getPhotoUrl } from "../../app/middlewares/upload.middleware"
+import path from "path"
 
 /**
  * @openapi
@@ -882,5 +884,146 @@ export const updateAdminInfo = async (req: Request, res: Response) => {
     return sendResponse(res, HTTP_STATUS.OK, user, "Admin info updated successfully")
   } catch (error: any) {
     return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to update admin info")
+  }
+}
+
+/**
+ * @openapi
+ * /users/{id}/upload-photo:
+ *   post:
+ *     tags:
+ *       - User Management
+ *     summary: Upload user profile photo
+ *     description: Upload a profile photo for a user (max 5MB, supports JPEG, PNG, GIF, WebP)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               photo:
+ *                 type: string
+ *                 format: binary
+ *                 description: User photo file
+ *     responses:
+ *       200:
+ *         description: Photo uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     photoUrl:
+ *                       type: string
+ *                     filename:
+ *                       type: string
+ *       400:
+ *         description: No file uploaded or invalid file type
+ *       404:
+ *         description: User not found
+ *       413:
+ *         description: File size too large
+ */
+export const uploadUserPhoto = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    
+    if (!req.file) {
+      return sendError(res, HTTP_STATUS.BAD_REQUEST, "No photo file uploaded")
+    }
+
+    // Get current user to check if they have an existing photo
+    const currentUser = await UserService.getUserById(id)
+    if (!currentUser) {
+      // Delete uploaded file if user not found
+      deletePhotoFile(req.file.path)
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "User not found")
+    }
+
+    // Delete old photo file if exists
+    if (currentUser.avatar) {
+      const oldPhotoPath = path.join(process.cwd(), "uploads", "users", path.basename(currentUser.avatar))
+      deletePhotoFile(oldPhotoPath)
+    }
+
+    // Update user with new photo filename
+    const photoUrl = getPhotoUrl(req.file.filename, req)
+    const updatedUser = await UserService.updateUser(id, { avatar: photoUrl })
+
+    return sendResponse(res, HTTP_STATUS.OK, {
+      photoUrl: photoUrl,
+      filename: req.file.filename,
+      user: updatedUser
+    }, "Photo uploaded successfully")
+
+  } catch (error: any) {
+    // Delete uploaded file if there's an error
+    if (req.file) {
+      deletePhotoFile(req.file.path)
+    }
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Failed to upload photo")
+  }
+}
+
+/**
+ * @openapi
+ * /users/{id}/delete-photo:
+ *   delete:
+ *     tags:
+ *       - User Management
+ *     summary: Delete user profile photo
+ *     description: Remove the profile photo for a user
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: Photo deleted successfully
+ *       404:
+ *         description: User not found or no photo to delete
+ */
+export const deleteUserPhoto = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+
+    const user = await UserService.getUserById(id)
+    if (!user) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "User not found")
+    }
+
+    if (!user.avatar) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "No photo to delete")
+    }
+
+    // Delete photo file
+    const photoPath = path.join(process.cwd(), "uploads", "users", path.basename(user.avatar))
+    deletePhotoFile(photoPath)
+
+    // Update user to remove avatar
+    await UserService.updateUser(id, { avatar: undefined })
+
+    return sendResponse(res, HTTP_STATUS.OK, null, "Photo deleted successfully")
+
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Failed to delete photo")
   }
 }

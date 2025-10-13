@@ -49,7 +49,7 @@ export const validateQuery = (schema: ObjectSchema) => {
       return sendError(res, HTTP_STATUS.BAD_REQUEST, errorMessage)
     }
     
-    req.query = value
+    // Don't overwrite req.query as it's read-only, just validate
     next()
   }
 }
