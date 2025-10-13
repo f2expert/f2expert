@@ -7,6 +7,7 @@ import paymentRoutes from "../modules/payments/payment.route"
 import notificationRoutes from "../modules/notifications/notification.route"
 import enrollmentRoutes from "../modules/enrollments/enrollment.route"
 import menuRoutes from "../modules/menu/menu.route"
+import testimonialRoutes from "../modules/testimonials/testimonial.route"
 
 const router = Router()
 
@@ -18,5 +19,6 @@ router.use("/payments", paymentRoutes)
 router.use("/notifications", notificationRoutes)
 router.use("/enrollments", enrollmentRoutes)
 router.use("/menu", menuRoutes)
+router.use("/testimonials", testimonialRoutes)
 
 export default router

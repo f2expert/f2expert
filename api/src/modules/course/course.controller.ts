@@ -19,18 +19,46 @@ import { ApiResponse } from "../../app/types/ApiResponse.interface"
 export const getAll = async (_req: Request, res: Response) => {
   try {
     const courses = await CourseService.getAllCourses()
-    if(!courses.length) return sendResponse(res, HTTP_STATUS.NO_CONTENT, null, MESSAGES.COURSE_NOT_FOUND)
-      
-    const response:ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: courses
+    
+    // Debug: Check if there are any courses at all
+    const totalCourses = await CourseService.getTotalCoursesCount()
+    
+    if(!courses.length) {
+      return sendResponse(res, HTTP_STATUS.OK, [], "No published courses found")
     }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+      
+    return sendResponse(res, HTTP_STATUS.OK, courses, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
 }
+
+// Debug endpoints (remove in production)
+export const getAllCoursesDebug = async (_req: Request, res: Response) => {
+  try {
+    const allCourses = await CourseService.getAllCoursesIncludingUnpublished()
+    const totalCount = await CourseService.getTotalCoursesCount()
+    
+    return sendResponse(res, HTTP_STATUS.OK, allCourses, "Debug: All courses retrieved (Total: " + totalCount + ")")
+  } catch (err: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
+  }
+}
+
+export const createSampleData = async (_req: Request, res: Response) => {
+  try {
+    const existingCount = await CourseService.getTotalCoursesCount()
+    if (existingCount > 0) {
+      return sendResponse(res, HTTP_STATUS.OK, { message: "Sample data already exists", count: existingCount }, "Sample data exists")
+    }
+    
+    const sampleCourses = await CourseService.createSampleCourses()
+    return sendResponse(res, HTTP_STATUS.CREATED, sampleCourses, "Sample courses created successfully")
+  } catch (err: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
+  }
+}
+
 /**
  * @openapi
  * /courses/limited/{limit}:
@@ -65,18 +93,9 @@ export const getLimited = async (req: Request, res: Response) => {
     }
     
     const courses = await CourseService.getLimitedCourses(limit)
-    if(!courses.length) return sendResponse(res, HTTP_STATUS.NO_CONTENT, null, MESSAGES.COURSE_NOT_FOUND)
+    if(!courses.length) return sendResponse(res, HTTP_STATUS.OK, [], MESSAGES.COURSE_NOT_FOUND)
       
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: {
-        courses,
-        count: courses.length,
-        limit
-      }
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, courses, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
@@ -102,13 +121,9 @@ export const getLimited = async (req: Request, res: Response) => {
 export const getById = async (req: Request, res: Response) => {
   try {
     const course = await CourseService.getCourseById(req.params.id)
-    if(!course) return sendResponse(res, HTTP_STATUS.NO_CONTENT, null, MESSAGES.COURSE_NOT_FOUND)
-    const response:ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: course
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    if(!course) return sendResponse(res, HTTP_STATUS.NOT_FOUND, null, MESSAGES.COURSE_NOT_FOUND)
+    
+    return sendResponse(res, HTTP_STATUS.OK, course, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
@@ -313,12 +328,8 @@ export const getById = async (req: Request, res: Response) => {
 export const create = async (req: Request, res: Response) => {
   try {
     const newCourse = await CourseService.createCourse(req.body)
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: newCourse
-    }
-    return sendResponse(res, HTTP_STATUS.CREATED, response)
+    
+    return sendResponse(res, HTTP_STATUS.CREATED, newCourse, MESSAGES.SUCCESS)
   } catch (err: any) {
     // Handle specific MongoDB validation errors
     if (err.name === 'ValidationError') {
@@ -397,12 +408,8 @@ export const create = async (req: Request, res: Response) => {
 export const update = async (req: Request, res: Response) => {
   try {
     const updatedCourse = await CourseService.updateCourse(req.params.id, req.body)
-    const response:ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: updatedCourse
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    
+    return sendResponse(res, HTTP_STATUS.OK, updatedCourse, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }

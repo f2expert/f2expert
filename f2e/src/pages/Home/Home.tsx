@@ -11,16 +11,8 @@ import {
   FaStar 
 } from 'react-icons/fa';
 import { Avatar, AvatarImage } from "../../components/atoms/Avatar/Avatar";
-
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  duration: string;
-  level: string;
-  price: string;
-  image: string;
-}
+import { useCourses } from "../../hooks";
+import type { CourseDetails } from "../../services/courseApi";
 
 interface Testimonial {
   id: string;
@@ -31,38 +23,8 @@ interface Testimonial {
 }
 
 export const Home: React.FC = () => {
-  const featuredCourses: Course[] = [
-    {
-      id: "1",
-      title: "Full Stack Web Development",
-      description:
-        "Master modern web development with React, Node.js, and databases",
-      duration: "12 weeks",
-      level: "Intermediate",
-      price: "$599",
-      image: "/assets/ui-ux.png",
-    },
-    {
-      id: "2",
-      title: "Data Science & Analytics",
-      description:
-        "Learn Python, machine learning, and data visualization techniques",
-      duration: "16 weeks",
-      level: "Beginner",
-      price: "$699",
-      image: "/assets/full-stack.png",
-    },
-    {
-      id: "3",
-      title: "Cloud Computing (AWS)",
-      description:
-        "Master cloud infrastructure, deployment, and DevOps practices",
-      duration: "10 weeks",
-      level: "Advanced",
-      price: "$799",
-      image: "/assets/web-development.png",
-    },
-  ];
+  const { courses, isLoading, loadCourses } = useCourses();
+  const [featuredCourses, setFeaturedCourses] = useState<CourseDetails[]>([]);
 
   const testimonials: Testimonial[] = [
     {
@@ -106,6 +68,27 @@ export const Home: React.FC = () => {
 
   // State for current banner image
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+
+  // Load featured courses from API
+  useEffect(() => {
+    const loadFeaturedCourses = async () => {
+      try {
+        // Load courses with limit of 3 for featured section
+        await loadCourses({ limit: 3, sortBy: 'rating', sortOrder: 'desc' });
+      } catch (error) {
+        console.error('Error loading featured courses:', error);
+      }
+    };
+
+    loadFeaturedCourses();
+  }, [loadCourses]);
+
+  // Update featured courses when courses data changes
+  useEffect(() => {
+    if (courses && courses.length > 0) {
+      setFeaturedCourses(courses.slice(0, 3));
+    }
+  }, [courses]);
 
   // Auto-rotate banner images
   useEffect(() => {
@@ -304,44 +287,92 @@ export const Home: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCourses.map((course) => (
-              <div
-                key={course.id}
-                className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-              >
-                <img
-                  src={course.image}
-                  alt={course.title}
-                  className="w-full h-48 object-cover bg-gray-200"
-                />
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="inline-block px-3 py-1 text-sm font-semibold text-blue-600 bg-blue-100 rounded-full">
-                      {course.level}
-                    </span>
-                    <span className="text-2xl font-bold text-green-600">
-                      {course.price}
-                    </span>
+            {isLoading ? (
+              // Loading skeleton
+              [...Array(3)].map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-lg shadow-lg overflow-hidden animate-pulse"
+                >
+                  <div className="w-full h-48 bg-gray-300"></div>
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="h-6 w-20 bg-gray-300 rounded-full"></div>
+                      <div className="h-6 w-16 bg-gray-300 rounded"></div>
+                    </div>
+                    <div className="h-6 w-3/4 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-4 w-full bg-gray-300 rounded mb-2"></div>
+                    <div className="h-4 w-2/3 bg-gray-300 rounded mb-4"></div>
+                    <div className="h-4 w-1/2 bg-gray-300 rounded mb-4"></div>
+                    <div className="h-10 w-full bg-gray-300 rounded"></div>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    {course.title}
-                  </h3>
-                  <p className="text-gray-600 mb-4">{course.description}</p>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-sm text-gray-500">
-                      Duration: {course.duration}
-                    </span>
-                  </div>
-                  <Button
-                    as={Link}
-                    to={`/courses/${course.id}`}
-                    className="w-full"
-                  >
-                    Learn More
-                  </Button>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              featuredCourses.map((course) => (
+                <div
+                  key={course._id}
+                  className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+                >
+                  <img
+                    src={course.thumbnailUrl}
+                    alt={course.title}
+                    className="w-full h-48 object-cover bg-gray-200"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/assets/ui-ux.png'; // Fallback image
+                    }}
+                  />
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-3">
+                      <span className="inline-block px-3 py-1 text-sm font-semibold text-blue-600 bg-blue-100 rounded-full">
+                        {course.level}
+                      </span>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold text-green-600">
+                          {course.currency}{course.price}
+                        </span>
+                        {course.originalPrice && course.originalPrice > course.price && (
+                          <div className="text-sm text-gray-500 line-through">
+                            {course.currency}{course.originalPrice}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      {course.title}
+                    </h3>
+                    <p className="text-gray-600 mb-4 h-12 overflow-hidden">{course.shortDescription}</p>
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-sm text-gray-500">
+                        Duration: {course.duration}
+                      </span>
+                      <div className="flex items-center">
+                        <FaStar className="text-yellow-400 text-sm mr-1" />
+                        <span className="text-sm text-gray-600">
+                          {course.rating} ({course.totalStudents} students)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-sm text-gray-500">
+                        {course.totalStudents} students enrolled
+                      </span>
+                      <span className="text-sm text-blue-600 font-medium">
+                        {course.category}
+                      </span>
+                    </div>
+                    <Button
+                      as={Link}
+                      to={`/courses/${course._id}`}
+                      className="w-full"
+                    >
+                      Learn More
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           <div className="text-center mt-12">

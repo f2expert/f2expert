@@ -9,6 +9,7 @@ import { Tutorial } from '../pages/Tutorial';
 import { Dashboard } from '../pages/Dashboard';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
+import { ForgotPassword } from '../pages/ForgotPassword';
 import Profile from '../pages/Profile';
 import { FeeDetails } from '../pages/FeeDetails';
 import { Notifications } from '../pages/Notifications';
@@ -83,6 +84,13 @@ export default function AppRoutes() {
       path: "/register",
       element: (
           <Register />
+      ),
+      errorElement: <ErrorHandler />,
+    },
+    {
+      path: "/forgot-password",
+      element: (
+          <ForgotPassword />
       ),
       errorElement: <ErrorHandler />,
     },

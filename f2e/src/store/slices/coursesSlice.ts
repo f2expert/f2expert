@@ -1,34 +1,32 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { courseApiService, type CourseDetails, type CourseFilters } from '../../services/courseApi';
 
-// Types
-export interface Course {
-  id: string;
-  title: string;
-  description: string;
-  instructor: string;
-  duration: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced';
-  price: number;
-  rating: number;
-  enrolled: number;
-  thumbnail: string;
-  progress?: number;
-  nextLesson?: string;
-  totalLessons?: number;
-  completedLessons?: number;
+// Export the CourseDetails type from API service as Course for compatibility
+export type Course = CourseDetails;
+
+// Additional types for the slice
+export interface CourseProgress {
+  courseId: string;
+  progress: number;
+  lastAccessedLesson?: string;
+  completedLessons: string[];
 }
 
 export interface CoursesState {
   courses: Course[];
   enrolledCourses: Course[];
   currentCourse: Course | null;
+  categories: string[];
   isLoading: boolean;
+  isEnrolling: boolean;
   error: string | null;
-  filters: {
-    level: string;
-    category: string;
-    search: string;
+  pagination: {
+    page: number;
+    totalPages: number;
+    total: number;
+    limit: number;
   };
+  filters: CourseFilters;
 }
 
 // Initial state
@@ -36,66 +34,73 @@ const initialState: CoursesState = {
   courses: [],
   enrolledCourses: [],
   currentCourse: null,
+  categories: [],
   isLoading: false,
+  isEnrolling: false,
   error: null,
+  pagination: {
+    page: 1,
+    totalPages: 0,
+    total: 0,
+    limit: 10
+  },
   filters: {
-    level: '',
-    category: '',
-    search: '',
+    page: 1,
+    limit: 10,
+    sortBy: 'title',
+    sortOrder: 'asc'
   },
 };
 
-// Mock data
-const mockCourses: Course[] = [
-  {
-    id: '1',
-    title: 'React Development Fundamentals',
-    description: 'Learn React from scratch with hands-on projects',
-    instructor: 'Sarah Johnson',
-    duration: '12 hours',
-    level: 'Beginner',
-    price: 99,
-    rating: 4.8,
-    enrolled: 1234,
-    thumbnail: '/api/placeholder/300/200',
-  },
-  {
-    id: '2',
-    title: 'Advanced JavaScript ES6+',
-    description: 'Master modern JavaScript features and patterns',
-    instructor: 'Mike Chen',
-    duration: '8 hours',
-    level: 'Intermediate',
-    price: 129,
-    rating: 4.9,
-    enrolled: 856,
-    thumbnail: '/api/placeholder/300/200',
-  },
-  {
-    id: '3',
-    title: 'TypeScript for Professionals',
-    description: 'Build scalable applications with TypeScript',
-    instructor: 'Alex Rivera',
-    duration: '10 hours',
-    level: 'Advanced',
-    price: 149,
-    rating: 4.7,
-    enrolled: 645,
-    thumbnail: '/api/placeholder/300/200',
-  },
-];
+
+
+// Additional thunks
+export const fetchEnrolledCourses = createAsyncThunk(
+  'courses/fetchEnrolledCourses',
+  async (_, { rejectWithValue }) => {
+    try {
+      const courses = await courseApiService.getEnrolledCourses();
+      return courses;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch enrolled courses');
+    }
+  }
+);
+
+export const fetchCategories = createAsyncThunk(
+  'courses/fetchCategories',
+  async (_, { rejectWithValue }) => {
+    try {
+      const categories = await courseApiService.getCategories();
+      return categories;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch categories');
+    }
+  }
+);
+
+export const updateCourseProgress = createAsyncThunk(
+  'courses/updateProgress',
+  async ({ courseId, lessonId, progress }: { courseId: string; lessonId: string; progress: number }, { rejectWithValue }) => {
+    try {
+      await courseApiService.updateProgress(courseId, lessonId, progress);
+      return { courseId, lessonId, progress };
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to update progress');
+    }
+  }
+);
 
 // Async thunks
 export const fetchCourses = createAsyncThunk(
   'courses/fetchCourses',
-  async (_, { rejectWithValue }) => {
+  async (filters: CourseFilters = {}, { rejectWithValue }) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return mockCourses;
-    } catch {
-      return rejectWithValue('Failed to fetch courses');
+      const response = await courseApiService.getCourses(filters);
+      console.log("===",response)
+      return response;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch courses');
     }
   }
 );
@@ -104,17 +109,10 @@ export const fetchCourseById = createAsyncThunk(
   'courses/fetchCourseById',
   async (courseId: string, { rejectWithValue }) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const course = mockCourses.find(c => c.id === courseId);
-      if (!course) {
-        throw new Error('Course not found');
-      }
-      
+      const course = await courseApiService.getCourseById(courseId);
       return course;
-    } catch {
-      return rejectWithValue('Failed to fetch course details');
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch course details');
     }
   }
 );
@@ -123,11 +121,14 @@ export const enrollInCourse = createAsyncThunk(
   'courses/enrollInCourse',
   async (courseId: string, { rejectWithValue, getState }) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await courseApiService.enrollInCourse(courseId);
+      
+      if (!result.success) {
+        throw new Error(result.message);
+      }
       
       const state = getState() as { courses: CoursesState };
-      const course = state.courses.courses.find(c => c.id === courseId);
+      const course = state.courses.courses.find(c => c._id === courseId);
       
       if (!course) {
         throw new Error('Course not found');
@@ -137,39 +138,17 @@ export const enrollInCourse = createAsyncThunk(
       const enrolledCourse: Course = {
         ...course,
         progress: 0,
-        nextLesson: 'Introduction to the Course',
-        totalLessons: 24,
-        completedLessons: 0,
+        isEnrolled: true,
       };
       
       return enrolledCourse;
-    } catch {
-      return rejectWithValue('Failed to enroll in course');
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to enroll in course');
     }
   }
 );
 
-export const updateCourseProgress = createAsyncThunk(
-  'courses/updateCourseProgress',
-  async (
-    { courseId, progress, completedLessons, nextLesson }: {
-      courseId: string;
-      progress: number;
-      completedLessons: number;
-      nextLesson: string;
-    },
-    { rejectWithValue }
-  ) => {
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      return { courseId, progress, completedLessons, nextLesson };
-    } catch {
-      return rejectWithValue('Failed to update course progress');
-    }
-  }
-);
+
 
 // Courses slice
 const coursesSlice = createSlice({
@@ -179,14 +158,15 @@ const coursesSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    setFilters: (state, action: PayloadAction<Partial<CoursesState['filters']>>) => {
+    setFilters: (state, action: PayloadAction<Partial<CourseFilters>>) => {
       state.filters = { ...state.filters, ...action.payload };
     },
     clearFilters: (state) => {
       state.filters = {
-        level: '',
-        category: '',
-        search: '',
+        page: 1,
+        limit: 10,
+        sortBy: 'title',
+        sortOrder: 'asc'
       };
     },
     setCurrentCourse: (state, action: PayloadAction<Course | null>) => {
@@ -202,7 +182,14 @@ const coursesSlice = createSlice({
       })
       .addCase(fetchCourses.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.courses = action.payload;
+        const response = action.payload;
+        state.courses = response.data;
+        state.pagination = {
+          page: response.page,
+          totalPages: response.totalPages,
+          total: response.total,
+          limit: response.limit
+        };
         state.error = null;
       })
       .addCase(fetchCourses.rejected, (state, action) => {
@@ -229,15 +216,47 @@ const coursesSlice = createSlice({
     // Enroll in course
     builder
       .addCase(enrollInCourse.pending, (state) => {
-        state.isLoading = true;
+        state.isEnrolling = true;
         state.error = null;
       })
       .addCase(enrollInCourse.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.isEnrolling = false;
         state.enrolledCourses.push(action.payload);
         state.error = null;
       })
       .addCase(enrollInCourse.rejected, (state, action) => {
+        state.isEnrolling = false;
+        state.error = action.payload as string;
+      });
+
+    // Fetch enrolled courses
+    builder
+      .addCase(fetchEnrolledCourses.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchEnrolledCourses.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.enrolledCourses = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchEnrolledCourses.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // Fetch categories
+    builder
+      .addCase(fetchCategories.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchCategories.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.categories = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchCategories.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });
@@ -249,15 +268,13 @@ const coursesSlice = createSlice({
       })
       .addCase(updateCourseProgress.fulfilled, (state, action) => {
         state.isLoading = false;
-        const { courseId, progress, completedLessons, nextLesson } = action.payload;
-        const courseIndex = state.enrolledCourses.findIndex(c => c.id === courseId);
+        const { courseId, progress } = action.payload;
+        const courseIndex = state.enrolledCourses.findIndex(c => c._id === courseId);
         
         if (courseIndex !== -1) {
           state.enrolledCourses[courseIndex] = {
             ...state.enrolledCourses[courseIndex],
             progress,
-            completedLessons,
-            nextLesson,
           };
         }
         state.error = null;

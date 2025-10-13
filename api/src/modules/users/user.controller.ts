@@ -1,20 +1,398 @@
-import { Request, Response } from "express";
-import * as UserService from "./user.service";
-import { sendError, sendResponse } from "../../app/utils/response.util";
-import { HTTP_STATUS } from "../../app/constants/http-status.constant";
-import { MESSAGES } from "../../app/constants/message.constant";
-import { ApiResponse } from "../../app/types/ApiResponse.interface";
-import { IUserDTO } from "./user.types";
+import { Request, Response } from "express"
+import * as UserService from "./user.service"
+import { sendError, sendResponse } from "../../app/utils/response.util"
+import { HTTP_STATUS } from "../../app/constants/http-status.constant"
+import { ICreateUserRequest, IUpdateUserRequest } from "./user.types"
+
 /**
  * @openapi
+ * components:
+ *   schemas:
+ *     Address:
+ *       type: object
+ *       properties:
+ *         street:
+ *           type: string
+ *           maxLength: 200
+ *         city:
+ *           type: string
+ *           maxLength: 100
+ *         state:
+ *           type: string
+ *           maxLength: 100
+ *         country:
+ *           type: string
+ *           maxLength: 100
+ *           default: "India"
+ *         zipCode:
+ *           type: string
+ *           maxLength: 10
+ *
+ *     EmergencyContact:
+ *       type: object
+ *       properties:
+ *         name:
+ *           type: string
+ *           maxLength: 100
+ *         phone:
+ *           type: string
+ *         relationship:
+ *           type: string
+ *           maxLength: 50
+ *
+ *     Certification:
+ *       type: object
+ *       required:
+ *         - name
+ *         - issuedBy
+ *         - issuedDate
+ *       properties:
+ *         name:
+ *           type: string
+ *         issuedBy:
+ *           type: string
+ *         issuedDate:
+ *           type: string
+ *           format: date
+ *         expiryDate:
+ *           type: string
+ *           format: date
+ *         certificateUrl:
+ *           type: string
+ *           format: uri
+ *
+ *     StudentInfo:
+ *       type: object
+ *       properties:
+ *         studentId:
+ *           type: string
+ *           example: "STU20240001"
+ *         enrollmentDate:
+ *           type: string
+ *           format: date-time
+ *         emergencyContact:
+ *           $ref: '#/components/schemas/EmergencyContact'
+ *         educationLevel:
+ *           type: string
+ *           enum: [high_school, bachelor, master, phd, other]
+ *         previousExperience:
+ *           type: string
+ *           maxLength: 1000
+ *         careerGoals:
+ *           type: string
+ *           maxLength: 1000
+ *
+ *     TrainerInfo:
+ *       type: object
+ *       properties:
+ *         employeeId:
+ *           type: string
+ *           example: "TR24001"
+ *         department:
+ *           type: string
+ *         specializations:
+ *           type: array
+ *           items:
+ *             type: string
+ *         experience:
+ *           type: number
+ *           minimum: 0
+ *           maximum: 50
+ *         qualifications:
+ *           type: array
+ *           items:
+ *             type: string
+ *         certifications:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Certification'
+ *         expertise:
+ *           type: array
+ *           items:
+ *             type: string
+ *         hourlyRate:
+ *           type: number
+ *           minimum: 0
+ *
+ *     AdminInfo:
+ *       type: object
+ *       properties:
+ *         employeeId:
+ *           type: string
+ *           example: "AD24001"
+ *         department:
+ *           type: string
+ *         permissions:
+ *           type: array
+ *           items:
+ *             type: string
+ *         accessLevel:
+ *           type: string
+ *           enum: [super_admin, admin, manager]
+ *
+ *     CreateUserRequest:
+ *       type: object
+ *       required:
+ *         - firstName
+ *         - lastName
+ *         - email
+ *         - password
+ *         - role
+ *       properties:
+ *         firstName:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 50
+ *           example: "John"
+ *         lastName:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 50
+ *           example: "Doe"
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: "john.doe@example.com"
+ *         password:
+ *           type: string
+ *           minLength: 8
+ *           example: "SecurePass123"
+ *           description: "Must contain at least one uppercase, one lowercase letter and one number"
+ *         phone:
+ *           type: string
+ *           example: "+91-9876543210"
+ *         dateOfBirth:
+ *           type: string
+ *           format: date
+ *         gender:
+ *           type: string
+ *           enum: [male, female, other]
+ *         address:
+ *           $ref: '#/components/schemas/Address'
+ *         role:
+ *           type: string
+ *           enum: [admin, trainer, student]
+ *           example: "student"
+ *
+ *     UpdateUserRequest:
+ *       type: object
+ *       properties:
+ *         firstName:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 50
+ *         lastName:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 50
+ *         email:
+ *           type: string
+ *           format: email
+ *         phone:
+ *           type: string
+ *         dateOfBirth:
+ *           type: string
+ *           format: date
+ *         gender:
+ *           type: string
+ *           enum: [male, female, other]
+ *         address:
+ *           $ref: '#/components/schemas/Address'
+ *         bio:
+ *           type: string
+ *           maxLength: 500
+ *         avatar:
+ *           type: string
+ *           format: uri
+ *         isActive:
+ *           type: boolean
+ *
+ *     UserResponse:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         firstName:
+ *           type: string
+ *         lastName:
+ *           type: string
+ *         email:
+ *           type: string
+ *         phone:
+ *           type: string
+ *         dateOfBirth:
+ *           type: string
+ *           format: date
+ *         gender:
+ *           type: string
+ *         address:
+ *           $ref: '#/components/schemas/Address'
+ *         role:
+ *           type: string
+ *           enum: [admin, trainer, student]
+ *         isActive:
+ *           type: boolean
+ *         isEmailVerified:
+ *           type: boolean
+ *         avatar:
+ *           type: string
+ *         bio:
+ *           type: string
+ *         studentInfo:
+ *           $ref: '#/components/schemas/StudentInfo'
+ *         trainerInfo:
+ *           $ref: '#/components/schemas/TrainerInfo'
+ *         adminInfo:
+ *           $ref: '#/components/schemas/AdminInfo'
+ *         fullName:
+ *           type: string
+ *         roleDisplay:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *
+ *     UserStats:
+ *       type: object
+ *       properties:
+ *         totalUsers:
+ *           type: number
+ *         activeUsers:
+ *           type: number
+ *         inactiveUsers:
+ *           type: number
+ *         roleBreakdown:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               _id:
+ *                 type: string
+ *               count:
+ *                 type: number
+ *               active:
+ *                 type: number
+ *
+ *     ChangePasswordRequest:
+ *       type: object
+ *       required:
+ *         - currentPassword
+ *         - newPassword
+ *         - confirmPassword
+ *       properties:
+ *         currentPassword:
+ *           type: string
+ *         newPassword:
+ *           type: string
+ *           minLength: 8
+ *           description: "Must contain at least one uppercase, one lowercase letter and one number"
+ *         confirmPassword:
+ *           type: string
+ *           description: "Must match newPassword"
+ *
  * /users:
  *   get:
  *     tags:
- *       - User
- *     summary: Retrieve a list of all users
+ *       - User Management
+ *     summary: Get all users
+ *     description: Retrieve all users with optional filtering by role and status
+ *     parameters:
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [admin, trainer, student]
+ *         description: Filter users by role
+ *       - in: query
+ *         name: isActive
+ *         schema:
+ *           type: boolean
+ *         description: Filter users by active status
  *     responses:
  *       200:
- *         description: List of users
+ *         description: Users retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Users retrieved successfully"
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/UserResponse'
+ *       500:
+ *         description: Internal server error
+ *
+ *   post:
+ *     tags:
+ *       - User Management
+ *     summary: Create a new user
+ *     description: Register a new user (admin, trainer, or student) in the system
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateUserRequest'
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "User created successfully"
+ *                 data:
+ *                   $ref: '#/components/schemas/UserResponse'
+ *       400:
+ *         description: Validation error or email already exists
+ *       500:
+ *         description: Internal server error
+ *
+ * /users/search:
+ *   get:
+ *     tags:
+ *       - User Management
+ *     summary: Search users
+ *     description: Search users by name or email with optional role filtering
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Search term (name or email)
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [admin, trainer, student]
+ *         description: Filter by user role
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *           default: 20
+ *           maximum: 100
+ *         description: Maximum number of results
+ *     responses:
+ *       200:
+ *         description: Search results
  *         content:
  *           application/json:
  *             schema:
@@ -27,71 +405,49 @@ import { IUserDTO } from "./user.types";
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/IUserDTO'
- * components:
- *   schemas:
- *     IUserDTO:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *           description: User ID
- *         name:
- *           type: string
- *         email:
- *           type: string
- *         password:
- *           type: string
- *         role:
- *           type: string
- *           enum: [student, instructor, admin]
- *         isActive:
- *           type: boolean
- *         createdAt:
- *           type: string
- *           format: date-time
- *         updatedAt:
- *           type: string
- *           format: date-time
- */
-export const getAll = async (_req: Request, res: Response) => {
-  try {
-    const users: IUserDTO[] = await UserService.getAllUsers();
-    if (!users.length)
-      return sendResponse(
-        res,
-        HTTP_STATUS.NO_CONTENT,
-        null,
-        MESSAGES.USER_NOT_FOUND
-      );
-
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: users,
-    };
-    return sendResponse(res, HTTP_STATUS.OK, response, MESSAGES.SUCCESS);
-  } catch (err: any) {
-    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message);
-  }
-};
-/**
- * @openapi
+ *                     $ref: '#/components/schemas/UserResponse'
+ *       400:
+ *         description: Search term is required
+ *
+ * /users/stats:
+ *   get:
+ *     tags:
+ *       - User Management
+ *     summary: Get user statistics
+ *     description: Retrieve comprehensive user statistics including role breakdown
+ *     responses:
+ *       200:
+ *         description: User statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/UserStats'
+ *       500:
+ *         description: Internal server error
+ *
  * /users/{id}:
  *   get:
  *     tags:
- *       - User
- *     summary: Retrieve user details by ID
+ *       - User Management
+ *     summary: Get user by ID
+ *     description: Retrieve a specific user by their unique identifier
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: User ID to retrieve
  *         schema:
  *           type: string
+ *         description: User ID
  *     responses:
  *       200:
- *         description: User details
+ *         description: User retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -102,118 +458,30 @@ export const getAll = async (_req: Request, res: Response) => {
  *                 message:
  *                   type: string
  *                 data:
- *                   $ref: '#/components/schemas/IUserDTO'
- */
-export const getById = async (req: Request, res: Response) => {
-  try {
-    const user = await UserService.getUserById(req.params.id);
-    if (!user)
-      return sendResponse(
-        res,
-        HTTP_STATUS.NO_CONTENT,
-        null,
-        MESSAGES.USER_NOT_FOUND
-      );
-
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: user,
-    };
-    return sendResponse(res, HTTP_STATUS.OK, response);
-  } catch (err: any) {
-    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message);
-  }
-};
-/**
- * @openapi
- * /users:
- *   post:
- *     tags:
- *       - User
- *     summary: Create a new user
- *     requestBody:
- *       required: true
- *       description: New user details
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
- *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *               role:
- *                 type: string
- *                 enum: [student, instructor, admin]
- *               isActive:
- *                 type: boolean
- *     responses:
- *       201:
- *         description: User created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   $ref: '#/components/schemas/IUserDTO'
- */
-export const create = async (req: Request, res: Response) => {
-  try {
-    const newUser = await UserService.createUser(req.body);
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: newUser,
-    };
-    return sendResponse(res, HTTP_STATUS.CREATED, response);
-  } catch (err: any) {
-    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message);
-  }
-};
-/**
- * @openapi
- * /users/{id}:
+ *                   $ref: '#/components/schemas/UserResponse'
+ *       404:
+ *         description: User not found
+ *       400:
+ *         description: Invalid user ID format
+ *
  *   put:
  *     tags:
- *       - User
- *     summary: Update user details by ID
+ *       - User Management
+ *     summary: Update user profile
+ *     description: Update user profile information (basic fields only)
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: User ID to update
  *         schema:
  *           type: string
+ *         description: User ID to update
  *     requestBody:
  *       required: true
- *       description: Fields to update (name, email, role, etc.)
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               role:
- *                 type: string
- *                 enum: [student, instructor, admin]
- *               isActive:
- *                 type: boolean
+ *             $ref: '#/components/schemas/UpdateUserRequest'
  *     responses:
  *       200:
  *         description: User updated successfully
@@ -227,56 +495,54 @@ export const create = async (req: Request, res: Response) => {
  *                 message:
  *                   type: string
  *                 data:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     name:
- *                       type: string
- *                     email:
- *                       type: string
- *                     role:
- *                       type: string
- *                     isActive:
- *                       type: boolean
- */
-export const update = async (req: Request, res: Response) => {
-  try {
-    const updatedUser = await UserService.updateUser(req.params.id, req.body);
-    if (!updatedUser)
-      return sendResponse(
-        res,
-        HTTP_STATUS.NO_CONTENT,
-        null,
-        MESSAGES.USER_NOT_FOUND
-      );
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: updatedUser,
-    };
-    return sendResponse(res, HTTP_STATUS.OK, response);
-  } catch (err: any) {
-    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message);
-  }
-};
-/**
- * @openapi
- * /users/{id}:
+ *                   $ref: '#/components/schemas/UserResponse'
+ *       400:
+ *         description: Validation error or email already exists
+ *       404:
+ *         description: User not found
+ *
  *   delete:
  *     tags:
- *       - User
- *     summary: Delete user by ID
+ *       - User Management
+ *     summary: Delete user
+ *     description: Permanently delete a user from the system
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: User ID to delete
  *         schema:
  *           type: string
+ *         description: User ID to delete
+ *     responses:
+ *       204:
+ *         description: User deleted successfully
+ *       404:
+ *         description: User not found
+ *       400:
+ *         description: Invalid user ID format
+ *
+ * /users/{id}/change-password:
+ *   post:
+ *     tags:
+ *       - User Management
+ *     summary: Change user password
+ *     description: Change password for a specific user
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ChangePasswordRequest'
  *     responses:
  *       200:
- *         description: User deleted successfully
+ *         description: Password changed successfully
  *         content:
  *           application/json:
  *             schema:
@@ -286,12 +552,335 @@ export const update = async (req: Request, res: Response) => {
  *                   type: boolean
  *                 message:
  *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: "Password changed successfully"
+ *       400:
+ *         description: Invalid current password or validation error
+ *
+ * /users/{id}/student-info:
+ *   put:
+ *     tags:
+ *       - Student Management
+ *     summary: Update student-specific information
+ *     description: Update additional information specific to student users
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Student user ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               emergencyContact:
+ *                 $ref: '#/components/schemas/EmergencyContact'
+ *               educationLevel:
+ *                 type: string
+ *                 enum: [high_school, bachelor, master, phd, other]
+ *               previousExperience:
+ *                 type: string
+ *                 maxLength: 1000
+ *               careerGoals:
+ *                 type: string
+ *                 maxLength: 1000
+ *     responses:
+ *       200:
+ *         description: Student info updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/UserResponse'
+ *       400:
+ *         description: User not found or not a student
+ *       404:
+ *         description: Student not found
+ *
+ * /users/{id}/trainer-info:
+ *   put:
+ *     tags:
+ *       - Trainer Management
+ *     summary: Update trainer-specific information
+ *     description: Update additional information specific to trainer users
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Trainer user ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               department:
+ *                 type: string
+ *                 maxLength: 100
+ *               specializations:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   maxLength: 100
+ *               experience:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 50
+ *               qualifications:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   maxLength: 200
+ *               certifications:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/Certification'
+ *               expertise:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   maxLength: 100
+ *               hourlyRate:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 10000
+ *     responses:
+ *       200:
+ *         description: Trainer info updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/UserResponse'
+ *       400:
+ *         description: User not found or not a trainer
+ *       404:
+ *         description: Trainer not found
+ *
+ * /users/{id}/admin-info:
+ *   put:
+ *     tags:
+ *       - Admin Management
+ *     summary: Update admin-specific information
+ *     description: Update additional information specific to admin users
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               department:
+ *                 type: string
+ *                 maxLength: 100
+ *               permissions:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               accessLevel:
+ *                 type: string
+ *                 enum: [super_admin, admin, manager]
+ *     responses:
+ *       200:
+ *         description: Admin info updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/UserResponse'
+ *       400:
+ *         description: User not found or not an admin
+ *       404:
+ *         description: Admin not found
  */
-export const remove = async (req: Request, res: Response) => {
+
+export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    await UserService.deleteUser(req.params.id);
-    return sendResponse(res, HTTP_STATUS.NO_CONTENT, null);
-  } catch (err: any) {
-    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message);
+    const { role, isActive } = req.query
+    const users = await UserService.getAllUsers(
+      role as string, 
+      isActive ? isActive === 'true' : undefined
+    )
+    return sendResponse(res, HTTP_STATUS.OK, users, "Users retrieved successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Failed to retrieve users")
   }
-};
+}
+
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const user = await UserService.getUserById(id)
+    
+    if (!user) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "User not found")
+    }
+    
+    return sendResponse(res, HTTP_STATUS.OK, user, "User retrieved successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to retrieve user")
+  }
+}
+
+export const createUser = async (req: Request, res: Response) => {
+  try {
+    const userData: ICreateUserRequest = req.body
+    const user = await UserService.createUser(userData)
+    return sendResponse(res, HTTP_STATUS.CREATED, user, "User created successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to create user")
+  }
+}
+
+export const updateUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const updateData: IUpdateUserRequest = req.body
+    const user = await UserService.updateUser(id, updateData)
+    
+    if (!user) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "User not found")
+    }
+    
+    return sendResponse(res, HTTP_STATUS.OK, user, "User updated successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to update user")
+  }
+}
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const deletedUser = await UserService.deleteUser(id)
+    
+    if (!deletedUser) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "User not found")
+    }
+    
+    return res.status(HTTP_STATUS.NO_CONTENT).send()
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to delete user")
+  }
+}
+
+export const searchUsers = async (req: Request, res: Response) => {
+  try {
+    const { q, role, limit } = req.query
+    
+    if (!q) {
+      return sendError(res, HTTP_STATUS.BAD_REQUEST, "Search term is required")
+    }
+    
+    const users = await UserService.searchUsers(
+      q as string, 
+      role as string, 
+      limit ? parseInt(limit as string) : undefined
+    )
+    
+    return sendResponse(res, HTTP_STATUS.OK, users, "Search completed successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Search failed")
+  }
+}
+
+export const getUserStats = async (req: Request, res: Response) => {
+  try {
+    const stats = await UserService.getUserStats()
+    return sendResponse(res, HTTP_STATUS.OK, stats, "User statistics retrieved successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Failed to retrieve statistics")
+  }
+}
+
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const { currentPassword, newPassword } = req.body
+    
+    const result = await UserService.changePassword(id, currentPassword, newPassword)
+    return sendResponse(res, HTTP_STATUS.OK, result, "Password changed successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to change password")
+  }
+}
+
+export const updateStudentInfo = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const user = await UserService.updateStudentInfo(id, req.body)
+    
+    if (!user) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "Student not found")
+    }
+    
+    return sendResponse(res, HTTP_STATUS.OK, user, "Student info updated successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to update student info")
+  }
+}
+
+export const updateTrainerInfo = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const user = await UserService.updateTrainerInfo(id, req.body)
+    
+    if (!user) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "Trainer not found")
+    }
+    
+    return sendResponse(res, HTTP_STATUS.OK, user, "Trainer info updated successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to update trainer info")
+  }
+}
+
+export const updateAdminInfo = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const user = await UserService.updateAdminInfo(id, req.body)
+    
+    if (!user) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "Admin not found")
+    }
+    
+    return sendResponse(res, HTTP_STATUS.OK, user, "Admin info updated successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to update admin info")
+  }
+}

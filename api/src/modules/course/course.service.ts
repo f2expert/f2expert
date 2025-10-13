@@ -5,6 +5,85 @@ export const getAllCourses = async () => {
   return CourseModel.find({ isPublished: true }).populate('instructor', 'name email')
 }
 
+export const getTotalCoursesCount = async () => {
+  return CourseModel.countDocuments({})
+}
+
+export const getAllCoursesIncludingUnpublished = async () => {
+  return CourseModel.find({}).populate('instructor', 'name email')
+}
+
+export const createSampleCourses = async () => {
+  const sampleCourses = [
+    {
+      title: "Full Stack Web Development",
+      description: "Learn to build complete web applications using modern technologies like React, Node.js, and MongoDB.",
+      shortDescription: "Complete web development course with hands-on projects",
+      instructor: "John Smith",
+      instructorBio: "Senior Full Stack Developer with 8+ years experience",
+      category: "Web Development",
+      level: "Intermediate",
+      technologies: ["JavaScript", "React", "Node.js", "MongoDB", "HTML", "CSS"],
+      prerequisites: ["Basic HTML/CSS knowledge", "JavaScript fundamentals"],
+      learningOutcomes: ["Build full-stack applications", "Create REST APIs", "Deploy to cloud platforms"],
+      syllabus: [
+        { module: "Frontend Development", topics: ["HTML5", "CSS3", "JavaScript ES6+", "React"], duration: "4 weeks" },
+        { module: "Backend Development", topics: ["Node.js", "Express", "MongoDB"], duration: "3 weeks" }
+      ],
+      price: 499.99,
+      currency: "USD",
+      duration: "12 weeks",
+      totalHours: 60,
+      totalLectures: 45,
+      language: "English",
+      isPublished: true,
+      isFeatured: true,
+      difficulty: 3,
+      rating: 4.5,
+      totalStudents: 150,
+      certificateProvided: true,
+      hasProjects: true,
+      hasAssignments: true,
+      supportProvided: true,
+      jobAssistance: true,
+      tags: ["web-development", "javascript", "react", "nodejs"]
+    },
+    {
+      title: "Python for Data Science",
+      description: "Master Python programming for data analysis, visualization, and machine learning applications.",
+      shortDescription: "Complete Python data science course with real-world projects",
+      instructor: "Jane Doe",
+      instructorBio: "Data Scientist with PhD in Statistics and 5 years industry experience",
+      category: "Data Science",
+      level: "Beginner",
+      technologies: ["Python", "Pandas", "NumPy", "Matplotlib", "Scikit-learn"],
+      prerequisites: ["Basic programming knowledge"],
+      learningOutcomes: ["Analyze data with Python", "Create visualizations", "Build ML models"],
+      syllabus: [
+        { module: "Python Basics", topics: ["Variables", "Data types", "Control structures"], duration: "2 weeks" },
+        { module: "Data Analysis", topics: ["Pandas", "NumPy", "Data cleaning"], duration: "3 weeks" }
+      ],
+      price: 399.99,
+      currency: "USD",
+      duration: "10 weeks",
+      totalHours: 40,
+      totalLectures: 35,
+      language: "English",
+      isPublished: true,
+      isFeatured: false,
+      difficulty: 2,
+      rating: 4.7,
+      totalStudents: 200,
+      certificateProvided: true,
+      hasProjects: true,
+      supportProvided: true,
+      tags: ["python", "data-science", "machine-learning"]
+    }
+  ]
+  
+  return CourseModel.insertMany(sampleCourses)
+}
+
 export const getLimitedCourses = async (limit: number) => {
   return CourseModel.find({ isPublished: true }).limit(limit).sort({ createdAt: -1 })
 }

@@ -31,7 +31,7 @@ export const ReduxExample: React.FC = () => {
 
   // Fetch courses when component mounts
   useEffect(() => {
-    dispatch(fetchCourses());
+    dispatch(fetchCourses({}));
   }, [dispatch]);
 
   // Fetch user data when authenticated
@@ -163,17 +163,17 @@ export const ReduxExample: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {courses.map(course => (
-              <div key={course.id} className="border rounded p-4">
+              <div key={course._id} className="border rounded p-4">
                 <h3 className="font-semibold mb-2">{course.title}</h3>
                 <p className="text-sm text-gray-600 mb-2">{course.description}</p>
                 <p className="text-sm"><strong>Instructor:</strong> {course.instructor}</p>
                 <p className="text-sm"><strong>Level:</strong> {course.level}</p>
                 <p className="text-sm"><strong>Duration:</strong> {course.duration}</p>
-                <p className="text-sm"><strong>Price:</strong> ${course.price}</p>
+                <p className="text-sm"><strong>Price:</strong> {course.currency}{course.price}</p>
                 
                 {isAuthenticated && (
                   <button 
-                    onClick={() => handleEnrollCourse(course.id)}
+                    onClick={() => handleEnrollCourse(course._id)}
                     className="mt-3 bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
                   >
                     Enroll

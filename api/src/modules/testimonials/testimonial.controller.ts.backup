@@ -1,0 +1,526 @@
+import { Request, Response } from "express"
+import { TestimonialService } from "./testimonial.service"
+import { sendError, sendResponse } from "../../app/utils/response.util"
+import { HTTP_STATUS } from "../../app/constants/http-status.constant"
+import { ICreateTestimonialRequest, IUpdateTestimonialRequest, ITestimonialQuery } from "./testimonial.types"
+
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     PlacementDetails:
+ *       type: object
+ *       properties:
+ *         salary:
+ *           type: number
+ *           minimum: 0
+ *           example: 500000
+ *         company:
+ *           type: string
+ *           maxLength: 100
+ *           example: "TechCorp Inc"
+ *         role:
+ *           type: string
+ *           maxLength: 100
+ *           example: "Software Developer"
+ *         location:
+ *           type: string
+ *           maxLength: 100
+ *           example: "Bangalore, India"
+ *
+ *     CreateTestimonialRequest:
+ *       type: object
+ *       required:
+ *         - studentName
+ *         - course
+ *         - title
+ *         - content
+ *         - rating
+ *       properties:
+ *         studentName:
+ *           type: string
+ *           minLength: 2
+ *           maxLength: 100
+ *           example: "Rahul Kumar"
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: "rahul.kumar@example.com"
+ *         course:
+ *           type: string
+ *           maxLength: 200
+ *           example: "Full Stack Web Development"
+ *         batchYear:
+ *           type: number
+ *           minimum: 2020
+ *           example: 2024
+ *         title:
+ *           type: string
+ *           maxLength: 200
+ *           example: "Excellent training program that changed my career"
+ *         content:
+ *           type: string
+ *           minLength: 50
+ *           maxLength: 2000
+ *           example: "The training program was comprehensive and practical. The instructors were knowledgeable and supportive throughout my learning journey."
+ *         rating:
+ *           type: number
+ *           minimum: 1
+ *           maximum: 5
+ *           example: 5
+ *         studentPhoto:
+ *           type: string
+ *           format: uri
+ *           example: "https://example.com/photos/student.jpg"
+ *         currentPosition:
+ *           type: string
+ *           maxLength: 100
+ *           example: "Software Developer"
+ *         currentCompany:
+ *           type: string
+ *           maxLength: 100
+ *           example: "TechCorp Inc"
+ *         linkedinProfile:
+ *           type: string
+ *           example: "https://www.linkedin.com/in/rahulkumar"
+ *         tags:
+ *           type: array
+ *           items:
+ *             type: string
+ *           maxItems: 10
+ *           example: ["web-development", "placement", "career-change"]
+ *         courseCompletionDate:
+ *           type: string
+ *           format: date
+ *         placementDetails:
+ *           $ref: '#/components/schemas/PlacementDetails'
+ *
+ *     UpdateTestimonialRequest:
+ *       type: object
+ *       properties:
+ *         studentName:
+ *           type: string
+ *           minLength: 2
+ *           maxLength: 100
+ *         email:
+ *           type: string
+ *           format: email
+ *         course:
+ *           type: string
+ *           maxLength: 200
+ *         batchYear:
+ *           type: number
+ *           minimum: 2020
+ *         title:
+ *           type: string
+ *           maxLength: 200
+ *         content:
+ *           type: string
+ *           minLength: 50
+ *           maxLength: 2000
+ *         rating:
+ *           type: number
+ *           minimum: 1
+ *           maximum: 5
+ *         studentPhoto:
+ *           type: string
+ *           format: uri
+ *         currentPosition:
+ *           type: string
+ *           maxLength: 100
+ *         currentCompany:
+ *           type: string
+ *           maxLength: 100
+ *         linkedinProfile:
+ *           type: string
+ *         isActive:
+ *           type: boolean
+ *         isFeatured:
+ *           type: boolean
+ *         tags:
+ *           type: array
+ *           items:
+ *             type: string
+ *           maxItems: 10
+ *         courseCompletionDate:
+ *           type: string
+ *           format: date
+ *         placementDetails:
+ *           $ref: '#/components/schemas/PlacementDetails'
+ *
+ *     TestimonialResponse:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         studentName:
+ *           type: string
+ *         email:
+ *           type: string
+ *         course:
+ *           type: string
+ *         batchYear:
+ *           type: number
+ *         title:
+ *           type: string
+ *         content:
+ *           type: string
+ *         rating:
+ *           type: number
+ *         studentPhoto:
+ *           type: string
+ *         currentPosition:
+ *           type: string
+ *         currentCompany:
+ *           type: string
+ *         linkedinProfile:
+ *           type: string
+ *         isApproved:
+ *           type: boolean
+ *         isActive:
+ *           type: boolean
+ *         isFeatured:
+ *           type: boolean
+ *         submittedDate:
+ *           type: string
+ *           format: date-time
+ *         approvedDate:
+ *           type: string
+ *           format: date-time
+ *         approvedBy:
+ *           type: object
+ *           properties:
+ *             _id:
+ *               type: string
+ *             firstName:
+ *               type: string
+ *             lastName:
+ *               type: string
+ *             email:
+ *               type: string
+ *         tags:
+ *           type: array
+ *           items:
+ *             type: string
+ *         courseCompletionDate:
+ *           type: string
+ *           format: date
+ *         placementDetails:
+ *           $ref: '#/components/schemas/PlacementDetails'
+ *         starDisplay:
+ *           type: string
+ *           example: "★★★★★"
+ *         statusDisplay:
+ *           type: string
+ *           example: "Active"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *
+ *     TestimonialStats:
+ *       type: object
+ *       properties:
+ *         overview:
+ *           type: object
+ *           properties:
+ *             total:
+ *               type: number
+ *             approved:
+ *               type: number
+ *             pending:
+ *               type: number
+ *             featured:
+ *               type: number
+ *             avgRating:
+ *               type: number
+ *         ratingBreakdown:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               _id:
+ *                 type: number
+ *               count:
+ *                 type: number
+ *         courseBreakdown:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               _id:
+ *                 type: string
+ *               count:
+ *                 type: number
+ *               avgRating:
+ *                 type: number
+ *
+ *     PaginatedTestimonialResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *         message:
+ *           type: string
+ *         data:
+ *           type: object
+ *           properties:
+ *             testimonials:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/TestimonialResponse'
+ *             pagination:
+ *               type: object
+ *               properties:
+ *                 current:
+ *                   type: number
+ *                 pages:
+ *                   type: number
+ *                 total:
+ *                   type: number
+ *                 limit:
+ *                   type: number
+ *
+ * /testimonials:
+ *   get:
+ *     tags:
+ *       - Testimonials
+ *     summary: Get all testimonials
+ *     description: Retrieve testimonials with filtering, pagination, and sorting options
+ *     parameters:
+ *       - in: query
+ *         name: isApproved
+ *         schema:
+ *           type: boolean
+ *         description: Filter by approval status
+ *       - in: query
+ *         name: isActive
+ *         schema:
+ *           type: boolean
+ *         description: Filter by active status
+ *       - in: query
+ *         name: isFeatured
+ *         schema:
+ *           type: boolean
+ *         description: Filter by featured status
+ *       - in: query
+ *         name: course
+ *         schema:
+ *           type: string
+ *         description: Filter by course name (partial match)
+ *       - in: query
+ *         name: rating
+ *         schema:
+ *           type: number
+ *           minimum: 1
+ *           maximum: 5
+ *         description: Filter by exact rating
+ *       - in: query
+ *         name: minRating
+ *         schema:
+ *           type: number
+ *           minimum: 1
+ *           maximum: 5
+ *         description: Filter by minimum rating
+ *       - in: query
+ *         name: tags
+ *         schema:
+ *           type: string
+ *         description: Filter by tags (comma-separated)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *         description: Number of results per page
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: number
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [rating, date, course]
+ *           default: date
+ *         description: Sort field
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Sort order
+ *     responses:
+ *       200:
+ *         description: Testimonials retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PaginatedTestimonialResponse'
+ *       500:\n *         description: Internal server error
+ *
+ *   post:\n *     tags:\n *       - Testimonials\n *     summary: Create a new testimonial\n *     description: Submit a new testimonial (requires admin approval)\n *     requestBody:\n *       required: true\n *       content:\n *         application/json:\n *           schema:\n *             $ref: '#/components/schemas/CreateTestimonialRequest'\n *     responses:\n *       201:\n *         description: Testimonial created successfully\n *         content:\n *           application/json:\n *             schema:\n *               type: object\n *               properties:\n *                 success:\n *                   type: boolean\n *                 message:\n *                   type: string\n *                 data:\n *                   $ref: '#/components/schemas/TestimonialResponse'\n *       400:\n *         description: Validation error\n *       500:\n *         description: Internal server error\n *\n * /testimonials/featured:\n *   get:\n *     tags:\n *       - Testimonials\n *     summary: Get featured testimonials\n *     description: Retrieve approved and featured testimonials for display\n *     parameters:\n *       - in: query\n *         name: limit\n *         schema:\n *           type: number\n *           default: 6\n *           maximum: 20\n *         description: Number of featured testimonials to return\n *     responses:\n *       200:\n *         description: Featured testimonials retrieved successfully\n *       500:\n *         description: Internal server error\n *\n * /testimonials/search:\n *   get:\n *     tags:\n *       - Testimonials\n *     summary: Search testimonials\n *     description: Search testimonials by student name, title, content, course, or company\n *     parameters:\n *       - in: query\n *         name: q\n *         required: true\n *         schema:\n *           type: string\n *         description: Search term\n *       - in: query\n *         name: limit\n *         schema:\n *           type: number\n *           default: 20\n *           maximum: 100\n *         description: Maximum number of results\n *     responses:\n *       200:\n *         description: Search results\n *       400:\n *         description: Search term is required\n *\n * /testimonials/stats:\n *   get:\n *     tags:\n *       - Testimonials\n *     summary: Get testimonial statistics\n *     description: Retrieve comprehensive testimonial statistics and analytics\n *     responses:\n *       200:\n *         description: Statistics retrieved successfully\n *         content:\n *           application/json:\n *             schema:\n *               type: object\n *               properties:\n *                 success:\n *                   type: boolean\n *                 message:\n *                   type: string\n *                 data:\n *                   $ref: '#/components/schemas/TestimonialStats'\n *       500:\n *         description: Internal server error\n *\n * /testimonials/course/{course}:\n *   get:\n *     tags:\n *       - Testimonials\n *     summary: Get testimonials by course\n *     description: Retrieve approved testimonials for a specific course\n *     parameters:\n *       - in: path\n *         name: course\n *         required: true\n *         schema:\n *           type: string\n *         description: Course name\n *       - in: query\n *         name: limit\n *         schema:\n *           type: number\n *           default: 10\n *           maximum: 50\n *         description: Number of testimonials to return\n *     responses:\n *       200:\n *         description: Course testimonials retrieved successfully\n *       500:\n *         description: Internal server error\n *\n * /testimonials/{id}:\n *   get:\n *     tags:\n *       - Testimonials\n *     summary: Get testimonial by ID\n *     parameters:\n *       - in: path\n *         name: id\n *         required: true\n *         schema:\n *           type: string\n *         description: Testimonial ID\n *     responses:\n *       200:\n *         description: Testimonial retrieved successfully\n *         content:\n *           application/json:\n *             schema:\n *               type: object\n *               properties:\n *                 success:\n *                   type: boolean\n *                 message:\n *                   type: string\n *                 data:\n *                   $ref: '#/components/schemas/TestimonialResponse'\n *       404:\n *         description: Testimonial not found\n *       400:\n *         description: Invalid testimonial ID format\n *\n *   put:\n *     tags:\n *       - Testimonials\n *     summary: Update testimonial\n *     description: Update testimonial information (admin only for approval fields)\n *     parameters:\n *       - in: path\n *         name: id\n *         required: true\n *         schema:\n *           type: string\n *         description: Testimonial ID\n *     requestBody:\n *       required: true\n *       content:\n *         application/json:\n *           schema:\n *             $ref: '#/components/schemas/UpdateTestimonialRequest'\n *     responses:\n *       200:\n *         description: Testimonial updated successfully\n *         content:\n *           application/json:\n *             schema:\n *               type: object\n *               properties:\n *                 success:\n *                   type: boolean\n *                 message:\n *                   type: string\n *                 data:\n *                   $ref: '#/components/schemas/TestimonialResponse'\n *       400:\n *         description: Validation error\n *       404:\n *         description: Testimonial not found\n *\n *   delete:\n *     tags:\n *       - Testimonials\n *     summary: Delete testimonial\n *     description: Permanently delete a testimonial (admin only)\n *     parameters:\n *       - in: path\n *         name: id\n *         required: true\n *         schema:\n *           type: string\n *         description: Testimonial ID\n *     responses:\n *       204:\n *         description: Testimonial deleted successfully\n *       404:\n *         description: Testimonial not found\n *       400:\n *         description: Invalid testimonial ID format\n *\n * /testimonials/{id}/approve:\n *   post:\n *     tags:\n *       - Testimonial Management\n *     summary: Approve or reject testimonial\n *     description: Update approval status of a testimonial (admin only)\n *     parameters:\n *       - in: path\n *         name: id\n *         required: true\n *         schema:\n *           type: string\n *         description: Testimonial ID\n *     requestBody:\n *       required: true\n *       content:\n *         application/json:\n *           schema:\n *             type: object\n *             required:\n *               - isApproved\n *             properties:\n *               isApproved:\n *                 type: boolean\n *                 description: Approval status\n *               approvedBy:\n *                 type: string\n *                 description: ID of admin user approving\n *     responses:\n *       200:\n *         description: Approval status updated successfully\n *       400:\n *         description: Validation error\n *       404:\n *         description: Testimonial not found\n *\n * /testimonials/{id}/toggle-featured:\n *   post:\n *     tags:\n *       - Testimonial Management\n *     summary: Toggle featured status\n *     description: Toggle the featured status of an approved testimonial (admin only)\n *     parameters:\n *       - in: path\n *         name: id\n *         required: true\n *         schema:\n *           type: string\n *         description: Testimonial ID\n *     responses:\n *       200:\n *         description: Featured status toggled successfully\n *       400:\n *         description: Cannot feature unapproved testimonial\n *       404:\n *         description: Testimonial not found\n */
+
+export const getAllTestimonials = async (req: Request, res: Response) => {
+  try {
+    const query: ITestimonialQuery = req.query as any
+    const result = await TestimonialService.getAllTestimonials(query)
+    return sendResponse(res, HTTP_STATUS.OK, result, "Testimonials retrieved successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Failed to retrieve testimonials")
+  }
+}
+
+export const getTestimonialById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const testimonial = await TestimonialService.getTestimonialById(id)
+    
+    if (!testimonial) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "Testimonial not found")
+    }
+    
+    return sendResponse(res, HTTP_STATUS.OK, testimonial, "Testimonial retrieved successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to retrieve testimonial")
+  }
+}
+
+export const createTestimonial = async (req: Request, res: Response) => {
+  try {
+    const testimonialData: ICreateTestimonialRequest = req.body
+    const testimonial = await TestimonialService.createTestimonial(testimonialData)
+    return sendResponse(res, HTTP_STATUS.CREATED, testimonial, "Testimonial created successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to create testimonial")
+  }
+}
+
+export const updateTestimonial = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const updateData: IUpdateTestimonialRequest = req.body
+    const testimonial = await TestimonialService.updateTestimonial(id, updateData)
+    
+    if (!testimonial) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "Testimonial not found")
+    }
+    
+    return sendResponse(res, HTTP_STATUS.OK, testimonial, "Testimonial updated successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to update testimonial")
+  }
+}
+
+export const deleteTestimonial = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const deletedTestimonial = await TestimonialService.deleteTestimonial(id)
+    
+    if (!deletedTestimonial) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "Testimonial not found")
+    }
+    
+    return res.status(HTTP_STATUS.NO_CONTENT).send()
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to delete testimonial")
+  }
+}
+
+export const updateApprovalStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const { isApproved, approvedBy } = req.body
+    
+    const testimonial = await TestimonialService.updateApprovalStatus(id, { isApproved, approvedBy })
+    
+    if (!testimonial) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "Testimonial not found")
+    }
+    
+    const message = isApproved ? "Testimonial approved successfully" : "Testimonial rejected successfully"
+    return sendResponse(res, HTTP_STATUS.OK, testimonial, message)
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to update approval status")
+  }
+}
+
+export const getFeaturedTestimonials = async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 6
+    const testimonials = await TestimonialService.getFeaturedTestimonials(limit)
+    return sendResponse(res, HTTP_STATUS.OK, testimonials, "Featured testimonials retrieved successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Failed to retrieve featured testimonials")
+  }
+}
+
+export const getTestimonialsByCourse = async (req: Request, res: Response) => {
+  try {
+    const { course } = req.params
+    const limit = parseInt(req.query.limit as string) || 10
+    const testimonials = await TestimonialService.getTestimonialsByCourse(course, limit)
+    return sendResponse(res, HTTP_STATUS.OK, testimonials, "Course testimonials retrieved successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Failed to retrieve course testimonials")
+  }
+}
+
+export const getTestimonialsByRating = async (req: Request, res: Response) => {
+  try {
+    const minRating = parseInt(req.query.minRating as string) || 4
+    const limit = parseInt(req.query.limit as string) || 10
+    const testimonials = await TestimonialService.getTestimonialsByRating(minRating, limit)
+    return sendResponse(res, HTTP_STATUS.OK, testimonials, "High-rated testimonials retrieved successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Failed to retrieve testimonials")
+  }
+}
+
+export const getTestimonialStats = async (req: Request, res: Response) => {
+  try {
+    const stats = await TestimonialService.getTestimonialStats()
+    return sendResponse(res, HTTP_STATUS.OK, stats, "Testimonial statistics retrieved successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Failed to retrieve statistics")
+  }
+}
+
+export const searchTestimonials = async (req: Request, res: Response) => {
+  try {
+    const { q, limit } = req.query
+    
+    if (!q) {
+      return sendError(res, HTTP_STATUS.BAD_REQUEST, "Search term is required")
+    }
+    
+    const testimonials = await TestimonialService.searchTestimonials(
+      q as string, 
+      limit ? parseInt(limit as string) : undefined
+    )
+    
+    return sendResponse(res, HTTP_STATUS.OK, testimonials, "Search completed successfully")
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Search failed")
+  }
+}
+
+export const toggleFeatured = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const testimonial = await TestimonialService.toggleFeatured(id)
+    
+    const message = testimonial.isFeatured ? "Testimonial featured successfully" : "Testimonial unfeatured successfully"
+    return sendResponse(res, HTTP_STATUS.OK, testimonial, message)
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, error.message || "Failed to toggle featured status")
+  }
+}
