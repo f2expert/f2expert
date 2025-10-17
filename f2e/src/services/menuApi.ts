@@ -6,7 +6,7 @@ export interface MenuItem {
   url: string;
   icon?: string;
   isActive?: boolean;
-  items?: {
+  children?: {
     title: string;
     url: string;
     contentId?: string;
@@ -73,7 +73,7 @@ class MenuApiService {
     try {
       console.log('Fetching menu for role:', role);
       
-      const response = await this.makeRequest<MenuResponse>(`/api/menu?role=${role}`);
+      const response = await this.makeRequest<MenuResponse>(`/api/menu?role=${role}&tree=true`);
 
       // Handle various response formats
       let menuItems: MenuItem[] = [];

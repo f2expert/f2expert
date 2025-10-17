@@ -36,7 +36,7 @@ const convertMenuItemToNavItem = (menuItem: MenuItem): NavItem => {
     url: menuItem.url,
     icon: getIcon(menuItem.icon),
     isActive: menuItem.isActive,
-    items: menuItem.items,
+    children: menuItem.children,
   };
 };
 

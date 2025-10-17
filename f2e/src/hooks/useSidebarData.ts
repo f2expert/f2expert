@@ -25,8 +25,8 @@ export const useSidebarData = () => {
       nav.title.toLowerCase() === language.toLowerCase()
     );
     
-    if (langNav && langNav.items) {
-      const topicItem = langNav.items.find(item => 
+    if (langNav && langNav.children) {
+      const topicItem = langNav.children.find(item => 
         item.title.toLowerCase() === topic.toLowerCase() ||
         item.url.includes(`/${language}/${topic}`)
       );
@@ -43,8 +43,8 @@ export const useSidebarData = () => {
       nav.title.toLowerCase() === language.toLowerCase()
     );
     
-    if (langNav && langNav.items) {
-      return langNav.items.find(item => 
+    if (langNav && langNav.children) {
+      return langNav.children.find(item => 
         item.title.toLowerCase() === topic.toLowerCase() ||
         item.url.includes(`/${language}/${topic}`)
       );
@@ -57,7 +57,7 @@ export const useSidebarData = () => {
   const getAvailableLanguages = () => {
     return sidebarData.navMain.map(nav => ({
       title: nav.title,
-      topics: nav.items?.map(item => ({
+      topics: nav.children?.map(item => ({
         title: item.title,
         url: item.url,
         contentId: item.contentId

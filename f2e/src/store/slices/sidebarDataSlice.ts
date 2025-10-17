@@ -34,7 +34,7 @@ export interface NavItem {
   url: string;
   icon: IconName;
   isActive?: boolean;
-  items?: {
+  children?: {
     title: string;
     url: string;
     contentId?: string;
@@ -98,7 +98,7 @@ const initialState: SidebarDataState = {
       url: "#",
       icon: "GrHtml5",
       isActive: true,
-      items: [
+      children: [
         {
           title: "History",
           url: "/dashboard/html/history",
@@ -120,7 +120,7 @@ const initialState: SidebarDataState = {
       title: "CSS",
       url: "#",
       icon: "TbFileTypeCss",
-      items: [
+      children: [
         {
           title: "Genesis",
           url: "/dashboard/css/genesis",
@@ -142,7 +142,7 @@ const initialState: SidebarDataState = {
       title: "JavaScript",
       url: "#",
       icon: "FaReact",
-      items: [
+      children: [
         {
           title: "Basics",
           url: "/dashboard/javascript/basics",
@@ -164,7 +164,7 @@ const initialState: SidebarDataState = {
       title: "Node.js",
       url: "#",
       icon: "FaNodeJs",
-      items: [
+      children: [
         {
           title: "Introduction",
           url: "/dashboard/nodejs/intro",
@@ -186,7 +186,7 @@ const initialState: SidebarDataState = {
       title: "Database",
       url: "#",
       icon: "PiDatabaseThin",
-      items: [
+      children: [
         {
           title: "SQL",
           url: "/dashboard/database/sql",
@@ -252,8 +252,8 @@ const sidebarDataSlice = createSlice({
         (nav) => nav.title.toLowerCase() === language.toLowerCase()
       );
 
-      if (langNav && langNav.items) {
-        const topicItem = langNav.items.find(
+      if (langNav && langNav.children) {
+        const topicItem = langNav.children.find(
           (item) =>
             item.title.toLowerCase() === topic.toLowerCase() ||
             item.url.includes(`/${language}/${topic}`)

@@ -25,7 +25,7 @@ export function NavMain({
     url: string;
     icon?: IconName;
     isActive?: boolean;
-    items?: {
+    children?: {
       title: string;
       url: string;
     }[];
@@ -54,7 +54,7 @@ export function NavMain({
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <SidebarMenuSub>
-                  {item.items?.map((subItem) => (
+                  {item.children?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
                       <SidebarMenuSubButton asChild>
                         <Link to={subItem.url}>
