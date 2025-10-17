@@ -16,6 +16,7 @@ import { Notifications } from '../pages/Notifications';
 import { useAuth } from '../hooks/useAuth';
 import Topic from '../pages/Dashboard/Topic';
 import { Protected } from '../components';
+import TopicDetails from '../pages/Dashboard/TopicDetails';
 
 export default function AppRoutes() {
   const { isAuthenticated, logout } = useAuth();
@@ -102,7 +103,8 @@ export default function AppRoutes() {
         { path: "profile", element: <Profile /> },
         { path: "fee-details", element: <FeeDetails /> },
         { path: "notifications", element: <Notifications /> },
-        { path: ":lang/:topic", element: <Topic /> }
+        { path: ":lang/", element: <Topic /> },
+        { path: ":lang/:topic", element: <TopicDetails /> }
       ],
       errorElement: <ErrorHandler />
     },

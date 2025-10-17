@@ -215,6 +215,42 @@ class TutorialApiService {
     }
   }
 
+  // Get tutorials by category
+  async getTutorialsByCategory(category: string, limit: number = 10): Promise<TutorialsResponse> {
+    const endpoint = `/tutorials/category/${category}?limit=${limit}`;
+    console.log(`Fetching tutorials for category: ${category} with limit: ${limit}`);
+    
+    try {
+      return await this.makeRequest<TutorialsResponse>(endpoint);
+    } catch (error) {
+      console.error('Error fetching tutorials by category:', error);
+      if (FORCE_REAL_API) {
+        throw new Error(`Tutorials API failed for category ${category} and mock data is disabled`);
+      }
+      console.log('Falling back to mock data for category:', category);
+      // Fallback to mock data with category filtering
+      return this.getMockTutorialsByCategory(category, limit);
+    }
+  }
+
+  // Get tutorials by technology
+  async getTutorialsByTechnology(technology: string): Promise<TutorialsResponse> {
+    const endpoint = `/tutorials/technology/${technology}`;
+    console.log(`Fetching tutorials for technology: ${technology}`);
+    
+    try {
+      return await this.makeRequest<TutorialsResponse>(endpoint);
+    } catch (error) {
+      console.error('Error fetching tutorials by technology:', error);
+      if (FORCE_REAL_API) {
+        throw new Error(`Tutorials API failed for technology ${technology} and mock data is disabled`);
+      }
+      console.log('Falling back to mock data for technology:', technology);
+      // Fallback to mock data with technology filtering
+      return this.getMockTutorialsByTechnology(technology);
+    }
+  }
+
   // Mock data method (replace with actual API call)
   private async getMockTutorials(filters?: TutorialFilters): Promise<TutorialsResponse> {
     // Simulate API delay
@@ -459,6 +495,100 @@ class TutorialApiService {
         );
       }
     }
+
+    return {
+      data: filteredTutorials,
+      total: filteredTutorials.length,
+      page: 1,
+      limit: filteredTutorials.length,
+      totalPages: 1
+    };
+  }
+
+  private async getMockTutorialsByCategory(category: string, limit: number): Promise<TutorialsResponse> {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    const allTutorials = await this.getMockTutorials();
+    
+    // Normalize category for comparison
+    const normalizedCategory = category.toLowerCase().trim();
+    
+    const filteredTutorials = allTutorials.data.filter(tutorial => {
+      // Check if category matches tutorial category
+      if (tutorial.category.toLowerCase().includes(normalizedCategory)) {
+        return true;
+      }
+      
+      // Check if category matches any tag
+      if (tutorial.tags.some(tag => 
+        tag.toLowerCase() === normalizedCategory || 
+        tag.toLowerCase().includes(normalizedCategory)
+      )) {
+        return true;
+      }
+      
+      // Check subcategory
+      if (tutorial.subCategory && tutorial.subCategory.toLowerCase().includes(normalizedCategory)) {
+        return true;
+      }
+      
+      // Check title for technology mentions
+      if (tutorial.title.toLowerCase().includes(normalizedCategory)) {
+        return true;
+      }
+      
+      return false;
+    });
+
+    const limitedTutorials = filteredTutorials.slice(0, limit);
+
+    console.log(`Filtered ${filteredTutorials.length} tutorials for category "${category}", returning ${limitedTutorials.length}`);
+
+    return {
+      data: limitedTutorials,
+      total: limitedTutorials.length,
+      page: 1,
+      limit,
+      totalPages: 1
+    };
+  }
+
+  private async getMockTutorialsByTechnology(technology: string): Promise<TutorialsResponse> {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    const allTutorials = await this.getMockTutorials();
+    
+    // Normalize technology for comparison
+    const normalizedTechnology = technology.toLowerCase().trim();
+    
+    const filteredTutorials = allTutorials.data.filter(tutorial => {
+      // Check if technology matches tutorial category
+      if (tutorial.category.toLowerCase().includes(normalizedTechnology)) {
+        return true;
+      }
+      
+      // Check if technology matches any tag
+      if (tutorial.tags.some(tag => 
+        tag.toLowerCase() === normalizedTechnology || 
+        tag.toLowerCase().includes(normalizedTechnology)
+      )) {
+        return true;
+      }
+      
+      // Check subcategory
+      if (tutorial.subCategory && tutorial.subCategory.toLowerCase().includes(normalizedTechnology)) {
+        return true;
+      }
+      
+      // Check title for technology mentions
+      if (tutorial.title.toLowerCase().includes(normalizedTechnology)) {
+        return true;
+      }
+      
+      return false;
+    });
+
+    console.log(`Filtered ${filteredTutorials.length} tutorials for technology "${technology}"`);
 
     return {
       data: filteredTutorials,

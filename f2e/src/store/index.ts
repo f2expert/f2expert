@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import coursesReducer from './slices/coursesSlice';
+import tutorialsReducer from './slices/tutorialsSlice';
 import userReducer from './slices/userSlice';
 import sidebarReducer from './slices/sidebarSlice';
 import sidebarDataReducer from './slices/sidebarDataSlice';
@@ -9,6 +10,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     courses: coursesReducer,
+    tutorials: tutorialsReducer,
     user: userReducer,
     sidebar: sidebarReducer,
     sidebarData: sidebarDataReducer,

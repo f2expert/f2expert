@@ -178,16 +178,12 @@ export const getLimited = async (req: Request, res: Response) => {
       return sendResponse(res, HTTP_STATUS.NO_CONTENT, null, "No tutorials found")
     }
       
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: {
-        tutorials,
-        count: tutorials.length,
-        limit
-      }
+    const responseData = {
+      tutorials,
+      count: tutorials.length,
+      limit
     }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, responseData, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
@@ -249,12 +245,7 @@ export const getById = async (req: Request, res: Response) => {
     // Increment view count
     await TutorialService.incrementTutorialViews(req.params.id)
 
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: tutorial
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, tutorial, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
@@ -399,12 +390,7 @@ export const getLatest = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10
     const tutorials = await TutorialService.getLatestTutorials(limit)
     
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: tutorials
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, tutorials, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
@@ -455,12 +441,7 @@ export const getByCategory = async (req: Request, res: Response) => {
     
     const tutorials = await TutorialService.getTutorialsByCategory(category, limit)
     
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: tutorials
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, tutorials, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
@@ -511,12 +492,7 @@ export const getByTechnology = async (req: Request, res: Response) => {
     
     const tutorials = await TutorialService.getTutorialsByTechnology(technology, limit)
     
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: tutorials
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, tutorials, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }

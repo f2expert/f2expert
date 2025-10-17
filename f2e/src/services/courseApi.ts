@@ -186,6 +186,20 @@ class CourseApiService {
     return this.getMockEnrolledCourses();
   }
 
+  // Get courses by category
+  async getCoursesByCategory(category: string, limit: number = 10): Promise<CoursesResponse> {
+    const endpoint = `/courses/category/${category}?limit=${limit}`;
+    console.log(`Fetching courses for category: ${category} with limit: ${limit}`);
+    
+    try {
+      return await this.makeRequest<CoursesResponse>(endpoint);
+    } catch (error) {
+      console.error('Error fetching courses by category:', error);
+      // Fallback to mock data if API fails
+      return this.getMockCoursesByCategory(category, limit);
+    }
+  }
+
   // Update course progress
   async updateProgress(courseId: string, lessonId: string, progress: number): Promise<{ success: boolean }> {
     const endpoint = `/courses/${courseId}/progress`;
@@ -381,6 +395,160 @@ class CourseApiService {
         createdAt: '2024-02-01T00:00:00Z',
         updatedAt: '2024-09-15T00:00:00Z',
         __v: 0
+      },
+      {
+        _id: '3',
+        title: 'HTML & CSS Fundamentals',
+        description: 'Learn the building blocks of web development with comprehensive HTML and CSS training including responsive design.',
+        shortDescription: 'Master HTML structure and CSS styling for modern web development',
+        instructor: 'Sarah Johnson',
+        instructorBio: 'Frontend Developer with 6+ years experience',
+        category: 'Web Development',
+        subCategory: 'Frontend Development',
+        level: 'Beginner',
+        technologies: ['HTML', 'CSS', 'HTML5', 'CSS3', 'Flexbox', 'Grid'],
+        prerequisites: ['Basic computer skills'],
+        learningOutcomes: [
+          'HTML document structure',
+          'Semantic HTML elements',
+          'CSS styling and layouts',
+          'Responsive web design',
+          'CSS Grid and Flexbox',
+          'Modern CSS features'
+        ],
+        syllabus: [
+          {
+            _id: 'm5',
+            module: 'HTML Fundamentals',
+            topics: ['HTML Structure', 'Elements', 'Attributes', 'Forms'],
+            duration: '3 weeks'
+          },
+          {
+            _id: 'm6',
+            module: 'CSS Styling',
+            topics: ['Selectors', 'Properties', 'Layouts', 'Responsive Design'],
+            duration: '4 weeks'
+          }
+        ],
+        price: 299,
+        originalPrice: 399,
+        currency: 'USD',
+        duration: '8 weeks',
+        totalHours: 60,
+        totalLectures: 35,
+        language: 'English',
+        isPublished: true,
+        isFeatured: false,
+        difficulty: 2,
+        rating: 4.7,
+        totalStudents: 12450,
+        certificateProvided: true,
+        hasProjects: true,
+        hasAssignments: false,
+        hasQuizzes: true,
+        supportProvided: true,
+        jobAssistance: false,
+        thumbnailUrl: '/assets/topics/html-css.png',
+        videoPreviewUrl: '/assets/topics/html-css-preview.mp4',
+        tags: ['HTML', 'CSS', 'Frontend', 'Web Design'],
+        enrollmentStartDate: '2024-01-01T00:00:00Z',
+        enrollmentEndDate: '2024-12-31T23:59:59Z',
+        courseStartDate: '2024-01-15T00:00:00Z',
+        courseEndDate: '2024-03-15T00:00:00Z',
+        maxStudents: 100,
+        minStudents: 15,
+        classSchedule: [
+          {
+            _id: 'cs5',
+            day: 'Monday',
+            startTime: '17:00',
+            endTime: '19:00'
+          }
+        ],
+        mode: 'Online',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-09-01T00:00:00Z',
+        __v: 0
+      },
+      {
+        _id: '4',
+        title: 'JavaScript Programming Masterclass',
+        description: 'Complete JavaScript course from basics to advanced concepts including ES6+, async programming, and modern frameworks.',
+        shortDescription: 'Comprehensive JavaScript programming from beginner to advanced',
+        instructor: 'Alex Chen',
+        instructorBio: 'Senior JavaScript Developer and Technical Lead',
+        category: 'Programming Languages',
+        subCategory: 'JavaScript',
+        level: 'Intermediate',
+        technologies: ['JavaScript', 'ES6', 'DOM', 'APIs', 'Async/Await'],
+        prerequisites: ['HTML/CSS basics'],
+        learningOutcomes: [
+          'JavaScript fundamentals',
+          'ES6+ features',
+          'DOM manipulation',
+          'Async programming',
+          'API integration',
+          'Modern JavaScript patterns'
+        ],
+        syllabus: [
+          {
+            _id: 'm7',
+            module: 'JavaScript Basics',
+            topics: ['Variables', 'Functions', 'Objects', 'Arrays'],
+            duration: '4 weeks'
+          },
+          {
+            _id: 'm8',
+            module: 'Advanced JavaScript',
+            topics: ['ES6+', 'Async/Await', 'Promises', 'Modules'],
+            duration: '5 weeks'
+          }
+        ],
+        price: 449,
+        originalPrice: 599,
+        currency: 'USD',
+        duration: '10 weeks',
+        totalHours: 90,
+        totalLectures: 55,
+        language: 'English',
+        isPublished: true,
+        isFeatured: true,
+        difficulty: 3,
+        rating: 4.9,
+        totalStudents: 9800,
+        certificateProvided: true,
+        hasProjects: true,
+        hasAssignments: true,
+        hasQuizzes: true,
+        supportProvided: true,
+        jobAssistance: true,
+        thumbnailUrl: '/assets/topics/javascript.png',
+        videoPreviewUrl: '/assets/topics/javascript-preview.mp4',
+        tags: ['JavaScript', 'Programming', 'ES6', 'Frontend'],
+        enrollmentStartDate: '2024-01-01T00:00:00Z',
+        enrollmentEndDate: '2024-12-31T23:59:59Z',
+        courseStartDate: '2024-02-01T00:00:00Z',
+        courseEndDate: '2024-04-15T00:00:00Z',
+        maxStudents: 75,
+        minStudents: 20,
+        classSchedule: [
+          {
+            _id: 'cs6',
+            day: 'Wednesday',
+            startTime: '18:30',
+            endTime: '20:30'
+          },
+          {
+            _id: 'cs7',
+            day: 'Friday',
+            startTime: '18:30',
+            endTime: '20:30'
+          }
+        ],
+        mode: 'Online',
+        createdAt: '2024-01-10T00:00:00Z',
+        updatedAt: '2024-10-01T00:00:00Z',
+        __v: 0
       }
     ];
 
@@ -466,6 +634,62 @@ class CourseApiService {
       page,
       limit,
       totalPages: Math.ceil(filteredCourses.length / limit)
+    };
+  }
+
+  private async getMockCoursesByCategory(category: string, limit: number): Promise<CoursesResponse> {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    const allCourses = await this.getMockCourses({});
+    
+    // Normalize category for comparison
+    const normalizedCategory = category.toLowerCase().trim();
+    
+    const filteredCourses = allCourses.data.filter(course => {
+      // Check if category matches course category
+      if (course.category.toLowerCase().includes(normalizedCategory)) {
+        return true;
+      }
+      
+      // Check if category matches any technology/tag
+      if (course.technologies.some(tech => 
+        tech.toLowerCase() === normalizedCategory || 
+        tech.toLowerCase().includes(normalizedCategory)
+      )) {
+        return true;
+      }
+      
+      // Check if category matches any tag
+      if (course.tags.some(tag => 
+        tag.toLowerCase() === normalizedCategory || 
+        tag.toLowerCase().includes(normalizedCategory)
+      )) {
+        return true;
+      }
+      
+      // Check subcategory
+      if (course.subCategory.toLowerCase().includes(normalizedCategory)) {
+        return true;
+      }
+      
+      // Check title for technology mentions
+      if (course.title.toLowerCase().includes(normalizedCategory)) {
+        return true;
+      }
+      
+      return false;
+    });
+
+    const limitedCourses = filteredCourses.slice(0, limit);
+
+    console.log(`Filtered ${filteredCourses.length} courses for category "${category}", returning ${limitedCourses.length}`);
+
+    return {
+      data: limitedCourses,
+      total: limitedCourses.length,
+      page: 1,
+      limit,
+      totalPages: 1
     };
   }
 

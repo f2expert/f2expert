@@ -1,39 +1,125 @@
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { YouTubeEmbed, LinkedInEmbed } from 'react-social-media-embed';
-import { useSidebarData } from '../../hooks';
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { fetchTutorialsByTechnology } from "../../store/slices/tutorialsSlice";
+import { TutorialCard } from "../../components/molecules/TutorialCard";
+import { Button } from "../../components/atoms/Button/Button";
+import { Skeleton } from "../../components/atoms/Skeleton/Skeleton";
 
 export default function Topic() {
   const params = useParams();
-  const { findContentId, findNavItem } = useSidebarData();
+  const dispatch = useAppDispatch();
   
-  const lang = params?.lang ? params.lang : "html"; // Default to html
-  const topic = params?.topic ? params.topic : "history"; // Default to history
+  const { tutorials, isLoading, error } = useAppSelector(state => state.tutorials);
   
-  // Get contentId and navigation item using helper functions
-  const contentId = findContentId(lang, topic) || "Ok3TQXserUI"; // Default fallback
-  const currentItem = findNavItem(lang, topic);
- 
+  const technology = params?.lang ? params.lang : "html"; // Default to html
+  
+  // Fetch tutorials when component mounts or technology changes
+  useEffect(() => {
+    dispatch(fetchTutorialsByTechnology(technology));
+  }, [dispatch, technology]);
+
+  // Handle tutorial start
+  const handleStartTutorial = async (tutorialId: string) => {
+    try {
+      console.log('Starting tutorial:', tutorialId);
+      // Navigate to tutorial page or start tutorial logic
+    } catch (error) {
+      console.error('Failed to start tutorial:', error);
+    }
+  };
+
+  // Retry function
+  const handleRetry = () => {
+    dispatch(fetchTutorialsByTechnology(technology));
+  };
+
   return (
     <div className="container flex overflow-auto">
-      <div className="align-left mt-4 mx-4 w-full">        
-        {/* Main Content */}        
-        <YouTubeEmbed url={`https://www.youtube.com/watch?v=${contentId}`} width={"100%"} height={400} />
-        <div className="bg-white">
-          <LinkedInEmbed 
-            url="https://www.linkedin.com/embed/feed/update/urn:li:share:7280144348048941056"
-            postUrl="https://www.linkedin.com/posts/f2expert-training-490479344_lorem-ipsum-dolor-sit-amet-consectetur-adipisicing-activity-7280144348623564800-d9EX"
-            width={"100%"}
-        />
-        </div>
-      </div>
-      <div className="align-right bg-gray-200 mt-4 mr-4 p-4 w-1/4">
-        <h1 className="text-sm font-semibold capitalize py-3">{lang} {currentItem?.title || topic}</h1>
-        <p>Welcome to {lang} {currentItem?.title || topic} content</p>
-        <div className="mt-4 text-xs text-gray-600">
-          <p>Content ID: {contentId}</p>
-          <p>Navigation URL: {currentItem?.url || 'N/A'}</p>
-        </div>
-      </div>
+      <div className="align-left mt-4 mx-4 w-full">
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-red-800 font-medium">Error loading tutorials</h3>
+                <p className="text-red-600 text-sm mt-1">{error}</p>
+              </div>
+              <Button onClick={handleRetry} variant="outline" size="sm">
+                Retry
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="space-y-3">
+                <Skeleton className="h-48 w-full rounded-lg" />
+                <div className="space-y-2 p-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tutorials Grid */}
+        {!isLoading && !error && (
+          <>
+            {tutorials.length > 0 ? (
+              <>
+                <div className="mb-4 text-sm text-gray-600">
+                  Found {technology}{tutorials.length} tutorial{tutorials.length !== 1 ? 's' : ''} for {technology}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {tutorials.map(tutorial => (
+                    <TutorialCard
+                      key={tutorial._id}
+                      tutorial={{ ...tutorial, videoUrl: `/dashboard/${technology}/${tutorial.videoUrl}` }}
+                      onStart={handleStartTutorial}
+                      showStartButton={true}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <div className="mb-4">
+                  <svg
+                    className="mx-auto h-12 w-12 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No tutorials found
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  We couldn't find any tutorials for "{technology}". Try searching for a different topic.
+                </p>
+                <Button onClick={handleRetry} variant="outline">
+                  Refresh
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>      
     </div>
   );
 }

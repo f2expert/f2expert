@@ -3,12 +3,12 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export interface MenuItem {
   title: string;
-  url: string;
+  path: string;
   icon?: string;
   isActive?: boolean;
   children?: {
     title: string;
-    url: string;
+    path: string;
     contentId?: string;
   }[];
 }
@@ -73,7 +73,7 @@ class MenuApiService {
     try {
       console.log('Fetching menu for role:', role);
       
-      const response = await this.makeRequest<MenuResponse>(`/api/menu?role=${role}&tree=true`);
+      const response = await this.makeRequest<MenuResponse>(`/api/menu?role=${role}`);
 
       // Handle various response formats
       let menuItems: MenuItem[] = [];

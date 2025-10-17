@@ -148,6 +148,19 @@ export const enrollInCourse = createAsyncThunk(
   }
 );
 
+export const fetchCoursesByCategory = createAsyncThunk(
+  'courses/fetchCoursesByCategory',
+  async ({ category, limit = 10 }: { category: string; limit?: number }, { rejectWithValue }) => {
+    try {
+      const response = await courseApiService.getCoursesByCategory(category, limit);
+      console.log("Courses by category:", response);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch courses by category');
+    }
+  }
+);
+
 
 
 // Courses slice
@@ -280,6 +293,28 @@ const coursesSlice = createSlice({
         state.error = null;
       })
       .addCase(updateCourseProgress.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // Fetch courses by category
+    builder
+      .addCase(fetchCoursesByCategory.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchCoursesByCategory.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.courses = action.payload.data;
+        state.pagination = {
+          page: action.payload.page,
+          totalPages: action.payload.totalPages,
+          total: action.payload.total,
+          limit: action.payload.limit
+        };
+        state.error = null;
+      })
+      .addCase(fetchCoursesByCategory.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

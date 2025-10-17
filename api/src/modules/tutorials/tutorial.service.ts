@@ -12,7 +12,7 @@ export const getLimitedTutorials = async (limit: number) => {
   return TutorialModel.find({ isPublished: true })
     .limit(limit)
     .sort({ createdAt: -1 })
-    .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl')
+    .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl videoUrl videoDuration')
 }
 
 export const getTutorialById = async (id: string) => {
@@ -70,7 +70,7 @@ export const getTutorialsWithFilters = async (
       .skip(skip)
       .limit(limit)
       .populate('relatedCourses', 'title category level')
-      .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews totalLikes thumbnailUrl createdAt publishedAt'),
+      .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews totalLikes thumbnailUrl videoUrl videoDuration createdAt publishedAt'),
     TutorialModel.countDocuments(query)
   ])
 
@@ -93,7 +93,7 @@ export const getFeaturedTutorials = async (limit: number = 6) => {
   })
   .sort({ rating: -1, totalViews: -1 })
   .limit(limit)
-  .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl')
+  .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl videoUrl videoDuration')
 }
 
 export const getTutorialsByCategory = async (category: string, limit?: number) => {
@@ -104,7 +104,7 @@ export const getTutorialsByCategory = async (category: string, limit?: number) =
   
   if (limit) query.limit(limit)
   
-  return query.select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl')
+  return query.select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl videoUrl videoDuration')
 }
 
 export const getTutorialsByTechnology = async (technology: string, limit?: number) => {
@@ -115,7 +115,7 @@ export const getTutorialsByTechnology = async (technology: string, limit?: numbe
   
   if (limit) query.limit(limit)
   
-  return query.select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl')
+  return query.select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl videoUrl videoDuration')
 }
 
 export const getTutorialsByType = async (tutorialType: string, limit?: number) => {
@@ -126,21 +126,21 @@ export const getTutorialsByType = async (tutorialType: string, limit?: number) =
   
   if (limit) query.limit(limit)
   
-  return query.select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl')
+  return query.select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl videoUrl videoDuration')
 }
 
 export const getPopularTutorials = async (limit: number = 10) => {
   return TutorialModel.find({ isPublished: true })
     .sort({ totalViews: -1, totalLikes: -1, rating: -1 })
     .limit(limit)
-    .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews totalLikes thumbnailUrl')
+    .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews totalLikes thumbnailUrl videoUrl videoDuration')
 }
 
 export const getLatestTutorials = async (limit: number = 10) => {
   return TutorialModel.find({ isPublished: true })
     .sort({ publishedAt: -1, createdAt: -1 })
     .limit(limit)
-    .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl publishedAt')
+    .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl videoUrl videoDuration publishedAt')
 }
 
 export const searchTutorials = async (searchTerm: string, limit: number = 20) => {
@@ -150,7 +150,7 @@ export const searchTutorials = async (searchTerm: string, limit: number = 20) =>
   })
   .sort({ score: { $meta: 'textScore' }, rating: -1, totalViews: -1 })
   .limit(limit)
-  .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl')
+  .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl videoUrl videoDuration')
 }
 
 export const getRelatedTutorials = async (tutorialId: string, category: string, technologies: string[], limit: number = 5) => {
@@ -164,7 +164,7 @@ export const getRelatedTutorials = async (tutorialId: string, category: string, 
   })
   .sort({ rating: -1, totalViews: -1 })
   .limit(limit)
-  .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl')
+  .select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl videoUrl videoDuration')
 }
 
 export const createTutorial = async (payload: TutorialDTO) => {
@@ -315,6 +315,6 @@ export const getTutorialsByAuthor = async (author: string, limit?: number) => {
   
   if (limit) query.limit(limit)
   
-  return query.select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl publishedAt')
+  return query.select('title shortDescription author category level technologies estimatedReadTime tutorialType difficulty rating totalViews thumbnailUrl videoUrl videoDuration publishedAt')
 }
 

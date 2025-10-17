@@ -31,12 +31,12 @@ export interface Team {
 
 export interface NavItem {
   title: string;
-  url: string;
+  path: string;
   icon: IconName;
   isActive?: boolean;
   children?: {
     title: string;
-    url: string;
+    path: string;
     contentId?: string;
   }[];
 }
@@ -95,111 +95,111 @@ const initialState: SidebarDataState = {
   navMain: [
     {
       title: "HTML",
-      url: "#",
+      path: "#",
       icon: "GrHtml5",
       isActive: true,
       children: [
         {
           title: "History",
-          url: "/dashboard/html/history",
+          path: "/dashboard/html/history",
           contentId: "Ok3TQXserUI",
         },
         {
           title: "Starred",
-          url: "/dashboard/html/starred",
+          path: "/dashboard/html/starred",
           contentId: "QQZNZ-vDW5U",
         },
         {
           title: "Settings",
-          url: "/dashboard/html/settings",
+          path: "/dashboard/html/settings",
           contentId: "PJAWLl92J3U",
         },
       ],
     },
     {
       title: "CSS",
-      url: "#",
+      path: "#",
       icon: "TbFileTypeCss",
       children: [
         {
           title: "Genesis",
-          url: "/dashboard/css/genesis",
+          path: "/dashboard/css/genesis",
           contentId: "Ok3TQXserUI",
         },
         {
           title: "Explorer",
-          url: "/dashboard/css/explorer",
+          path: "/dashboard/css/explorer",
           contentId: "Ok3TQXserUI",
         },
         {
           title: "Quantum",
-          url: "/dashboard/css/quantum",
+          path: "/dashboard/css/quantum",
           contentId: "Ok3TQXserUI",
         },
       ],
     },
     {
       title: "JavaScript",
-      url: "#",
+      path: "#",
       icon: "FaReact",
       children: [
         {
           title: "Basics",
-          url: "/dashboard/javascript/basics",
+          path: "/dashboard/javascript/basics",
           contentId: "Ok3TQXserUI",
         },
         {
           title: "Advanced",
-          url: "/dashboard/javascript/advanced",
+          path: "/dashboard/javascript/advanced",
           contentId: "Ok3TQXserUI",
         },
         {
           title: "Frameworks",
-          url: "/dashboard/javascript/frameworks",
+          path: "/dashboard/javascript/frameworks",
           contentId: "Ok3TQXserUI",
         },
       ],
     },
     {
       title: "Node.js",
-      url: "#",
+      path: "#",
       icon: "FaNodeJs",
       children: [
         {
           title: "Introduction",
-          url: "/dashboard/nodejs/intro",
+          path: "/dashboard/nodejs/intro",
           contentId: "Ok3TQXserUI",
         },
         {
           title: "Express.js",
-          url: "/dashboard/nodejs/express",
+          path: "/dashboard/nodejs/express",
           contentId: "Ok3TQXserUI",
         },
         {
           title: "MongoDB",
-          url: "/dashboard/nodejs/mongodb",
+          path: "/dashboard/nodejs/mongodb",
           contentId: "Ok3TQXserUI",
         },
       ],
     },
     {
       title: "Database",
-      url: "#",
+      path: "#",
       icon: "PiDatabaseThin",
       children: [
         {
           title: "SQL",
-          url: "/dashboard/database/sql",
+          path: "/dashboard/database/sql",
           contentId: "Ok3TQXserUI",
         },
         {
           title: "NoSQL",
-          url: "/dashboard/database/nosql",
+          path: "/dashboard/database/nosql",
           contentId: "Ok3TQXserUI",
         },
         {
           title: "Design",
-          url: "/dashboard/database/design",
+          path: "/dashboard/database/design",
           contentId: "Ok3TQXserUI",
         },
       ],
@@ -256,7 +256,7 @@ const sidebarDataSlice = createSlice({
         const topicItem = langNav.children.find(
           (item) =>
             item.title.toLowerCase() === topic.toLowerCase() ||
-            item.url.includes(`/${language}/${topic}`)
+            item.path.includes(`/${language}/${topic}`)
         );
 
         if (topicItem) {
