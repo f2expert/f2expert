@@ -4,6 +4,11 @@ import mongoose from 'mongoose';
 
 export class MenuService {
   static async createMenu(data: IMenuDTO) {
+    // Clean up parentId - convert empty string to null/undefined
+    if (data.parentId === '' || data.parentId === null) {
+      delete data.parentId;
+    }
+    
     // Validate parentId if provided
     if (data.parentId) {
       const parentMenu = await MenuModel.findById(data.parentId);
@@ -44,6 +49,11 @@ export class MenuService {
   static async updateMenu(id: string, data: Partial<IMenuDTO>) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new Error('Invalid menu ID format');
+    }
+
+    // Clean up parentId - convert empty string to null/undefined
+    if (data.parentId === '' || data.parentId === null) {
+      data.parentId = undefined;
     }
 
     // Validate parentId if being updated

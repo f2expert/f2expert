@@ -8,7 +8,8 @@ import {
   updateStudentInfoSchema,
   updateTrainerInfoSchema,
   updateAdminInfoSchema,
-  changePasswordSchema 
+  changePasswordSchema,
+  loginSchema 
 } from "./user.validation"
 import Joi from "joi"
 
@@ -36,6 +37,11 @@ router.get("/stats", UserController.getUserStats)
 
 router.get("/:id", 
   UserController.getUserById
+)
+
+router.post("/login", 
+  validateBody(loginSchema),
+  UserController.loginUser
 )
 
 router.post("/", 

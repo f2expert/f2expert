@@ -3,7 +3,10 @@ import * as UserService from "./user.service"
 import { sendError, sendResponse } from "../../app/utils/response.util"
 import { HTTP_STATUS } from "../../app/constants/http-status.constant"
 import { ICreateUserRequest, IUpdateUserRequest } from "./user.types"
+import { IUser } from "./user.model"
 import { deletePhotoFile, getPhotoUrl } from "../../app/middlewares/upload.middleware"
+import { generateToken } from "../../app/utils/jwt.util"
+import { comparePassword } from "../../app/utils/hash.util"
 import path from "path"
 
 /**
@@ -1025,5 +1028,140 @@ export const deleteUserPhoto = async (req: Request, res: Response) => {
 
   } catch (error: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Failed to delete photo")
+  }
+}
+
+/**
+ * @openapi
+ * /users/login:
+ *   post:
+ *     tags:
+ *       - User Management
+ *     summary: User login
+ *     description: Authenticate user with email and password
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john.doe@example.com"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: "SecurePassword123"
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Login successful"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                         name:
+ *                           type: string
+ *                         email:
+ *                           type: string
+ *                         role:
+ *                           type: string
+ *                           enum: [admin, trainer, student]
+ *                         isActive:
+ *                           type: boolean
+ *                         avatar:
+ *                           type: string
+ *                         createdAt:
+ *                           type: string
+ *                           format: date-time
+ *                         updatedAt:
+ *                           type: string
+ *                           format: date-time
+ *                     token:
+ *                       type: string
+ *                       description: JWT authentication token
+ *       400:
+ *         description: Missing required fields
+ *       401:
+ *         description: Invalid credentials
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+export const loginUser = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body
+
+    // Validate required fields
+    if (!email || !password) {
+      return sendError(res, HTTP_STATUS.BAD_REQUEST, "Email and password are required")
+    }
+
+    // Find user by email
+    const user = await UserService.getUserByEmail(email) as IUser | null
+    if (!user) {
+      return sendError(res, HTTP_STATUS.NOT_FOUND, "User not found")
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "User account is deactivated")
+    }
+
+    // Verify password
+    const isValidPassword = await comparePassword(password, user.password)
+    if (!isValidPassword) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Invalid credentials")
+    }
+
+    // Generate JWT token
+    const token = generateToken({ 
+      id: (user._id as any).toString(), 
+      email: user.email, 
+      role: user.role 
+    })
+
+    // Prepare user data (exclude password)
+    const userData = {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      fullName: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      avatar: user.avatar,
+      phone: user.phone,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    }
+
+    return sendResponse(res, HTTP_STATUS.OK, {
+      user: userData,
+      token
+    }, "Login successful")
+
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Login failed")
   }
 }

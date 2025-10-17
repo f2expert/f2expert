@@ -44,6 +44,7 @@ export const createMenuValidation = Joi.object({
   parentId: Joi.string()
     .pattern(/^[0-9a-fA-F]{24}$/)
     .optional()
+    .allow('', null)
     .messages({
       'string.pattern.base': 'Parent ID must be a valid MongoDB ObjectId'
     }),

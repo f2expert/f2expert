@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
 import { useAuth } from '../../hooks/useAuth';
+//import { testLoginApi } from '../../utils/testLoginApi';
 
 interface LoginFormData {
   email: string;
@@ -19,6 +20,7 @@ export const Login: React.FC = () => {
   });
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   // Debug logging
   React.useEffect(() => {
@@ -27,12 +29,17 @@ export const Login: React.FC = () => {
 
   // Redirect to dashboard if already authenticated
   React.useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !authLoading) {
       console.log('User authenticated, navigating to dashboard...');
+      setLoginSuccess(true);
       setIsLoading(false);
-      navigate('/dashboard', { replace: true });
+      
+      // Small delay to show success message before redirecting
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 800);
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -75,16 +82,32 @@ export const Login: React.FC = () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setErrors({}); // Clear any previous errors
+    
+    // Test API connectivity in development
+    /*if (import.meta.env?.NODE_ENV === 'development') {
+      console.log('🧪 Testing login API connectivity...');
+      const testResult = await testLoginApi(formData.email, formData.password);
+      console.log('Login API test result:', testResult);
+    }*/
 
     try {
+      console.log('🔑 Attempting login for:', formData.email);
+      
       // Use Redux login method and wait for completion
       await login(formData.email, formData.password);
       
-      // The useEffect will handle navigation when isAuthenticated becomes true
-      console.log('Login successful, waiting for auth state update...');
+      console.log('✅ Login successful, auth state should update and trigger redirect...');
+      
+      // Don't set isLoading to false here - let the useEffect handle it
+      // The redirect useEffect will handle setting isLoading to false
+      
     } catch (error) {
-      console.error('Login error:', error);
-      setErrors({ email: 'Invalid email or password' });
+      console.error('❌ Login error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Invalid email or password';
+      
+      // Display error message under the email field
+      setErrors({ email: errorMessage });
       setIsLoading(false);
     }
   };
@@ -184,10 +207,15 @@ export const Login: React.FC = () => {
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || loginSuccess}
               className="w-full py-3 text-lg font-medium"
             >
-              {isLoading ? (
+              {loginSuccess ? (
+                <>
+                  <i className="fas fa-check mr-2 text-green-500"></i>
+                  Success! Redirecting...
+                </>
+              ) : isLoading ? (
                 <>
                   <i className="fas fa-spinner fa-spin mr-2"></i>
                   Signing in...
@@ -196,6 +224,18 @@ export const Login: React.FC = () => {
                 'Sign In'
               )}
             </Button>
+
+            {/* Success Message */}
+            {loginSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <i className="fas fa-check-circle text-green-500 mr-2"></i>
+                  <p className="text-sm text-green-700 font-medium">
+                    Login successful! Redirecting to dashboard...
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Demo Credentials */}
             <div className="bg-gray-50 rounded-lg p-4">

@@ -4,7 +4,7 @@ import { NavMain } from "../../molecules/NavMain/NavMain"
 import { TeamSwitcher } from "../../molecules/TeamSwitcher/TeamSwitcher"
 import { NavUser } from "../../molecules/NavUser/NavUser"
 import { Separator } from "../../atoms/Separator";
-import { useSidebarRedux, useSidebarData } from '../../../hooks';
+import { useSidebarRedux, useSidebarData, useMenuApi } from '../../../hooks';
 import { cn } from '../../../lib/utils';
 
 interface AppSidebarProps {
@@ -20,6 +20,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 }) => {
   const { open, isMobile, openMobile, setOpenMobile, setIsMobile } = useSidebarRedux();
   const { user, teams, navMain, updateUser } = useSidebarData();
+  const { isLoading: menuLoading, error: menuError, refreshMenu } = useMenuApi();
   const lastUpdateRef = React.useRef({ userName: '', userEmail: '' });
 
   // Handle mobile detection
@@ -45,10 +46,23 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         if (Object.keys(updates).length > 0) {
           updateUser(updates);
           lastUpdateRef.current = { userName: userName || '', userEmail: userEmail || '' };
+          
+          // Refresh menu when user data changes (role might have changed)
+          refreshMenu();
         }
       }
     }
-  }, [userName, userEmail, user.name, user.email, updateUser]);
+  }, [userName, userEmail, user.name, user.email, updateUser, refreshMenu]);
+
+  // Debug logging for menu state
+  React.useEffect(() => {
+    if (menuError) {
+      console.error('Menu API error:', menuError);
+    }
+    if (menuLoading) {
+      console.log('Loading dynamic menu...');
+    }
+  }, [menuError, menuLoading]);
 
   // Use updated user data
   const userData = {
@@ -107,8 +121,25 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             <TeamSwitcher teams={teams} />
           </div>
           <Separator />
-          <div className="flex-1 overflow-auto p-1">
-            <NavMain items={navMain} />
+          <div className="flex-1 overflow-auto p-4">
+            {menuLoading ? (
+              <div className="flex items-center justify-center p-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-sm text-gray-500">Loading menu...</span>
+              </div>
+            ) : menuError ? (
+              <div className="p-4">
+                <div className="text-sm text-red-600 mb-2">Failed to load menu</div>
+                <button 
+                  onClick={refreshMenu}
+                  className="text-xs text-blue-600 hover:text-blue-800"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <NavMain items={navMain} />
+            )}
           </div>
           <Separator />
           <div className="p-1">

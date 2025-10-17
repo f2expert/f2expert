@@ -13,14 +13,17 @@ import {
 const router = Router();
 
 // Main CRUD operations
-router.post('/menus', validateBody(createMenuValidation), MenuController.createMenu);
-router.get('/menus', validateQuery(menuQueryValidation), MenuController.getAllMenus);
-router.get('/menus/:id', MenuController.getMenuById);
-router.put('/menus/:id', validateBody(updateMenuValidation), MenuController.updateMenu);
-router.delete('/menus/:id', MenuController.deleteMenu);
+router.post('/', validateBody(createMenuValidation), MenuController.createMenu);
+router.get('/', validateQuery(menuQueryValidation), MenuController.getAllMenus);
+router.get('/:id', MenuController.getMenuById);
+router.put('/:id', validateBody(updateMenuValidation), MenuController.updateMenu);
+router.delete('/:id', MenuController.deleteMenu);
 
 // Additional utility endpoints
-router.get('/menus/:id/children', MenuController.getChildMenus);
-router.get('/menus/root/list', MenuController.getRootMenus);
+router.get('/:id/children', MenuController.getChildMenus);
+router.get('/root/list', MenuController.getRootMenus);
+
+// User navigation endpoint
+router.get('/user-navigation/:userId', MenuController.getUserNavigation);
 
 export default router;

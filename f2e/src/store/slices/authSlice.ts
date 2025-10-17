@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { authApiService } from '../../services/authApi';
 
 // Types
 export interface User {
@@ -31,41 +32,49 @@ export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Auth slice: Attempting login with credentials:', { email: credentials.email });
       
-      // Mock successful login
-      const mockUser: User = {
-        id: '1',
-        name: 'John Doe',
-        email: credentials.email,
-        avatar: '',
-        role: 'user'
-      };
-
-      const mockToken = 'mock-jwt-token-' + Date.now();
-
+      // Call real API
+      const { user, token } = await authApiService.login(credentials);
+      
+      console.log('Auth slice: Login successful, received user:', user);
+      
       // Store in localStorage
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      localStorage.setItem('token', mockToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', token);
 
-      return { user: mockUser, token: mockToken };
+      return { user, token };
     } catch (error) {
-      return rejectWithValue('Login failed. Please check your credentials.');
+      console.error('Auth slice: Login failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please check your credentials.';
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
 export const logoutUser = createAsyncThunk(
   'auth/logoutUser',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
-      // Clear localStorage immediately (no API call simulation needed for logout)
+      const state = getState() as { auth: AuthState };
+      const token = state.auth.token;
+      
+      // Call logout API if token exists
+      if (token) {
+        try {
+          await authApiService.logout(token);
+        } catch (logoutError) {
+          console.warn('Logout API call failed, but continuing with local logout:', logoutError);
+        }
+      }
+      
+      // Clear localStorage
       localStorage.removeItem('user');
       localStorage.removeItem('token');
 
       return null;
     } catch (error) {
+      console.error('Logout error:', error);
       return rejectWithValue('Logout failed');
     }
   }
@@ -87,6 +96,7 @@ export const checkAuthStatus = createAsyncThunk(
 
       return null;
     } catch (error) {
+      console.error('Auth status check error:', error);
       return rejectWithValue('Failed to check auth status');
     }
   }
@@ -115,6 +125,7 @@ export const registerUser = createAsyncThunk(
 
       return { user: mockUser, token: mockToken };
     } catch (error) {
+      console.error('Registration error:', error);
       return rejectWithValue('Registration failed');
     }
   }
