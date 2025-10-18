@@ -26,7 +26,7 @@ export interface IUserDTO {
   isPhoneVerified?: boolean
   
   // Profile Information
-  avatar?: string
+  photo?: string // URL to user's profile photo
   bio?: string
   
   // Role-specific Information
@@ -98,6 +98,7 @@ export interface ICreateUserRequest {
   role: "admin" | "trainer" | "student"
   dateOfBirth?: Date
   gender?: "male" | "female" | "other"
+  photo?: string // URL to user's profile photo
   address?: {
     street?: string
     city?: string
@@ -123,7 +124,7 @@ export interface IUpdateUserRequest {
     zipCode?: string
   }
   bio?: string
-  avatar?: string
+  photo?: string // URL to user's profile photo
   isActive?: boolean
 }
 

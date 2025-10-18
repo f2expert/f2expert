@@ -26,7 +26,7 @@ export interface IUser extends Document {
   isPhoneVerified?: boolean
   
   // Profile Information
-  avatar?: string
+  photo?: string // URL to user's profile photo
   bio?: string
   
   // Role-specific Information
@@ -130,7 +130,7 @@ const userSchema = new Schema<IUser>(
     isPhoneVerified: { type: Boolean, default: false },
     
     // Profile Information
-    avatar: { type: String },
+    photo: { type: String },
     bio: { type: String, maxlength: 500 },
     
     // Role-specific Information

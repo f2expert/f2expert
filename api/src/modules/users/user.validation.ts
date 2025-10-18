@@ -85,6 +85,13 @@ export const createUserSchema = Joi.object({
   
   address: addressSchema.optional(),
   
+  photo: Joi.string()
+    .uri()
+    .optional()
+    .messages({
+      'string.uri': 'Photo must be a valid URL'
+    }),
+  
   role: Joi.string()
     .valid('admin', 'trainer', 'student')
     .required()
@@ -104,7 +111,7 @@ export const updateUserSchema = Joi.object({
   gender: Joi.string().valid('male', 'female', 'other').optional(),
   address: addressSchema.optional(),
   bio: Joi.string().max(500).optional(),
-  avatar: Joi.string().uri().optional(),
+  photo: Joi.string().uri().optional(),
   isActive: Joi.boolean().optional()
 })
 

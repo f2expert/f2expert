@@ -206,7 +206,7 @@ import path from "path"
  *         bio:
  *           type: string
  *           maxLength: 500
- *         avatar:
+ *         photo:
  *           type: string
  *           format: uri
  *         isActive:
@@ -239,7 +239,7 @@ import path from "path"
  *           type: boolean
  *         isEmailVerified:
  *           type: boolean
- *         avatar:
+ *         photo:
  *           type: string
  *         bio:
  *           type: string
@@ -959,14 +959,14 @@ export const uploadUserPhoto = async (req: Request, res: Response) => {
     }
 
     // Delete old photo file if exists
-    if (currentUser.avatar) {
-      const oldPhotoPath = path.join(process.cwd(), "uploads", "users", path.basename(currentUser.avatar))
+    if (currentUser.photo) {
+      const oldPhotoPath = path.join(process.cwd(), "uploads", "users", path.basename(currentUser.photo))
       deletePhotoFile(oldPhotoPath)
     }
 
     // Update user with new photo filename
     const photoUrl = getPhotoUrl(req.file.filename, req)
-    const updatedUser = await UserService.updateUser(id, { avatar: photoUrl })
+    const updatedUser = await UserService.updateUser(id, { photo: photoUrl })
 
     return sendResponse(res, HTTP_STATUS.OK, {
       photoUrl: photoUrl,
@@ -1013,16 +1013,16 @@ export const deleteUserPhoto = async (req: Request, res: Response) => {
       return sendError(res, HTTP_STATUS.NOT_FOUND, "User not found")
     }
 
-    if (!user.avatar) {
+    if (!user.photo) {
       return sendError(res, HTTP_STATUS.NOT_FOUND, "No photo to delete")
     }
 
     // Delete photo file
-    const photoPath = path.join(process.cwd(), "uploads", "users", path.basename(user.avatar))
+    const photoPath = path.join(process.cwd(), "uploads", "users", path.basename(user.photo))
     deletePhotoFile(photoPath)
 
-    // Update user to remove avatar
-    await UserService.updateUser(id, { avatar: undefined })
+    // Update user to remove photo
+    await UserService.updateUser(id, { photo: undefined })
 
     return sendResponse(res, HTTP_STATUS.OK, null, "Photo deleted successfully")
 
@@ -1088,7 +1088,7 @@ export const deleteUserPhoto = async (req: Request, res: Response) => {
  *                           enum: [admin, trainer, student]
  *                         isActive:
  *                           type: boolean
- *                         avatar:
+ *                         photo:
  *                           type: string
  *                         createdAt:
  *                           type: string
@@ -1150,7 +1150,7 @@ export const loginUser = async (req: Request, res: Response) => {
       email: user.email,
       role: user.role,
       isActive: user.isActive,
-      avatar: user.avatar,
+      photo: user.photo,
       phone: user.phone,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt

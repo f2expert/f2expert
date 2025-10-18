@@ -3,73 +3,9 @@ import { Link } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
 import { useTrainers } from '../../hooks';
 import { Skeleton } from '../../components/atoms/Skeleton';
-import { 
-  FaLightbulb, 
-  FaHandshake, 
-  FaUsers, 
-  FaTrophy 
-} from 'react-icons/fa';
-
-interface Achievement {
-  year: string;
-  title: string;
-  description: string;
-}
 
 export const About: React.FC = () => {
-  const { trainers, isLoading, error } = useTrainers();
-
-  const achievements: Achievement[] = [
-    {
-      year: '2018',
-      title: 'Founded F2Export IT Training',
-      description: 'Started with a vision to bridge the skills gap in IT industry'
-    },
-    {
-      year: '2019',
-      title: 'First 1000 Students',
-      description: 'Reached milestone of training 1000 students with 90% job placement'
-    },
-    {
-      year: '2021',
-      title: 'Industry Partnership',
-      description: 'Established partnerships with leading tech companies for direct hiring'
-    },
-    {
-      year: '2023',
-      title: 'Award Recognition',
-      description: 'Recognized as "Best IT Training Institute" by TechEducation Awards'
-    },
-    {
-      year: '2024',
-      title: 'Global Expansion',
-      description: 'Launched online programs reaching students across 15 countries'
-    }
-  ];
-
-  const values = [
-    {
-      icon: FaLightbulb,
-      title: 'Innovation',
-      description: 'We constantly update our curriculum with the latest technologies and industry trends.'
-    },
-    {
-      icon: FaHandshake,
-      title: 'Integrity',
-      description: 'We maintain the highest standards of honesty and transparency in all our interactions.'
-    },
-    {
-      icon: FaUsers,
-      title: 'Community',
-      description: 'We foster a supportive learning environment where everyone can thrive and grow.'
-    },
-    {
-      icon: FaTrophy,
-      title: 'Excellence',
-      description: 'We strive for excellence in everything we do, from course content to student support.'
-    }
-  ];
-
+  const { trainers, isLoading, error } = useTrainers();  
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -155,85 +91,6 @@ export const About: React.FC = () => {
         </div>
       </section>
 
-      {/* Values Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Our Core Values
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              The principles that guide everything we do and shape our approach to education
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {values.map((value, index) => {
-              const IconComponent = value.icon;
-              return (
-                <div key={index} className="text-center">
-                  <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <IconComponent className="text-2xl text-indigo-600" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    {value.title}
-                  </h3>
-                  <p className="text-gray-600">
-                    {value.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Timeline Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Our Journey
-            </h2>
-            <p className="text-xl text-gray-600">
-              Key milestones in our journey to become a leading IT training center
-            </p>
-          </div>
-
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-indigo-200"></div>
-            
-            <div className="space-y-12">
-              {achievements.map((achievement, index) => (
-                <div key={index} className={`flex items-center ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}>
-                  <div className={`w-1/2 ${index % 2 === 0 ? 'pr-8 text-right' : 'pl-8 text-left'}`}>
-                    <div className="bg-white p-6 rounded-lg shadow-lg">
-                      <div className="text-2xl font-bold text-indigo-600 mb-2">
-                        {achievement.year}
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {achievement.title}
-                      </h3>
-                      <p className="text-gray-600">
-                        {achievement.description}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Timeline dot */}
-                  <div className="relative z-10 flex items-center justify-center w-8 h-8 bg-indigo-600 rounded-full">
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  </div>
-                  
-                  <div className="w-1/2"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Team Section */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -242,7 +99,7 @@ export const About: React.FC = () => {
               Meet Our Expert Team
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Industry professionals and education experts committed to your success
+              Our team comprises experienced instructors, industry experts, and dedicated support staff who are passionate about education and technology
             </p>
           </div>
 
@@ -319,36 +176,6 @@ export const About: React.FC = () => {
                 </div>
               ))
             )}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-20 bg-indigo-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Our Impact in Numbers
-            </h2>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">5000+</div>
-              <div className="text-indigo-200">Students Trained</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">95%</div>
-              <div className="text-indigo-200">Job Placement Rate</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">50+</div>
-              <div className="text-indigo-200">Expert Instructors</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold mb-2">15</div>
-              <div className="text-indigo-200">Countries Reached</div>
-            </div>
           </div>
         </div>
       </section>

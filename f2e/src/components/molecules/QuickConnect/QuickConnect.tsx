@@ -69,7 +69,7 @@ export const QuickConnect: React.FC<QuickConnectProps> = ({
           />
         </div>
         
-        <div>
+       {/* <div>
           <FormInput
             type="email"
             placeholder="Email ID"
@@ -78,7 +78,7 @@ export const QuickConnect: React.FC<QuickConnectProps> = ({
             required
             name="email"
           />
-        </div>
+        </div>*/}
         
         <div>
           <FormInput
@@ -91,7 +91,7 @@ export const QuickConnect: React.FC<QuickConnectProps> = ({
           />
         </div>
         
-        <div>
+       {/**  <div>
           <FormInput
             type="textarea"
             placeholder="Description"
@@ -100,7 +100,7 @@ export const QuickConnect: React.FC<QuickConnectProps> = ({
             rows={3}
             name="description"
           />
-        </div>
+        </div>*/}
         
         <div>
           <Button
