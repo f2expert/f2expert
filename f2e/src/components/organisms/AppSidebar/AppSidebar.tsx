@@ -35,7 +35,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, [setIsMobile]);
 
-  // Update user data in Redux when props change
+  // Update user data in Redux when props change (without triggering menu reload)
   React.useEffect(() => {
     if (userName || userEmail) {
       // Only update if values actually changed since last update
@@ -47,12 +47,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           updateUser(updates);
           lastUpdateRef.current = { userName: userName || '', userEmail: userEmail || '' };
           
-          // Refresh menu when user data changes (role might have changed)
-          refreshMenu();
+          // Note: Removed refreshMenu() call to prevent redundant API calls
+          // Menu will be loaded by useMenuApi hook automatically
         }
       }
     }
-  }, [userName, userEmail, user.name, user.email, updateUser, refreshMenu]);
+  }, [userName, userEmail, user.name, user.email, updateUser]); // Removed refreshMenu dependency
 
   // Debug logging for menu state
   React.useEffect(() => {

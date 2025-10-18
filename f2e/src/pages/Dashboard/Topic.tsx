@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { fetchTutorialsByTechnology } from "../../store/slices/tutorialsSlice";
@@ -9,14 +9,18 @@ import { Skeleton } from "../../components/atoms/Skeleton/Skeleton";
 export default function Topic() {
   const params = useParams();
   const dispatch = useAppDispatch();
+  const lastTechnologyRef = useRef<string>("");
   
   const { tutorials, isLoading, error } = useAppSelector(state => state.tutorials);
   
   const technology = params?.lang ? params.lang : "html"; // Default to html
   
-  // Fetch tutorials when component mounts or technology changes
+  // Fetch tutorials when component mounts or technology changes (prevent duplicate calls)
   useEffect(() => {
-    dispatch(fetchTutorialsByTechnology(technology));
+    if (technology !== lastTechnologyRef.current) {
+      lastTechnologyRef.current = technology;
+      dispatch(fetchTutorialsByTechnology(technology));
+    }
   }, [dispatch, technology]);
 
   // Handle tutorial start

@@ -22,6 +22,8 @@ export interface MenuResponse {
 }
 
 class MenuApiService {
+  private pendingRequests = new Map<string, Promise<MenuItem[]>>();
+  
   private getHeaders(): HeadersInit {
     return {
       'Content-Type': 'application/json',
@@ -70,6 +72,29 @@ class MenuApiService {
 
   // Fetch menu items by user role
   async getMenuByRole(role: string): Promise<MenuItem[]> {
+    const requestKey = `menu-role-${role}`;
+    
+    // Check if there's already a pending request for this role
+    if (this.pendingRequests.has(requestKey)) {
+      console.log('Menu request already pending for role:', role, 'returning existing promise');
+      const existingRequest = this.pendingRequests.get(requestKey);
+      return existingRequest!; // We know it exists because we just checked has()
+    }
+    
+    // Create new request promise
+    const requestPromise = this.executeMenuRequest(role);
+    this.pendingRequests.set(requestKey, requestPromise);
+    
+    try {
+      const result = await requestPromise;
+      return result;
+    } finally {
+      // Clean up the pending request
+      this.pendingRequests.delete(requestKey);
+    }
+  }
+  
+  private async executeMenuRequest(role: string): Promise<MenuItem[]> {
     try {
       console.log('Fetching menu for role:', role);
       
@@ -103,6 +128,29 @@ class MenuApiService {
 
   // Fetch menu for current user (if token is available)
   async getUserMenu(): Promise<MenuItem[]> {
+    const requestKey = 'menu-user';
+    
+    // Check if there's already a pending request for user menu
+    if (this.pendingRequests.has(requestKey)) {
+      console.log('User menu request already pending, returning existing promise');
+      const existingRequest = this.pendingRequests.get(requestKey);
+      return existingRequest!; // We know it exists because we just checked has()
+    }
+    
+    // Create new request promise
+    const requestPromise = this.executeUserMenuRequest();
+    this.pendingRequests.set(requestKey, requestPromise);
+    
+    try {
+      const result = await requestPromise;
+      return result;
+    } finally {
+      // Clean up the pending request
+      this.pendingRequests.delete(requestKey);
+    }
+  }
+  
+  private async executeUserMenuRequest(): Promise<MenuItem[]> {
     try {
       const token = localStorage.getItem('token');
       const user = localStorage.getItem('user');

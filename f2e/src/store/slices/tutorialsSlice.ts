@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import { tutorialApiService, type Tutorial, type TutorialFilters } from '../../services/tutorialApi';
+import { tutorialApiService, type Tutorial, type TutorialFilters, type TutorialsResponse } from '../../services/tutorialApi';
 
 // Export the Tutorial type from API service
 export type { Tutorial };
@@ -76,13 +76,40 @@ export const fetchTutorialsByCategory = createAsyncThunk(
   }
 );
 
+// Track pending tutorials by technology requests to prevent duplicates
+const pendingTechnologyRequests = new Map<string, Promise<TutorialsResponse>>();
+
 export const fetchTutorialsByTechnology = createAsyncThunk(
   'tutorials/fetchTutorialsByTechnology',
   async (technology: string, { rejectWithValue }) => {
+    // Check if this request is already pending
+    if (pendingTechnologyRequests.has(technology)) {
+      const pendingRequest = pendingTechnologyRequests.get(technology);
+      if (pendingRequest) {
+        return await pendingRequest;
+      }
+    }
+    
+    // Create and track the request
+    const requestPromise = (async (): Promise<TutorialsResponse> => {
+      try {
+        const response = await tutorialApiService.getTutorialsByTechnology(technology);
+        console.log("Tutorials by technology:", response);
+        return response;
+      } catch (error) {
+        throw error instanceof Error ? error : new Error('Failed to fetch tutorials by technology');
+      }
+    })();
+    
+    pendingTechnologyRequests.set(technology, requestPromise);
+    
+    // Clean up completed request
+    requestPromise.finally(() => {
+      pendingTechnologyRequests.delete(technology);
+    });
+    
     try {
-      const response = await tutorialApiService.getTutorialsByTechnology(technology);
-      console.log("Tutorials by technology:", response);
-      return response;
+      return await requestPromise;
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch tutorials by technology');
     }

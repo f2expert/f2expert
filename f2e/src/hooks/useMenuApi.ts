@@ -161,6 +161,12 @@ export const useMenuApi = () => {
 
   // Load menu for current authenticated user
   const loadUserMenu = useCallback(async () => {
+    // Prevent multiple simultaneous calls
+    if (isLoading) {
+      console.log('Menu already loading, skipping duplicate call');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     
@@ -188,25 +194,49 @@ export const useMenuApi = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [dispatch]);
+  }, [dispatch, isLoading]); // Added isLoading to dependencies for protection
 
-  // Auto-load menu on hook initialization
+  // Auto-load menu on hook initialization (only once)
   useEffect(() => {
-    loadUserMenu();
-  }, [loadUserMenu]);
+    let isMounted = true;
+    
+    const initializeMenu = async () => {
+      if (isMounted) {
+        await loadUserMenu();
+      }
+    };
+    
+    initializeMenu();
+    
+    return () => {
+      isMounted = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty to run only once on mount
 
-  // Reload menu when user authentication changes
+  // Reload menu when user authentication changes (with debouncing)
   useEffect(() => {
+    let timeoutId: number;
+    
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'user' || e.key === 'token') {
-        console.log('Authentication changed, reloading menu');
-        loadUserMenu();
+        console.log('Authentication changed, scheduling menu reload');
+        
+        // Debounce to prevent multiple rapid calls
+        clearTimeout(timeoutId);
+        timeoutId = window.setTimeout(() => {
+          loadUserMenu();
+        }, 500); // Wait 500ms before reloading
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [loadUserMenu]);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearTimeout(timeoutId);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty to prevent recreation
 
   return {
     menuItems,

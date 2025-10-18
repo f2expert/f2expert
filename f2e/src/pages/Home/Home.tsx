@@ -23,7 +23,7 @@ interface Testimonial {
 }
 
 export const Home: React.FC = () => {
-  const { courses, isLoading, loadCourses } = useCourses();
+  const { courses, isLoading } = useCourses();
   const [featuredCourses, setFeaturedCourses] = useState<CourseDetails[]>([]);
 
   const testimonials: Testimonial[] = [
@@ -69,20 +69,7 @@ export const Home: React.FC = () => {
   // State for current banner image
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
-  // Load featured courses from API
-  useEffect(() => {
-    const loadFeaturedCourses = async () => {
-      try {
-        // Load courses with limit of 3 for featured section
-        await loadCourses({ limit: 3, sortBy: 'rating', sortOrder: 'desc' });
-      } catch (error) {
-        console.error('Error loading featured courses:', error);
-      }
-    };
-
-    loadFeaturedCourses();
-  }, [loadCourses]);
-
+  // useCourses hook automatically loads courses on mount
   // Update featured courses when courses data changes
   useEffect(() => {
     if (courses && courses.length > 0) {

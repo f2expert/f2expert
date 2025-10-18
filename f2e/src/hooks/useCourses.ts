@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   fetchCourses,
@@ -14,6 +14,9 @@ import {
 } from '../store/slices/coursesSlice';
 import type { CourseFilters, CourseDetails } from '../services/courseApi';
 
+// Track pending course API requests to prevent duplicates
+const pendingCoursesRequests = new Map<string, Promise<unknown>>();
+
 export const useCourses = () => {
   const dispatch = useAppDispatch();
   const {
@@ -28,18 +31,39 @@ export const useCourses = () => {
     filters
   } = useAppSelector(state => state.courses);
 
-  // Fetch courses with filters
+  // Track if initial load has been attempted
+  const initialLoadAttempted = useRef(false);
+
+  // Fetch courses with filters and duplicate prevention
   const loadCourses = useCallback((courseFilters?: CourseFilters) => {
     const filtersToUse = courseFilters || filters;
-    dispatch(fetchCourses(filtersToUse));
+    const requestKey = JSON.stringify(filtersToUse);
+    
+    // Check if this request is already pending
+    if (pendingCoursesRequests.has(requestKey)) {
+      return pendingCoursesRequests.get(requestKey);
+    }
+    
+    // Create and track the request
+    const requestPromise = dispatch(fetchCourses(filtersToUse));
+    pendingCoursesRequests.set(requestKey, requestPromise);
+    
+    // Clean up completed request
+    requestPromise.finally(() => {
+      pendingCoursesRequests.delete(requestKey);
+    });
+    
+    return requestPromise;
   }, [dispatch, filters]);
 
-  // Load initial courses on mount
+  // Load initial courses on mount (only once)
   useEffect(() => {
-    if (!courses || courses.length === 0) {
+    if (!initialLoadAttempted.current && (!courses || courses.length === 0)) {
+      initialLoadAttempted.current = true;
       loadCourses();
     }
-  }, [courses, loadCourses]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only run once on mount
 
   // Load categories on mount
   useEffect(() => {
