@@ -16,15 +16,11 @@ import {
 export interface ProtectedProps {
   children?: React.ReactNode;
   className?: string;
-  userName?: string;
-  userEmail?: string;
   isAuthenticated?: boolean;
   onLogout?: () => void;
 }
 
 export const Protected: React.FC<ProtectedProps> = ({
-  userName = "John Doe",
-  userEmail = "john@example.com",
   onLogout,
 }) => {
   const location = useLocation();
@@ -33,8 +29,6 @@ export const Protected: React.FC<ProtectedProps> = ({
   return (
     <div className="flex min-h-screen w-full">
       <AppSidebar 
-        userName={userName}
-        userEmail={userEmail}
         onLogout={onLogout}
       />
       <SidebarInset className="flex-1">

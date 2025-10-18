@@ -41,25 +41,13 @@ export interface NavItem {
   }[];
 }
 
-export interface SidebarUser {
-  name: string;
-  email: string;
-  avatar: string;
-}
-
 export interface SidebarDataState {
-  user: SidebarUser;
   teams: Team[];
   navMain: NavItem[];
 }
 
 // Initial data
 const initialState: SidebarDataState = {
-  user: {
-    name: "Rhythm",
-    email: "rhythm@gmail.com",
-    avatar: "/assets/student/user.jpg",
-  },
   teams: [
     {
       name: "Home ",
@@ -211,9 +199,6 @@ const sidebarDataSlice = createSlice({
   name: "sidebarData",
   initialState,
   reducers: {
-    updateUser: (state, action: PayloadAction<Partial<SidebarUser>>) => {
-      state.user = { ...state.user, ...action.payload };
-    },
     updateTeams: (state, action: PayloadAction<Team[]>) => {
       state.teams = action.payload;
     },
@@ -268,7 +253,6 @@ const sidebarDataSlice = createSlice({
 });
 
 export const {
-  updateUser,
   updateTeams,
   addTeam,
   removeTeam,

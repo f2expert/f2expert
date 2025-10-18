@@ -8,20 +8,16 @@ import { useSidebarRedux, useSidebarData, useMenuApi } from '../../../hooks';
 import { cn } from '../../../lib/utils';
 
 interface AppSidebarProps {
-  userName?: string;
-  userEmail?: string;
   onLogout?: () => void;
 }
 
 export const AppSidebar: React.FC<AppSidebarProps> = ({
-  userName,
-  userEmail,
   onLogout,
 }) => {
   const { open, isMobile, openMobile, setOpenMobile, setIsMobile } = useSidebarRedux();
-  const { user, teams, navMain, updateUser } = useSidebarData();
+  const { user, teams, navMain } = useSidebarData();
   const { isLoading: menuLoading, error: menuError, refreshMenu } = useMenuApi();
-  const lastUpdateRef = React.useRef({ userName: '', userEmail: '' });
+console.log('AppSidebar render: ', { user});
 
   // Handle mobile detection
   React.useEffect(() => {
@@ -35,25 +31,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, [setIsMobile]);
 
-  // Update user data in Redux when props change (without triggering menu reload)
-  React.useEffect(() => {
-    if (userName || userEmail) {
-      // Only update if values actually changed since last update
-      if (userName !== lastUpdateRef.current.userName || userEmail !== lastUpdateRef.current.userEmail) {
-        const updates: { name?: string; email?: string } = {};
-        if (userName && userName !== user.name) updates.name = userName;
-        if (userEmail && userEmail !== user.email) updates.email = userEmail;
-        if (Object.keys(updates).length > 0) {
-          updateUser(updates);
-          lastUpdateRef.current = { userName: userName || '', userEmail: userEmail || '' };
-          
-          // Note: Removed refreshMenu() call to prevent redundant API calls
-          // Menu will be loaded by useMenuApi hook automatically
-        }
-      }
-    }
-  }, [userName, userEmail, user.name, user.email, updateUser]); // Removed refreshMenu dependency
-
   // Debug logging for menu state
   React.useEffect(() => {
     if (menuError) {
@@ -66,9 +43,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
   // Use updated user data
   const userData = {
-    name: userName || user.name,
-    email: userEmail || user.email,
-    avatar: user.avatar,
+    name: user?.name || 'Guest',
+    email: user?.email || '',
+    avatar: user?.avatar || '/assets/student/user.jpg',
   };
 
   // Always render desktop sidebar, handle mobile with CSS

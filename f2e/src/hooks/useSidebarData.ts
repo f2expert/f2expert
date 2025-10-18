@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
-  updateUser as updateUserAction,
   updateTeams as updateTeamsAction,
   addTeam as addTeamAction,
   removeTeam as removeTeamAction,
@@ -12,12 +11,12 @@ import {
   updateContentId as updateContentIdAction,
   type Team,
   type NavItem,
-  type SidebarUser,
 } from '../store/slices/sidebarDataSlice';
 
 export const useSidebarData = () => {
   const dispatch = useAppDispatch();
   const sidebarData = useAppSelector(state => state.sidebarData);
+  const user= useAppSelector(state => state.auth.user);
 
   // Helper function to find content by language and topic
   const findContentId = (language: string, topic: string): string | null => {
@@ -66,7 +65,6 @@ export const useSidebarData = () => {
   };
 
   // Memoize dispatch functions to prevent unnecessary re-renders
-  const updateUser = useCallback((userData: Partial<SidebarUser>) => dispatch(updateUserAction(userData)), [dispatch]);
   const updateTeams = useCallback((teams: Team[]) => dispatch(updateTeamsAction(teams)), [dispatch]);
   const addTeam = useCallback((team: Team) => dispatch(addTeamAction(team)), [dispatch]);
   const removeTeam = useCallback((teamName: string) => dispatch(removeTeamAction(teamName)), [dispatch]);
@@ -79,7 +77,7 @@ export const useSidebarData = () => {
 
   return {
     // Data
-    user: sidebarData.user,
+    user,
     teams: sidebarData.teams,
     navMain: sidebarData.navMain,
     
@@ -87,9 +85,6 @@ export const useSidebarData = () => {
     findContentId,
     findNavItem,
     getAvailableLanguages,
-    
-    // User actions
-    updateUser,
     
     // Teams actions
     updateTeams,

@@ -144,7 +144,7 @@ class AuthApiService {
 
       // For successful responses, ensure we have required data
       if (!tokenValue || !userData) {
-        console.error('Missing authentication data in response:', {
+          console.error('Missing authentication data in response:', {
           hasToken: !!tokenValue,
           hasUser: !!userData,
           responseKeys: Object.keys(response),
