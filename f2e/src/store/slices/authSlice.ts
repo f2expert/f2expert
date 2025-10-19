@@ -4,10 +4,32 @@ import { authApiService } from '../../services/authApi';
 // Types
 export interface User {
   id: string;
+  firstName?: string;
+  lastName?: string;
   name: string;
   email: string;
-  avatar?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+  };
+  photo?: string;
+  bio?: string;
   role?: string;
+  isActive?: boolean;
+  isEmailVerified?: boolean;
+  studentInfo?: {
+    studentId: string;
+    enrollmentDate: string;
+    emergencyContact: Record<string, unknown>;
+  };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthState {
@@ -111,9 +133,11 @@ export const registerUser = createAsyncThunk(
       
       const mockUser: User = {
         id: String(Date.now()),
+        firstName: userData.name.split(' ')[0],
+        lastName: userData.name.split(' ').slice(1).join(' '),
         name: userData.name,
         email: userData.email,
-        avatar: '',
+        photo: '',
         role: 'user'
       };
 

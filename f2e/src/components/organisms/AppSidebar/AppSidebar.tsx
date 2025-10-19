@@ -41,11 +41,12 @@ console.log('AppSidebar render: ', { user});
     }
   }, [menuError, menuLoading]);
 
+  
   // Use updated user data
   const userData = {
     name: user?.name || 'Guest',
     email: user?.email || '',
-    avatar: user?.avatar || '/assets/student/user.jpg',
+    photo: user?.photo || '/assets/profile.png',
   };
 
   // Always render desktop sidebar, handle mobile with CSS

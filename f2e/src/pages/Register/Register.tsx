@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
+import { authApiService, type RegisterData } from '../../services/authApi';
 
 interface RegisterFormData {
   firstName: string;
@@ -9,9 +10,18 @@ interface RegisterFormData {
   password: string;
   confirmPassword: string;
   phone: string;
+  dateOfBirth: string;
+  gender: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+  };
   agreeToTerms: boolean;
   subscribeNewsletter: boolean;
-  learningGoal: string;
+  role: string;
 }
 
 interface RegisterFormErrors {
@@ -21,8 +31,18 @@ interface RegisterFormErrors {
   password?: string;
   confirmPassword?: string;
   phone?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    zipCode?: string;
+  };
   agreeToTerms?: string;
-  learningGoal?: string;
+  role?: string;
+  general?: string;
 }
 
 export const Register: React.FC = () => {
@@ -34,37 +54,60 @@ export const Register: React.FC = () => {
     password: '',
     confirmPassword: '',
     phone: '',
+    dateOfBirth: '',
+    gender: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      country: '',
+      zipCode: ''
+    },
     agreeToTerms: false,
     subscribeNewsletter: true,
-    learningGoal: ''
+    role: 'student'
   });
   const [errors, setErrors] = useState<RegisterFormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-
-  const learningGoals = [
-    'Career Change',
-    'Skill Enhancement',
-    'Personal Development',
-    'Business Growth',
-    'Academic Requirements',
-    'Other'
-  ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
     
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name as keyof RegisterFormErrors]) {
-      setErrors(prev => ({
+    // Handle nested address fields
+    if (name.startsWith('address.')) {
+      const addressField = name.split('.')[1];
+      setFormData(prev => ({
         ...prev,
-        [name]: undefined
+        address: {
+          ...prev.address,
+          [addressField]: value
+        }
       }));
+      
+      // Clear address error when user starts typing
+      if (errors.address?.[addressField as keyof typeof errors.address]) {
+        setErrors(prev => ({
+          ...prev,
+          address: {
+            ...prev.address,
+            [addressField]: undefined
+          }
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+      
+      // Clear error when user starts typing
+      if (errors[name as keyof RegisterFormErrors]) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: undefined
+        }));
+      }
     }
   };
 
@@ -109,8 +152,8 @@ export const Register: React.FC = () => {
       newErrors.agreeToTerms = 'You must agree to the terms and conditions';
     }
 
-    if (!formData.learningGoal) {
-      newErrors.learningGoal = 'Please select your learning goal';
+    if (!formData.role) {
+      newErrors.role = 'Please select your role';
     }
 
     setErrors(newErrors);
@@ -123,21 +166,45 @@ export const Register: React.FC = () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setErrors({}); // Clear any previous errors
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Prepare data for API call
+      const registrationData: RegisterData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        address: {
+          street: formData.address.street,
+          city: formData.address.city,
+          state: formData.address.state,
+          country: formData.address.country,
+          zipCode: formData.address.zipCode
+        },
+        role: formData.role
+      };
+
+      // Call registration API
+      const response = await authApiService.register(registrationData);
       
-      // Mock successful registration
+      console.log('Registration successful:', response);
+      
+      // Store basic auth info for automatic login after registration
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', formData.email);
       localStorage.setItem('userName', `${formData.firstName} ${formData.lastName}`);
       
       // Redirect to dashboard with welcome message
       navigate('/dashboard?welcome=true');
+      
     } catch (error) {
       console.error('Registration error:', error);
-      setErrors({ email: 'Registration failed. Please try again.' });
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -257,6 +324,160 @@ export const Register: React.FC = () => {
               )}
             </div>
 
+            {/* Date of Birth and Gender */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
+                  Date of Birth
+                </label>
+                <input
+                  id="dateOfBirth"
+                  name="dateOfBirth"
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                    errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.dateOfBirth && (
+                  <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
+                  Gender
+                </label>
+                <select
+                  id="gender"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                    errors.gender ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+                {errors.gender && (
+                  <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Address Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">Address Information</h3>
+              
+              <div>
+                <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-2">
+                  Street Address
+                </label>
+                <input
+                  id="street"
+                  name="address.street"
+                  type="text"
+                  value={formData.address.street}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                    errors.address?.street ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your street address"
+                />
+                {errors.address?.street && (
+                  <p className="mt-1 text-sm text-red-600">{errors.address.street}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                    City
+                  </label>
+                  <input
+                    id="city"
+                    name="address.city"
+                    type="text"
+                    value={formData.address.city}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                      errors.address?.city ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter your city"
+                  />
+                  {errors.address?.city && (
+                    <p className="mt-1 text-sm text-red-600">{errors.address.city}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+                    State/Province
+                  </label>
+                  <input
+                    id="state"
+                    name="address.state"
+                    type="text"
+                    value={formData.address.state}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                      errors.address?.state ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter your state/province"
+                  />
+                  {errors.address?.state && (
+                    <p className="mt-1 text-sm text-red-600">{errors.address.state}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+                    Country
+                  </label>
+                  <input
+                    id="country"
+                    name="address.country"
+                    type="text"
+                    value={formData.address.country}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                      errors.address?.country ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter your country"
+                  />
+                  {errors.address?.country && (
+                    <p className="mt-1 text-sm text-red-600">{errors.address.country}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-2">
+                    ZIP/Postal Code
+                  </label>
+                  <input
+                    id="zipCode"
+                    name="address.zipCode"
+                    type="text"
+                    value={formData.address.zipCode}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                      errors.address?.zipCode ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter your ZIP/postal code"
+                  />
+                  {errors.address?.zipCode && (
+                    <p className="mt-1 text-sm text-red-600">{errors.address.zipCode}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Password Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -302,27 +523,27 @@ export const Register: React.FC = () => {
               </div>
             </div>
 
-            {/* Learning Goal */}
+            {/* Role Selection */}
             <div>
-              <label htmlFor="learningGoal" className="block text-sm font-medium text-gray-700 mb-2">
-                What's your learning goal?
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+                Select Your Role
               </label>
               <select
-                id="learningGoal"
-                name="learningGoal"
-                value={formData.learningGoal}
+                id="role"
+                name="role"
+                value={formData.role}
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  errors.learningGoal ? 'border-red-500' : 'border-gray-300'
+                  errors.role ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="">Select your learning goal</option>
-                {learningGoals.map((goal) => (
-                  <option key={goal} value={goal}>{goal}</option>
-                ))}
+                <option value="">Select your role</option>
+                <option value="student">Student</option>
+                <option value="trainer">Trainer</option>
+                <option value="admin">Admin</option>
               </select>
-              {errors.learningGoal && (
-                <p className="mt-1 text-sm text-red-600">{errors.learningGoal}</p>
+              {errors.role && (
+                <p className="mt-1 text-sm text-red-600">{errors.role}</p>
               )}
             </div>
 
@@ -389,6 +610,20 @@ export const Register: React.FC = () => {
                 </label>
               </div>
             </div>
+
+            {/* General Error Display */}
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <i className="fas fa-exclamation-triangle text-red-400"></i>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-600">{errors.general}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Submit Button */}
             <Button

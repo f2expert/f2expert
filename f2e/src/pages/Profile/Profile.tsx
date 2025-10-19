@@ -3,11 +3,26 @@ import { Button, Input, Card, CardContent, CardDescription, CardHeader, CardTitl
 import { Separator } from '../../components/atoms/Separator';
 import { GearIcon, CameraIcon } from '@radix-ui/react-icons';
 import { useAuth } from '../../hooks/useAuth';
+import { authApiService, type UpdateProfileData } from '../../services/authApi';
+import { useAppDispatch } from '../../store/hooks';
+import { updateUser } from '../../store/slices/authSlice';
 
 interface ProfileData {
+  firstName: string;
+  lastName: string;
   name: string;
   email: string;
-  avatar: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+  };
+  photo: string;
   bio: string;
   joinDate: string;
   level: string;
@@ -24,56 +39,188 @@ interface ProfileData {
 }
 
 export const Profile: React.FC = () => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, token } = useAuth();
+  const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<'profile' | 'settings' | 'security'>('profile');
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   // Initialize with stable data to prevent re-renders
-  const initialProfileData: ProfileData = React.useMemo(() => ({
-    name: authUser?.name || 'John Doe',
-    email: authUser?.email || 'john.doe@email.com',
-    avatar: '/api/placeholder/120/120',
-    bio: 'Full-stack developer passionate about creating innovative web solutions. Always eager to learn new technologies and share knowledge with the community.',
-    joinDate: '2024-01-15',
-    level: 'Intermediate Developer',
-    totalCourses: 8,
-    completedCourses: 5,
-    totalHours: 236,
-    certificates: 3,
-    skills: ['React', 'TypeScript', 'Node.js', 'Python', 'PostgreSQL', 'AWS'],
-    preferences: {
-      emailNotifications: true,
-      publicProfile: true,
-      darkMode: false,
-    }
-  }), [authUser?.name, authUser?.email]);
+  const initialProfileData: ProfileData = React.useMemo(() => {
+    const fullName = authUser?.name || 'John Doe';
+    const nameParts = fullName.split(' ');
+    const firstName = nameParts[0] || 'John';
+    const lastName = nameParts.slice(1).join(' ') || 'Doe';
+    
+    return {
+      firstName,
+      lastName,
+      name: fullName,
+      email: authUser?.email || 'john.doe@email.com',
+      phone: authUser?.phone || '',
+      dateOfBirth: authUser?.dateOfBirth || '',
+      gender: authUser?.gender || '',
+      address: {
+        street: authUser?.address?.street || '',
+        city: authUser?.address?.city || '',
+        state: authUser?.address?.state || '',
+        country: 'India',
+        zipCode: ''
+      },
+      photo: authUser?.photo || '/assets/profile.png',
+      bio: authUser?.bio || 'Full-stack developer passionate about creating innovative web solutions. Always eager to learn new technologies and share knowledge with the community.',
+      joinDate: '2024-01-15',
+      level: 'Intermediate Developer',
+      totalCourses: 8,
+      completedCourses: 5,
+      totalHours: 236,
+      certificates: 3,
+      skills: ['React', 'TypeScript', 'Node.js', 'Python', 'PostgreSQL', 'AWS'],
+      preferences: {
+        emailNotifications: true,
+        publicProfile: true,
+        darkMode: false,
+      }
+    };
+  }, [authUser?.name, authUser?.email, authUser?.photo]);
 
   // Mock profile data - in a real app, this would come from an API
   const [profileData, setProfileData] = useState<ProfileData>(initialProfileData);
 
   const [editFormData, setEditFormData] = useState(() => ({
-    name: initialProfileData.name,
+    firstName: initialProfileData.firstName,
+    lastName: initialProfileData.lastName,
+    email: initialProfileData.email,
+    phone: initialProfileData.phone,
+    dateOfBirth: initialProfileData.dateOfBirth,
+    gender: initialProfileData.gender,
+    address: { ...initialProfileData.address },
     bio: initialProfileData.bio,
     skills: initialProfileData.skills.join(', ')
   }));
 
-  const handleSaveProfile = () => {
-    setProfileData(prev => ({
-      ...prev,
-      name: editFormData.name,
-      bio: editFormData.bio,
-      skills: editFormData.skills.split(',').map(skill => skill.trim()).filter(Boolean)
-    }));
-    setIsEditing(false);
+  const handleSaveProfile = async () => {
+    if (!authUser?.id || !token) {
+      alert('Missing user ID or token');
+      return;
+    }
+
+    setIsUpdatingProfile(true);
+    
+    try {
+      // Prepare profile update data
+      const updateData: UpdateProfileData = {
+        firstName: editFormData.firstName,
+        lastName: editFormData.lastName,
+        email: editFormData.email,
+        phone: editFormData.phone,
+        dateOfBirth: editFormData.dateOfBirth,
+        gender: editFormData.gender,
+        address: editFormData.address,
+        bio: editFormData.bio
+      };
+
+      console.log('Updating profile...', updateData);
+      
+      const updatedUser = await authApiService.updateProfile(authUser.id, updateData, token);
+      
+      console.log('Profile update successful:', updatedUser);
+      
+      // Update local profile data
+      setProfileData(prev => ({
+        ...prev,
+        firstName: editFormData.firstName,
+        lastName: editFormData.lastName,
+        name: `${editFormData.firstName} ${editFormData.lastName}`.trim(),
+        email: editFormData.email,
+        phone: editFormData.phone,
+        dateOfBirth: editFormData.dateOfBirth,
+        gender: editFormData.gender,
+        address: { ...editFormData.address },
+        bio: editFormData.bio,
+        skills: editFormData.skills.split(',').map(skill => skill.trim()).filter(Boolean)
+      }));
+      
+      // Update auth store with new user data
+      dispatch(updateUser({
+        name: `${editFormData.firstName} ${editFormData.lastName}`.trim(),
+        email: editFormData.email
+      }));
+      
+      setIsEditing(false);
+      alert('Profile updated successfully!');
+      
+    } catch (error) {
+      console.error('Profile update failed:', error);
+      alert(`Profile update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUpdatingProfile(false);
+    }
   };
 
   const handleCancelEdit = () => {
     setEditFormData({
-      name: profileData.name,
+      firstName: profileData.firstName,
+      lastName: profileData.lastName,
+      email: profileData.email,
+      phone: profileData.phone,
+      dateOfBirth: profileData.dateOfBirth,
+      gender: profileData.gender,
+      address: { ...profileData.address },
       bio: profileData.bio,
       skills: profileData.skills.join(', ')
     });
     setIsEditing(false);
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !authUser?.id || !token) {
+      console.error('Missing file, user ID, or token for photo upload');
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (e.g., max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    
+    try {
+      console.log('Uploading photo...', { userId: authUser.id, fileName: file.name });
+      
+      const result = await authApiService.uploadPhoto(authUser.id, file, token);
+      
+      console.log('Photo upload successful:', result);
+      
+      // Update profile data
+      setProfileData(prev => ({
+        ...prev,
+        photo: result.photoUrl
+      }));
+      
+      // Update auth store with new photo
+      dispatch(updateUser({ photo: result.photoUrl }));
+      
+      alert('Photo uploaded successfully!');
+      
+    } catch (error) {
+      console.error('Photo upload failed:', error);
+      alert(`Photo upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUploadingPhoto(false);
+      // Clear the input so the same file can be selected again if needed
+      event.target.value = '';
+    }
   };
 
   const renderProfileTab = () => (
@@ -84,13 +231,24 @@ export const Profile: React.FC = () => {
           <div className="flex items-start gap-6">
             <div className="relative">
               <img 
-                src={profileData.avatar} 
+                src={profileData.photo} 
                 alt={profileData.name}
                 className="w-24 h-24 rounded-full bg-gray-200 object-cover"
               />
-              <button className="absolute bottom-0 right-0 bg-blue-500 text-white p-1.5 rounded-full hover:bg-blue-600 transition-colors">
-                <CameraIcon className="h-3 w-3" />
-              </button>
+              <label className="absolute bottom-0 right-0 bg-blue-500 text-white p-1.5 rounded-full hover:bg-blue-600 transition-colors cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  disabled={isUploadingPhoto}
+                  className="hidden"
+                />
+                {isUploadingPhoto ? (
+                  <div className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" />
+                ) : (
+                  <CameraIcon className="h-3 w-3" />
+                )}
+              </label>
             </div>
             
             <div className="flex-1 space-y-4">
@@ -113,33 +271,176 @@ export const Profile: React.FC = () => {
                 </>
               ) : (
                 <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">First Name</label>
+                      <Input
+                        value={editFormData.firstName}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                        disabled={isUpdatingProfile}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Last Name</label>
+                      <Input
+                        value={editFormData.lastName}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                        disabled={isUpdatingProfile}
+                      />
+                    </div>
+                  </div>
+                  
                   <div>
-                    <label className="block text-sm font-medium mb-1">Name</label>
+                    <label className="block text-sm font-medium mb-1">Email</label>
                     <Input
-                      value={editFormData.name}
-                      onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                      type="email"
+                      value={editFormData.email}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                      disabled={isUpdatingProfile}
                     />
                   </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Phone</label>
+                    <Input
+                      type="tel"
+                      value={editFormData.phone}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      disabled={isUpdatingProfile}
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Date of Birth</label>
+                      <Input
+                        type="date"
+                        value={editFormData.dateOfBirth}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                        disabled={isUpdatingProfile}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Gender</label>
+                      <select
+                        value={editFormData.gender}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, gender: e.target.value }))}
+                        disabled={isUpdatingProfile}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-gray-900">Address</h4>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Street</label>
+                      <Input
+                        value={editFormData.address.street}
+                        onChange={(e) => setEditFormData(prev => ({ 
+                          ...prev, 
+                          address: { ...prev.address, street: e.target.value }
+                        }))}
+                        disabled={isUpdatingProfile}
+                        placeholder="Enter street address"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">City</label>
+                        <Input
+                          value={editFormData.address.city}
+                          onChange={(e) => setEditFormData(prev => ({ 
+                            ...prev, 
+                            address: { ...prev.address, city: e.target.value }
+                          }))}
+                          disabled={isUpdatingProfile}
+                          placeholder="Enter city"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">State</label>
+                        <Input
+                          value={editFormData.address.state}
+                          onChange={(e) => setEditFormData(prev => ({ 
+                            ...prev, 
+                            address: { ...prev.address, state: e.target.value }
+                          }))}
+                          disabled={isUpdatingProfile}
+                          placeholder="Enter state"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Country</label>
+                        <Input
+                          value={editFormData.address.country}
+                          onChange={(e) => setEditFormData(prev => ({ 
+                            ...prev, 
+                            address: { ...prev.address, country: e.target.value }
+                          }))}
+                          disabled={isUpdatingProfile}
+                          placeholder="Enter country"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">ZIP Code</label>
+                        <Input
+                          value={editFormData.address.zipCode}
+                          onChange={(e) => setEditFormData(prev => ({ 
+                            ...prev, 
+                            address: { ...prev.address, zipCode: e.target.value }
+                          }))}
+                          disabled={isUpdatingProfile}
+                          placeholder="Enter ZIP code"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div>
                     <label className="block text-sm font-medium mb-1">Bio</label>
                     <textarea
-                      className="w-full p-2 border border-gray-300 rounded-md resize-none"
+                      className="w-full p-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                       rows={3}
                       value={editFormData.bio}
                       onChange={(e) => setEditFormData(prev => ({ ...prev, bio: e.target.value }))}
+                      disabled={isUpdatingProfile}
+                      placeholder="Tell us about yourself"
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium mb-1">Skills (comma-separated)</label>
                     <Input
                       value={editFormData.skills}
                       onChange={(e) => setEditFormData(prev => ({ ...prev, skills: e.target.value }))}
+                      disabled={isUpdatingProfile}
                       placeholder="React, TypeScript, Node.js"
                     />
                   </div>
+                  
                   <div className="flex gap-2">
-                    <Button onClick={handleSaveProfile}>Save Changes</Button>
-                    <Button variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                    <Button 
+                      onClick={handleSaveProfile}
+                      disabled={isUpdatingProfile}
+                    >
+                      {isUpdatingProfile ? 'Updating...' : 'Save Changes'}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleCancelEdit}
+                      disabled={isUpdatingProfile}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </div>
               )}

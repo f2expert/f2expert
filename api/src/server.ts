@@ -35,8 +35,16 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   next(err)
 })
 
-app.use(cors())
-app.use(helmet())
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true
+}))
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false
+}))
 app.use(morgan("dev"))
 
 // Use logger before routes
@@ -49,7 +57,13 @@ app.use(errorMiddleware)
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 // 🔹 Static file serving for uploaded photos
-app.use("/uploads", express.static("uploads"))
+app.use("/uploads", (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
+  res.setHeader('Cache-Control', 'public, max-age=31536000');
+  next();
+}, express.static("uploads"))
 
 // 🔹 API Routes
 app.use("/api", routes)

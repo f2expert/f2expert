@@ -1117,7 +1117,7 @@ export const loginUser = async (req: Request, res: Response) => {
       return sendError(res, HTTP_STATUS.BAD_REQUEST, "Email and password are required")
     }
 
-    // Find user by email
+    // Find user by email (with all fields including role-specific info)
     const user = await UserService.getUserByEmail(email) as IUser | null
     if (!user) {
       return sendError(res, HTTP_STATUS.NOT_FOUND, "User not found")
@@ -1141,19 +1141,44 @@ export const loginUser = async (req: Request, res: Response) => {
       role: user.role 
     })
 
-    // Prepare user data (exclude password)
-    const userData = {
-      _id: user._id,
+    // Prepare complete user data with role-specific information
+    const userData: any = {
+      _id: (user._id as any).toString(),
       firstName: user.firstName,
       lastName: user.lastName,
-      fullName: `${user.firstName} ${user.lastName}`,
       email: user.email,
+      phone: user.phone,
+      dateOfBirth: user.dateOfBirth?.toISOString().split('T')[0],
+      gender: user.gender,
+      address: user.address,
       role: user.role,
       isActive: user.isActive,
+      isEmailVerified: user.isEmailVerified || false,
       photo: user.photo,
-      phone: user.phone,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      bio: user.bio,
+      fullName: `${user.firstName} ${user.lastName}`,
+      roleDisplay: user.role.charAt(0).toUpperCase() + user.role.slice(1),
+      createdAt: user.createdAt?.toISOString(),
+      updatedAt: user.updatedAt?.toISOString()
+    }
+
+    // Add role-specific information based on user role
+    if (user.role === 'student' && user.studentInfo) {
+      userData.studentInfo = {
+        ...user.studentInfo,
+        enrollmentDate: user.studentInfo.enrollmentDate?.toISOString()
+      }
+    } else if (user.role === 'trainer' && user.trainerInfo) {
+      userData.trainerInfo = {
+        ...user.trainerInfo,
+        certifications: user.trainerInfo.certifications?.map(cert => ({
+          ...cert,
+          issuedDate: cert.issuedDate?.toISOString().split('T')[0],
+          expiryDate: cert.expiryDate?.toISOString().split('T')[0]
+        }))
+      }
+    } else if (user.role === 'admin' && user.adminInfo) {
+      userData.adminInfo = user.adminInfo
     }
 
     return sendResponse(res, HTTP_STATUS.OK, {

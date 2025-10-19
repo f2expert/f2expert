@@ -1,5 +1,4 @@
 import { Router } from "express"
-import authRoutes from "../modules/auth/auth.route"
 import userRoutes from "../modules/users/user.route"
 import courseRoutes from "../modules/course/course.route"
 import tutorialRoutes from "../modules/tutorials/tutorial.route"
@@ -11,7 +10,6 @@ import testimonialRoutes from "../modules/testimonials/testimonial.route"
 
 const router = Router()
 
-router.use("/auth", authRoutes)
 router.use("/users", userRoutes)
 router.use("/courses", courseRoutes)
 router.use("/tutorials", tutorialRoutes)

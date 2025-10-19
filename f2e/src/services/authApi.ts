@@ -12,42 +12,117 @@ export interface LoginResponse {
   data: {
     token: string;
     user: {
-      id?: string;
-      _id?: string;
-      name?: string;
-      fullName?: string;
-      firstName?: string;
-      lastName?: string;
+      _id: string;
+      firstName: string;
+      lastName: string;
       email: string;
-      avatar?: string;
-      role?: string;
-      isActive?: boolean;
-      phone?: string;
-      createdAt?: string;
-      updatedAt?: string;
+      phone: string;
+      dateOfBirth: string;
+      gender: string;
+      address: {
+        street: string;
+        city: string;
+        state: string;
+        country: string;
+        zipCode: string;
+      };
+      role: string;
+      isActive: boolean;
+      isEmailVerified: boolean;
+      photo: string;
+      bio: string;
+      fullName: string;
+      roleDisplay: string;
+      createdAt: string;
+      updatedAt: string;
+      studentInfo?: {
+        studentId: string;
+        enrollmentDate: string;
+        emergencyContact: Record<string, unknown>;
+      };
     };
-  };
-  // Also support direct token/user for backward compatibility
-  token?: string;
-  user?: {
-    id?: string;
-    _id?: string;
-    name?: string;
-    fullName?: string;
-    firstName?: string;
-    lastName?: string;
-    email: string;
-    avatar?: string;
-    role?: string;
   };
 }
 
 export interface AuthUser {
   id: string;
+  firstName?: string;
+  lastName?: string;
   name: string;
   email: string;
-  avatar?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+  };
+  photo?: string;
+  bio?: string;
   role?: string;
+  isActive?: boolean;
+  isEmailVerified?: boolean;
+  studentInfo?: {
+    studentId: string;
+    enrollmentDate: string;
+    emergencyContact: Record<string, unknown>;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface RegisterData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phone: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+  };
+  role?: string;
+}
+
+export interface UpdateProfileData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+  };
+  bio?: string;
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone: string;
+      role: string;
+      createdAt: string;
+    };
+  };
 }
 
 class AuthApiService {
@@ -123,43 +198,44 @@ class AuthApiService {
 
       console.log('Login API response:', response);
 
-      // Handle various response formats
-      // Check if the response indicates success (some APIs return success: true/false)
+      // Check if the response indicates success
       if (response.success !== undefined && response.success === false) {
         throw new Error(response.message || 'Login failed');
       }
 
-      // Extract user and token from response (handle nested data structure)
-      let userData, tokenValue;
-      
-      if (response.data) {
-        // API returns data in nested structure: { success: true, data: { user, token } }
-        userData = response.data.user;
-        tokenValue = response.data.token;
-      } else {
-        // API returns data directly: { user, token }
-        userData = response.user;
-        tokenValue = response.token;
-      }
+      // Extract user and token from response
+      const userData = response.data.user;
+      const tokenValue = response.data.token;
 
-      // For successful responses, ensure we have required data
+      // Ensure we have required data
       if (!tokenValue || !userData) {
-          console.error('Missing authentication data in response:', {
+        console.error('Missing authentication data in response:', {
           hasToken: !!tokenValue,
           hasUser: !!userData,
-          responseKeys: Object.keys(response),
-          dataKeys: response.data ? Object.keys(response.data) : 'no data object'
+          responseKeys: Object.keys(response)
         });
-        throw new Error('Login API returned success but missing authentication data. Please check API response format.');
+        throw new Error('Login API returned success but missing authentication data.');
       }
 
-      // Normalize user data
+      // Normalize user data from the comprehensive API response
       const normalizedUser: AuthUser = {
-        id: userData._id || userData.id || '',
-        name: userData.fullName || userData.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User',
+        id: userData._id,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        name: userData.fullName || `${userData.firstName} ${userData.lastName}`.trim(),
         email: userData.email,
-        avatar: userData.avatar,
-        role: userData.role || 'user',
+        phone: userData.phone,
+        dateOfBirth: userData.dateOfBirth,
+        gender: userData.gender,
+        address: userData.address,
+        photo: userData.photo,
+        bio: userData.bio,
+        role: userData.role,
+        isActive: userData.isActive,
+        isEmailVerified: userData.isEmailVerified,
+        studentInfo: userData.studentInfo,
+        createdAt: userData.createdAt,
+        updatedAt: userData.updatedAt,
       };
 
       if (!normalizedUser.id) {
@@ -172,6 +248,47 @@ class AuthApiService {
     } catch (error) {
       console.error('Login API error:', error);
       throw new Error(error instanceof Error ? error.message : 'Login failed. Please check your credentials.');
+    }
+  }
+
+  // Register new user
+  async register(userData: RegisterData): Promise<RegisterResponse> {
+    try {
+      console.log('Attempting registration for email:', userData.email);
+      
+      // Prepare registration payload in the exact format required by the API
+      const registrationPayload = {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        password: userData.password,
+        phone: userData.phone,
+        dateOfBirth: userData.dateOfBirth,
+        gender: userData.gender,
+        address: userData.address,
+        role: userData.role || 'student'
+      };
+
+      console.log('Registration payload:', registrationPayload);
+
+      const response = await this.makeRequest<RegisterResponse>('/api/users', {
+        method: 'POST',
+        body: JSON.stringify(registrationPayload),
+      });
+
+      console.log('Registration API response:', response);
+
+      // Check if registration was successful
+      if (response.success !== undefined && response.success === false) {
+        throw new Error(response.message || 'Registration failed');
+      }
+
+      console.log('Registration successful');
+      return response;
+      
+    } catch (error) {
+      console.error('Registration API error:', error);
+      throw new Error(error instanceof Error ? error.message : 'Registration failed. Please try again.');
     }
   }
 
@@ -204,6 +321,103 @@ class AuthApiService {
     } catch (error) {
       console.error('Logout API error:', error);
       // Don't throw error for logout - still clear local storage
+    }
+  }
+
+  // Upload user photo
+  async uploadPhoto(userId: string, photoFile: File, token: string): Promise<{ photoUrl: string }> {
+    try {
+      console.log('Uploading photo for user:', userId);
+      
+      const formData = new FormData();
+      formData.append('photo', photoFile);
+      
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/upload-photo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Photo upload failed: ${response.status} ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Photo upload successful:', result);
+      
+      // Extract photo URL from response
+      const photoUrl = result.data?.photoUrl || result.photoUrl || result.data?.photo || result.photo;
+      
+      if (!photoUrl) {
+        throw new Error('Photo URL not found in response');
+      }
+      
+      return { photoUrl };
+    } catch (error) {
+      console.error('Photo upload API error:', error);
+      throw new Error(error instanceof Error ? error.message : 'Photo upload failed');
+    }
+  }
+
+  // Update user profile
+  async updateProfile(userId: string, profileData: UpdateProfileData, token: string): Promise<AuthUser> {
+    try {
+      console.log('Updating profile for user:', userId, profileData);
+      
+      const response = await this.makeRequest<{ success: boolean; message: string; data?: { user: AuthUser } }>(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      console.log('Profile update API response:', response);
+
+      // Check if update was successful
+      if (response.success !== undefined && response.success === false) {
+        throw new Error(response.message || 'Profile update failed');
+      }
+
+      // Extract updated user data
+      let actualUserData;
+      if (response.data?.user) {
+        actualUserData = response.data.user;
+      } else {
+        // If response doesn't have nested structure, assume response is the user data
+        actualUserData = response as unknown as AuthUser;
+      }
+      
+      // Normalize updated user data
+      const normalizedUser: AuthUser = {
+        id: actualUserData.id || userId,
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        name: `${profileData.firstName} ${profileData.lastName}`.trim(),
+        email: profileData.email,
+        phone: profileData.phone,
+        dateOfBirth: profileData.dateOfBirth,
+        gender: profileData.gender,
+        address: profileData.address,
+        photo: actualUserData.photo,
+        bio: profileData.bio,
+        role: actualUserData.role || 'user',
+        isActive: actualUserData.isActive,
+        isEmailVerified: actualUserData.isEmailVerified,
+        studentInfo: actualUserData.studentInfo,
+        createdAt: actualUserData.createdAt,
+        updatedAt: actualUserData.updatedAt,
+      };
+
+      console.log('Profile update successful:', normalizedUser);
+      return normalizedUser;
+      
+    } catch (error) {
+      console.error('Profile update API error:', error);
+      throw new Error(error instanceof Error ? error.message : 'Profile update failed');
     }
   }
 }
