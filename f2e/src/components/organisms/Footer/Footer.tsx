@@ -69,14 +69,14 @@ export const Footer: React.FC<FooterProps> = ({
   
   return (
     <footer className={cn("w-full bg-gray-800 text-white", className)} {...props}>
-      {/* Main Footer Content */}
+      {/* Main Footer Content 
       <div className={cn("px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16")}>
-        <div className="max-w-7xl mx-auto">
-          {/* Responsive Grid Layout with Wider Company Section */}
+        <div className="max-w-7xl mx-auto">*/}
+          {/* Responsive Grid Layout with Wider Company Section 
           <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12">
-            
+            */}
 
-            {/* Company Info Section - Wider Second Column */}
+            {/* Company Info Section - Wider Second Column 
             {showCompanyInfo && (
               <div className="md:col-span-2 lg:col-span-2 space-y-6">
                 <CompanyInfo
@@ -85,8 +85,8 @@ export const Footer: React.FC<FooterProps> = ({
                   phone={contactPhone}
                 />
               </div>
-            )}
-{/* Navigation Section - First Column */}
+            )}*/}
+{/* Navigation Section - First Column 
             {showNavigation && (
               <div className="space-y-6">
                 {navigationSections.map((section, index) => (
@@ -97,8 +97,8 @@ export const Footer: React.FC<FooterProps> = ({
                   />
                 ))}
               </div>
-            )}
-            {/* Quick Connect Section - Third Column */}
+            )}*/}
+            {/* Quick Connect Section - Third Column 
             {showQuickConnect && (
               <div className="space-y-6">
                 <QuickConnect
@@ -108,7 +108,7 @@ export const Footer: React.FC<FooterProps> = ({
             )}
           </div>
         </div>
-      </div>
+      </div>*/}
 
       {/* Footer Bottom */}
       {(showCopyright || showSocial) && (

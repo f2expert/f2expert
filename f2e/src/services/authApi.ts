@@ -109,6 +109,17 @@ export interface UpdateProfileData {
   bio?: string;
 }
 
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  success: boolean;
+  message: string;
+}
+
 export interface RegisterResponse {
   success: boolean;
   message: string;
@@ -418,6 +429,34 @@ class AuthApiService {
     } catch (error) {
       console.error('Profile update API error:', error);
       throw new Error(error instanceof Error ? error.message : 'Profile update failed');
+    }
+  }
+
+  // Change user password
+  async changePassword(userId: string, passwordData: ChangePasswordData, token: string): Promise<void> {
+    try {
+      console.log('Changing password for user:', userId);
+      
+      const response = await this.makeRequest<ChangePasswordResponse>(`/api/users/${userId}/change-password`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(passwordData),
+      });
+
+      console.log('Password change API response:', response);
+
+      // Check if password change was successful
+      if (response.success !== undefined && response.success === false) {
+        throw new Error(response.message || 'Password change failed');
+      }
+
+      console.log('Password change successful');
+      
+    } catch (error) {
+      console.error('Password change API error:', error);
+      throw new Error(error instanceof Error ? error.message : 'Password change failed');
     }
   }
 }

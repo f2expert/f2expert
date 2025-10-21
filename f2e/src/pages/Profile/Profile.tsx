@@ -3,7 +3,7 @@ import { Button, Input, Card, CardContent, CardDescription, CardHeader, CardTitl
 import { Separator } from '../../components/atoms/Separator';
 import { GearIcon, CameraIcon } from '@radix-ui/react-icons';
 import { useAuth } from '../../hooks/useAuth';
-import { authApiService, type UpdateProfileData } from '../../services/authApi';
+import { authApiService, type UpdateProfileData, type ChangePasswordData } from '../../services/authApi';
 import { useAppDispatch } from '../../store/hooks';
 import { updateUser } from '../../store/slices/authSlice';
 
@@ -45,6 +45,18 @@ export const Profile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordFormData, setPasswordFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordErrors, setPasswordErrors] = useState<{
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+    general?: string;
+  }>({});
 
   // Initialize with stable data to prevent re-renders
   const initialProfileData: ProfileData = React.useMemo(() => {
@@ -83,7 +95,18 @@ export const Profile: React.FC = () => {
         darkMode: false,
       }
     };
-  }, [authUser?.name, authUser?.email, authUser?.photo]);
+  }, [
+    authUser?.name, 
+    authUser?.email, 
+    authUser?.photo, 
+    authUser?.phone, 
+    authUser?.dateOfBirth, 
+    authUser?.gender, 
+    authUser?.bio,
+    authUser?.address?.street,
+    authUser?.address?.city,
+    authUser?.address?.state
+  ]);
 
   // Mock profile data - in a real app, this would come from an API
   const [profileData, setProfileData] = useState<ProfileData>(initialProfileData);
@@ -220,6 +243,75 @@ export const Profile: React.FC = () => {
       setIsUploadingPhoto(false);
       // Clear the input so the same file can be selected again if needed
       event.target.value = '';
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!authUser?.id || !token) {
+      setPasswordErrors({ general: 'Missing user ID or token' });
+      return;
+    }
+
+    // Validate password form
+    const newErrors: typeof passwordErrors = {};
+    
+    if (!passwordFormData.currentPassword) {
+      newErrors.currentPassword = 'Current password is required';
+    }
+    
+    if (!passwordFormData.newPassword) {
+      newErrors.newPassword = 'New password is required';
+    } else if (passwordFormData.newPassword.length < 8) {
+      newErrors.newPassword = 'Password must be at least 8 characters';
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(passwordFormData.newPassword)) {
+      newErrors.newPassword = 'Password must contain uppercase, lowercase, and number';
+    }
+    
+    if (!passwordFormData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your new password';
+    } else if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setPasswordErrors(newErrors);
+      return;
+    }
+
+    setIsChangingPassword(true);
+    setPasswordErrors({});
+    
+    try {
+      const changePasswordData: ChangePasswordData = {
+        currentPassword: passwordFormData.currentPassword,
+        newPassword: passwordFormData.newPassword,
+        confirmPassword: passwordFormData.confirmPassword
+      };
+
+      console.log('Changing password...');
+      
+      await authApiService.changePassword(authUser.id, changePasswordData, token);
+      
+      console.log('Password change successful');
+      
+      // Reset form
+      setPasswordFormData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      
+      alert('Password changed successfully!');
+      
+    } catch (error) {
+      console.error('Password change failed:', error);
+      setPasswordErrors({ 
+        general: error instanceof Error ? error.message : 'Password change failed' 
+      });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -557,39 +649,122 @@ export const Profile: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <h4 className="font-medium mb-2">Change Password</h4>
-            <div className="space-y-3 max-w-md">
-              <Input type="password" placeholder="Current Password" />
-              <Input type="password" placeholder="New Password" />
-              <Input type="password" placeholder="Confirm New Password" />
-              <Button>Update Password</Button>
-            </div>
-          </div>
-          
-          <Separator />
-          
-          <div>
-            <h4 className="font-medium mb-2">Two-Factor Authentication</h4>
-            <p className="text-sm text-gray-600 mb-3">Add an extra layer of security to your account</p>
-            <Button variant="outline">Enable 2FA</Button>
-          </div>
-          
-          <Separator />
-          
-          <div>
-            <h4 className="font-medium mb-2">Login Sessions</h4>
-            <p className="text-sm text-gray-600 mb-3">Manage your active login sessions</p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                <div>
-                  <p className="font-medium">Current Session</p>
-                  <p className="text-sm text-gray-600">Windows • Chrome • Active now</p>
-                </div>
-                <Badge variant="secondary">Current</Badge>
+          <form onSubmit={handlePasswordChange}>
+            <h4 className="font-medium mb-4">Change Password</h4>
+            <div className="space-y-4 max-w-md">
+              <div>
+                <label className="block text-sm font-medium mb-1">Current Password</label>
+                <Input 
+                  type="password" 
+                  value={passwordFormData.currentPassword}
+                  onChange={(e) => {
+                    setPasswordFormData(prev => ({ ...prev, currentPassword: e.target.value }));
+                    if (passwordErrors.currentPassword) {
+                      setPasswordErrors(prev => ({ ...prev, currentPassword: undefined }));
+                    }
+                  }}
+                  disabled={isChangingPassword}
+                  className={passwordErrors.currentPassword ? 'border-red-500' : ''}
+                  placeholder="Enter current password" 
+                />
+                {passwordErrors.currentPassword && (
+                  <p className="mt-1 text-sm text-red-600">{passwordErrors.currentPassword}</p>
+                )}
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">New Password</label>
+                <Input 
+                  type="password" 
+                  value={passwordFormData.newPassword}
+                  onChange={(e) => {
+                    setPasswordFormData(prev => ({ ...prev, newPassword: e.target.value }));
+                    if (passwordErrors.newPassword) {
+                      setPasswordErrors(prev => ({ ...prev, newPassword: undefined }));
+                    }
+                  }}
+                  disabled={isChangingPassword}
+                  className={passwordErrors.newPassword ? 'border-red-500' : ''}
+                  placeholder="Enter new password" 
+                />
+                {passwordErrors.newPassword && (
+                  <p className="mt-1 text-sm text-red-600">{passwordErrors.newPassword}</p>
+                )}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Confirm New Password</label>
+                <Input 
+                  type="password" 
+                  value={passwordFormData.confirmPassword}
+                  onChange={(e) => {
+                    setPasswordFormData(prev => ({ ...prev, confirmPassword: e.target.value }));
+                    if (passwordErrors.confirmPassword) {
+                      setPasswordErrors(prev => ({ ...prev, confirmPassword: undefined }));
+                    }
+                  }}
+                  disabled={isChangingPassword}
+                  className={passwordErrors.confirmPassword ? 'border-red-500' : ''}
+                  placeholder="Confirm new password" 
+                />
+                {passwordErrors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-600">{passwordErrors.confirmPassword}</p>
+                )}
+              </div>
+              
+              {/* Password Requirements */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <h5 className="text-sm font-medium text-gray-700 mb-2">Password Requirements:</h5>
+                <ul className="text-xs text-gray-600 space-y-1">
+                  <li className="flex items-center">
+                    <i className={`fas fa-check mr-2 ${passwordFormData.newPassword.length >= 8 ? 'text-green-500' : 'text-gray-400'}`}></i>
+                    At least 8 characters
+                  </li>
+                  <li className="flex items-center">
+                    <i className={`fas fa-check mr-2 ${/(?=.*[a-z])/.test(passwordFormData.newPassword) ? 'text-green-500' : 'text-gray-400'}`}></i>
+                    One lowercase letter
+                  </li>
+                  <li className="flex items-center">
+                    <i className={`fas fa-check mr-2 ${/(?=.*[A-Z])/.test(passwordFormData.newPassword) ? 'text-green-500' : 'text-gray-400'}`}></i>
+                    One uppercase letter
+                  </li>
+                  <li className="flex items-center">
+                    <i className={`fas fa-check mr-2 ${/(?=.*\d)/.test(passwordFormData.newPassword) ? 'text-green-500' : 'text-gray-400'}`}></i>
+                    One number
+                  </li>
+                </ul>
+              </div>
+              
+              {/* General Error Display */}
+              {passwordErrors.general && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <i className="fas fa-exclamation-triangle text-red-400"></i>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-red-600">{passwordErrors.general}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <Button 
+                type="submit"
+                disabled={isChangingPassword}
+                className="w-full"
+              >
+                {isChangingPassword ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Updating Password...
+                  </>
+                ) : (
+                  'Update Password'
+                )}
+              </Button>
             </div>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>

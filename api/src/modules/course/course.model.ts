@@ -1,4 +1,5 @@
 import { Schema, model, Document } from "mongoose"
+import { CATEGORIES, LEVELS, COURSE_MODES, CURRENCIES, LANGUAGES } from "../../app/constants/common.constant"
 
 export interface CourseDocument extends Document {
   title: string
@@ -64,15 +65,13 @@ const courseSchema = new Schema<CourseDocument>(
     category: { 
       type: String, 
       required: true,
-      enum: ['Web Development', 'Mobile Development', 'Data Science', 'AI/ML', 'Cloud Computing', 
-             'DevOps', 'Cybersecurity', 'Database', 'Programming Languages', 'Software Testing',
-             'UI/UX Design', 'Game Development', 'Blockchain', 'IoT', 'Big Data', 'Other']
+      enum: CATEGORIES
     },
     subCategory: { type: String },
     level: { 
       type: String, 
       required: true,
-      enum: ['Beginner', 'Intermediate', 'Advanced', 'Expert']
+      enum: LEVELS
     },
     technologies: [{ type: String, required: true }],
     prerequisites: [{ type: String }],
@@ -84,11 +83,11 @@ const courseSchema = new Schema<CourseDocument>(
     }],
     price: { type: Number, required: true, min: 0 },
     originalPrice: { type: Number, min: 0 },
-    currency: { type: String, default: 'USD' },
+    currency: { type: String, enum: CURRENCIES, default: 'USD' },
     duration: { type: String, required: true },
     totalHours: { type: Number, required: true, min: 1 },
     totalLectures: { type: Number, required: true, min: 1 },
-    language: { type: String, default: 'English' },
+    language: { type: String, enum: LANGUAGES, default: 'English' },
     isPublished: { type: Boolean, default: false },
     isFeatured: { type: Boolean, default: false },
     difficulty: { type: Number, min: 1, max: 5, default: 1 },
@@ -117,7 +116,7 @@ const courseSchema = new Schema<CourseDocument>(
     mode: { 
       type: String, 
       required: true,
-      enum: ['Online', 'Offline', 'Hybrid'],
+      enum: COURSE_MODES,
       default: 'Online'
     }
   },

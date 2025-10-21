@@ -1,4 +1,5 @@
 import Joi from "joi"
+import { CATEGORIES, LEVELS, COURSE_MODES, CURRENCIES, LANGUAGES, WEEKDAYS, VALIDATION_LIMITS } from "../../app/constants/common.constant"
 
 const syllabusSchema = Joi.object({
   module: Joi.string().required(),
@@ -7,7 +8,7 @@ const syllabusSchema = Joi.object({
 })
 
 const classScheduleSchema = Joi.object({
-  day: Joi.string().valid('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday').required(),
+  day: Joi.string().valid(...WEEKDAYS).required(),
   startTime: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
   endTime: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).required()
 })
@@ -34,16 +35,12 @@ export const createCourseSchema = Joi.object({
     'any.required': 'Instructor is required'
   }),
   instructorBio: Joi.string().max(500).optional(),
-  category: Joi.string().valid(
-    'Web Development', 'Mobile Development', 'Data Science', 'AI/ML', 'Cloud Computing',
-    'DevOps', 'Cybersecurity', 'Database', 'Programming Languages', 'Software Testing',
-    'UI/UX Design', 'Game Development', 'Blockchain', 'IoT', 'Big Data', 'Other'
-  ).required().messages({
+  category: Joi.string().valid(...CATEGORIES).required().messages({
     'any.only': 'Category must be one of the valid IT course categories',
     'any.required': 'Category is required'
   }),
   subCategory: Joi.string().max(50).optional(),
-  level: Joi.string().valid('Beginner', 'Intermediate', 'Advanced', 'Expert').required(),
+  level: Joi.string().valid(...LEVELS).required(),
   technologies: Joi.array().items(Joi.string()).min(1).required().messages({
     'array.min': 'At least one technology must be specified',
     'any.required': 'Technologies are required'
@@ -59,7 +56,7 @@ export const createCourseSchema = Joi.object({
     'any.required': 'Price is required'
   }),
   originalPrice: Joi.number().min(0).precision(2).optional(),
-  currency: Joi.string().length(3).default('USD'),
+  currency: Joi.string().valid(...CURRENCIES).default('USD'),
   duration: Joi.string().required(),
   totalHours: Joi.number().min(1).required().messages({
     'number.min': 'Total hours must be at least 1',
@@ -89,7 +86,7 @@ export const createCourseSchema = Joi.object({
   maxStudents: Joi.number().min(1).optional(),
   minStudents: Joi.number().min(1).optional(),
   classSchedule: Joi.array().items(classScheduleSchema).optional(),
-  mode: Joi.string().valid('Online', 'Offline', 'Hybrid').default('Online')
+  mode: Joi.string().valid(...COURSE_MODES).default('Online')
 })
 
 export const updateCourseSchema = Joi.object({
@@ -98,20 +95,16 @@ export const updateCourseSchema = Joi.object({
   shortDescription: Joi.string().min(20).max(200).optional(),
   instructor: Joi.string().min(2).max(50).optional(),
   instructorBio: Joi.string().max(500).optional(),
-  category: Joi.string().valid(
-    'Web Development', 'Mobile Development', 'Data Science', 'AI/ML', 'Cloud Computing',
-    'DevOps', 'Cybersecurity', 'Database', 'Programming Languages', 'Software Testing',
-    'UI/UX Design', 'Game Development', 'Blockchain', 'IoT', 'Big Data', 'Other'
-  ).optional(),
+  category: Joi.string().valid(...CATEGORIES).optional(),
   subCategory: Joi.string().max(50).optional(),
-  level: Joi.string().valid('Beginner', 'Intermediate', 'Advanced', 'Expert').optional(),
+  level: Joi.string().valid(...LEVELS).optional(),
   technologies: Joi.array().items(Joi.string()).min(1).optional(),
   prerequisites: Joi.array().items(Joi.string()).optional(),
   learningOutcomes: Joi.array().items(Joi.string()).min(1).optional(),
   syllabus: Joi.array().items(syllabusSchema).optional(),
   price: Joi.number().min(0).precision(2).optional(),
   originalPrice: Joi.number().min(0).precision(2).optional(),
-  currency: Joi.string().length(3).optional(),
+  currency: Joi.string().valid(...CURRENCIES).optional(),
   duration: Joi.string().optional(),
   totalHours: Joi.number().min(1).optional(),
   totalLectures: Joi.number().min(1).optional(),
@@ -135,17 +128,17 @@ export const updateCourseSchema = Joi.object({
   maxStudents: Joi.number().min(1).optional(),
   minStudents: Joi.number().min(1).optional(),
   classSchedule: Joi.array().items(classScheduleSchema).optional(),
-  mode: Joi.string().valid('Online', 'Offline', 'Hybrid').optional()
+  mode: Joi.string().valid(...COURSE_MODES).optional()
 })
 
 export const courseFilterSchema = Joi.object({
   category: Joi.string().optional(),
-  level: Joi.string().valid('Beginner', 'Intermediate', 'Advanced', 'Expert').optional(),
+  level: Joi.string().valid(...LEVELS).optional(),
   technologies: Joi.array().items(Joi.string()).optional(),
   minPrice: Joi.number().min(0).optional(),
   maxPrice: Joi.number().min(0).optional(),
   rating: Joi.number().min(0).max(5).optional(),
-  mode: Joi.string().valid('Online', 'Offline', 'Hybrid').optional(),
+  mode: Joi.string().valid(...COURSE_MODES).optional(),
   isFeatured: Joi.boolean().optional(),
   hasProjects: Joi.boolean().optional(),
   certificateProvided: Joi.boolean().optional(),

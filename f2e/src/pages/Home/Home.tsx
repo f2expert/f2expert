@@ -8,9 +8,11 @@ import {
   FaClock, 
   FaCertificate, 
   FaSyncAlt, 
-  FaStar 
+  FaStar,
+  FaFlag,
+  FaEye,
+  FaHistory
 } from 'react-icons/fa';
-import { Avatar, AvatarImage } from "../../components/atoms/Avatar/Avatar";
 import { useCourses } from "../../hooks";
 import type { CourseDetails } from "../../services/courseApi";
 
@@ -201,14 +203,9 @@ export const Home: React.FC = () => {
             </div>
             <div className="mt-16 grid grid-cols-1 gap-12 text-center md:grid-cols-3 md:gap-8">
               <div className="flex flex-col items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary-color)] text-white">
-                  <span className="material-symbols-outlined !text-2xl">
-                    flag
-                  </span>
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-100 mb-4">
+                  <FaFlag className="text-3xl text-blue-600" />
                 </div>
-                <Avatar className="w-full h-40 rounded-lg">
-                  <AvatarImage src="/assets/mission.png" alt="Our Mission" />
-                </Avatar>
                 <h3 className="text-xl font-semibold text-gray-900">
                   Our Mission
                 </h3>
@@ -219,15 +216,9 @@ export const Home: React.FC = () => {
                 </p>
               </div>
               <div className="flex flex-col items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary-color)] text-white">
-                  <span className="material-symbols-outlined !text-2xl">
-                    visibility
-                  </span>
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100 mb-4">
+                  <FaEye className="text-3xl text-green-600" />
                 </div>
-                <Avatar className="w-full h-40 rounded-lg">
-                  <AvatarImage src="/assets/vision.png" alt="Our Vision" />
-                </Avatar>
-
                 <h3 className="text-xl font-semibold text-gray-900">
                   Our Vision
                 </h3>
@@ -238,20 +229,15 @@ export const Home: React.FC = () => {
                 </p>
               </div>
               <div className="flex flex-col items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary-color)] text-white">
-                  <span className="material-symbols-outlined !text-2xl">
-                    history
-                  </span>
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-purple-100 mb-4">
+                  <FaHistory className="text-3xl text-purple-600" />
                 </div>
-                <Avatar className="w-full h-40 rounded-lg">
-                  <AvatarImage src="/assets/history.png" alt="Our History" />
-                </Avatar>
                 <h3 className="text-xl font-semibold text-gray-900">
                   Our History
                 </h3>
                 <p className="text-gray-600">
                   {" "}
-                  Since our inception in 2015, we have successfully trained
+                  Since our inception in 2021, we have successfully trained
                   thousands of students who have gone on to build successful
                   careers in top-tier companies.{" "}
                 </p>

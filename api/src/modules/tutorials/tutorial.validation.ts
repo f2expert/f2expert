@@ -1,4 +1,5 @@
 import Joi from "joi"
+import { CATEGORIES, LEVELS, TUTORIAL_TYPES, RESOURCE_TYPES, VALIDATION_LIMITS } from "../../app/constants/common.constant"
 
 const stepSchema = Joi.object({
   stepNumber: Joi.number().min(1).required(),
@@ -19,7 +20,7 @@ const codeExampleSchema = Joi.object({
 const resourceSchema = Joi.object({
   title: Joi.string().min(3).max(100).required(),
   url: Joi.string().uri().required(),
-  type: Joi.string().valid('Documentation', 'Tool', 'Library', 'Framework', 'Article', 'Video').required()
+  type: Joi.string().valid(...RESOURCE_TYPES).required()
 })
 
 export const createTutorialSchema = Joi.object({
@@ -33,6 +34,11 @@ export const createTutorialSchema = Joi.object({
     'string.max': 'Description must not exceed 1000 characters',
     'any.required': 'Description is required'
   }),
+  shortDescription: Joi.string().min(VALIDATION_LIMITS.SHORT_DESC_MIN).max(VALIDATION_LIMITS.SHORT_DESC_MAX).required().messages({
+    'string.min': 'Short description must be at least 20 characters long',
+    'string.max': 'Short description must not exceed 300 characters',
+    'any.required': 'Short description is required'
+  }),
   content: Joi.string().min(50).required().messages({
     'string.min': 'Content must be at least 50 characters long',
     'any.required': 'Content is required'
@@ -42,15 +48,11 @@ export const createTutorialSchema = Joi.object({
     'string.max': 'Author name must not exceed 50 characters',
     'any.required': 'Author is required'
   }),
-  category: Joi.string().valid(
-    'Web Development', 'Mobile Development', 'Data Science', 'AI/ML', 'Cloud Computing',
-    'DevOps', 'Cybersecurity', 'Database', 'Programming Languages', 'Software Testing',
-    'UI/UX Design', 'Game Development', 'Blockchain', 'IoT', 'Big Data', 'Tools & Setup', 'Other'
-  ).required().messages({
+  category: Joi.string().valid(...CATEGORIES).required().messages({
     'any.only': 'Category must be one of the valid IT tutorial categories',
     'any.required': 'Category is required'
   }),
-  level: Joi.string().valid('Beginner', 'Intermediate', 'Advanced', 'Expert').required(),
+  level: Joi.string().valid(...LEVELS).required(),
   technologies: Joi.array().items(Joi.string()).min(1).required().messages({
     'array.min': 'At least one technology must be specified',
     'any.required': 'Technologies are required'
@@ -60,7 +62,7 @@ export const createTutorialSchema = Joi.object({
     'number.max': 'Estimated read time must not exceed 300 minutes',
     'any.required': 'Estimated read time is required'
   }),
-  tutorialType: Joi.string().valid('Article', 'Video', 'Interactive', 'Code-Along', 'Step-by-Step').default('Article'),
+  tutorialType: Joi.string().valid(...TUTORIAL_TYPES).default('Article'),
   // Optional fields with defaults
   tags: Joi.array().items(Joi.string()).optional(),
   difficulty: Joi.number().min(1).max(5).default(2),
@@ -81,18 +83,14 @@ export const updateTutorialSchema = Joi.object({
   content: Joi.string().min(100).optional(),
   author: Joi.string().min(2).max(50).optional(),
   authorBio: Joi.string().max(500).optional(),
-  category: Joi.string().valid(
-    'Web Development', 'Mobile Development', 'Data Science', 'AI/ML', 'Cloud Computing',
-    'DevOps', 'Cybersecurity', 'Database', 'Programming Languages', 'Software Testing',
-    'UI/UX Design', 'Game Development', 'Blockchain', 'IoT', 'Big Data', 'Tools & Setup', 'Other'
-  ).optional(),
+  category: Joi.string().valid(...CATEGORIES).optional(),
   subCategory: Joi.string().max(50).optional(),
-  level: Joi.string().valid('Beginner', 'Intermediate', 'Advanced', 'Expert').optional(),
+  level: Joi.string().valid(...LEVELS).optional(),
   technologies: Joi.array().items(Joi.string()).min(1).optional(),
   prerequisites: Joi.array().items(Joi.string()).optional(),
   learningObjectives: Joi.array().items(Joi.string()).min(1).optional(),
   estimatedReadTime: Joi.number().min(1).max(300).optional(),
-  tutorialType: Joi.string().valid('Article', 'Video', 'Interactive', 'Code-Along', 'Step-by-Step').optional(),
+  tutorialType: Joi.string().valid(...TUTORIAL_TYPES).optional(),
   steps: Joi.array().items(stepSchema).optional(),
   codeExamples: Joi.array().items(codeExampleSchema).optional(),
   resources: Joi.array().items(resourceSchema).optional(),
@@ -114,9 +112,9 @@ export const updateTutorialSchema = Joi.object({
 
 export const tutorialFilterSchema = Joi.object({
   category: Joi.string().optional(),
-  level: Joi.string().valid('Beginner', 'Intermediate', 'Advanced', 'Expert').optional(),
+  level: Joi.string().valid(...LEVELS).optional(),
   technologies: Joi.array().items(Joi.string()).optional(),
-  tutorialType: Joi.string().valid('Article', 'Video', 'Interactive', 'Code-Along', 'Step-by-Step').optional(),
+  tutorialType: Joi.string().valid(...TUTORIAL_TYPES).optional(),
   difficulty: Joi.number().min(1).max(5).optional(),
   rating: Joi.number().min(0).max(5).optional(),
   minReadTime: Joi.number().min(1).optional(),

@@ -1,4 +1,5 @@
 import { Schema, model, Document } from "mongoose"
+import { CATEGORIES, LEVELS, TUTORIAL_TYPES, RESOURCE_TYPES, LANGUAGES } from "../../app/constants/common.constant"
 
 export interface TutorialDocument extends Document {
   title: string
@@ -69,15 +70,13 @@ const tutorialSchema = new Schema<TutorialDocument>(
     category: { 
       type: String, 
       required: true,
-      enum: ['Web Development', 'Mobile Development', 'Data Science', 'AI/ML', 'Cloud Computing', 
-             'DevOps', 'Cybersecurity', 'Database', 'Programming Languages', 'Software Testing',
-             'UI/UX Design', 'Game Development', 'Blockchain', 'IoT', 'Big Data', 'Tools & Setup', 'Other']
+      enum: CATEGORIES
     },
     subCategory: { type: String, maxlength: 50 },
     level: { 
       type: String, 
       required: true,
-      enum: ['Beginner', 'Intermediate', 'Advanced', 'Expert']
+      enum: LEVELS
     },
     technologies: [{ type: String, required: true }],
     prerequisites: [{ type: String }],
@@ -86,7 +85,7 @@ const tutorialSchema = new Schema<TutorialDocument>(
     tutorialType: {
       type: String,
       required: true,
-      enum: ['Article', 'Video', 'Interactive', 'Code-Along', 'Step-by-Step'],
+      enum: TUTORIAL_TYPES,
       default: 'Article'
     },
     steps: [{
@@ -109,7 +108,7 @@ const tutorialSchema = new Schema<TutorialDocument>(
       type: { 
         type: String, 
         required: true,
-        enum: ['Documentation', 'Tool', 'Library', 'Framework', 'Article', 'Video']
+        enum: RESOURCE_TYPES
       }
     }],
     tags: [{ type: String }],
@@ -129,7 +128,7 @@ const tutorialSchema = new Schema<TutorialDocument>(
     seoTitle: { type: String, maxlength: 60 },
     seoDescription: { type: String, maxlength: 160 },
     seoKeywords: [{ type: String }],
-    language: { type: String, default: 'English' },
+    language: { type: String, enum: LANGUAGES, default: 'English' },
     publishedAt: { type: Date },
     lastUpdated: { type: Date }
   },
