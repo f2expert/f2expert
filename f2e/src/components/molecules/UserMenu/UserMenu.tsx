@@ -12,7 +12,9 @@ import {
   PersonIcon, 
   GearIcon, 
   ExitIcon,
-  QuestionMarkCircledIcon 
+  QuestionMarkCircledIcon,
+  PlusIcon,
+  VideoIcon
 } from '@radix-ui/react-icons';
 
 export interface UserMenuProps {
@@ -20,6 +22,8 @@ export interface UserMenuProps {
   userEmail?: string;
   onProfile?: () => void;
   onSettings?: () => void;
+  onCreateCourse?: () => void;
+  onCreateTutorial?: () => void;
   onHelp?: () => void;
   onLogout?: () => void;
   className?: string;
@@ -30,6 +34,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   userEmail,
   onProfile,
   onSettings,
+  onCreateCourse,
+  onCreateTutorial,
   onHelp,
   onLogout,
   className = ''
@@ -66,6 +72,18 @@ export const UserMenu: React.FC<UserMenuProps> = ({
           <DropdownMenuItem onClick={onSettings}>
             <GearIcon className="mr-2 h-4 w-4" />
             <span>Settings</span>
+          </DropdownMenuItem>
+        )}
+        {onCreateCourse && (
+          <DropdownMenuItem onClick={onCreateCourse}>
+            <PlusIcon className="mr-2 h-4 w-4" />
+            <span>Create Course</span>
+          </DropdownMenuItem>
+        )}
+        {onCreateTutorial && (
+          <DropdownMenuItem onClick={onCreateTutorial}>
+            <VideoIcon className="mr-2 h-4 w-4" />
+            <span>Create Tutorial</span>
           </DropdownMenuItem>
         )}
         {onHelp && (

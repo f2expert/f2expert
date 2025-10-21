@@ -4,6 +4,7 @@ import {
   CreditCard,
   User,
   LogOut,
+  PlusCircle,
 } from "lucide-react"
 
 import {
@@ -84,6 +85,14 @@ console.log('NavUser render: ',  user );
               <DropdownMenuItem>
                 <User />
                 <Link to="/dashboard/profile">Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <PlusCircle />
+                <Link to="/dashboard/create-course">Create Course</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <PlusCircle />
+                <Link to="/dashboard/create-tutorial">Create Tutorial</Link>
               </DropdownMenuItem>
               <DropdownMenuItem >
                 <CreditCard />

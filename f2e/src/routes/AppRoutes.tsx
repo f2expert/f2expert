@@ -6,7 +6,7 @@ import { About } from '../pages/About';
 import { Contact } from '../pages/Contact';
 import { Courses } from '../pages/Courses';
 import { Tutorial } from '../pages/Tutorial';
-import { Dashboard } from '../pages/Dashboard';
+import { Dashboard, Topic, TopicDetails, CreateCourse, CreateTutorial } from '../pages/Dashboard';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
 import { ForgotPassword } from '../pages/ForgotPassword';
@@ -14,9 +14,7 @@ import Profile from '../pages/Profile';
 import { FeeDetails } from '../pages/FeeDetails';
 import { Notifications } from '../pages/Notifications';
 import { useAuth } from '../hooks/useAuth';
-import Topic from '../pages/Dashboard/Topic';
 import { Protected } from '../components';
-import TopicDetails from '../pages/Dashboard/TopicDetails';
 
 export default function AppRoutes() {
   const { isAuthenticated, logout } = useAuth();
@@ -100,6 +98,8 @@ export default function AppRoutes() {
       element: <>{isAuthenticated ? <Protected onLogout={handleLogout} /> : <Navigate to="/login" />}</>,
       children: [
         { index: true, element: <Dashboard /> },
+        { path: "create-course", element: <CreateCourse /> },
+        { path: "create-tutorial", element: <CreateTutorial /> },
         { path: "profile", element: <Profile /> },
         { path: "fee-details", element: <FeeDetails /> },
         { path: "notifications", element: <Notifications /> },
