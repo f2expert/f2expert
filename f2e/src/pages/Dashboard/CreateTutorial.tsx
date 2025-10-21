@@ -21,20 +21,27 @@ import { cn } from '../../lib/utils';
 interface TutorialFormData {
   title: string;
   description: string;
-  shortDescription: string;
+  content: string; // Main tutorial content
+  author: string;
   category: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
-  language: string;
-  duration: string;
-  videoType: 'upload' | 'youtube' | 'external';
+  technologies: string; // Will be split into array
+  estimatedReadTime: number;
+  tutorialType: 'Article' | 'Video' | 'Interactive';
+  tags: string; // Will be split into array
+  difficulty: number; // 1-5 scale
+  isPublished: boolean;
+  thumbnailUrl: string;
   videoUrl: string;
+  videoDuration: number; // in seconds
+  // UI-only fields
+  videoType: 'upload' | 'youtube' | 'external';
   videoFile: File | null;
   thumbnailFile: File | null;
-  thumbnailUrl: string;
-  downloadableResources: string;
-  tags: string;
-  isFree: boolean;
-  isPublished: boolean;
+  shortDescription: string; // For UI display
+  language: string; // For UI
+  downloadableResources: string; // For UI
+  isFree: boolean; // For UI
 }
 
 const CATEGORIES = [
@@ -50,46 +57,60 @@ const CATEGORIES = [
   'Programming Languages'
 ];
 
-const LANGUAGES = [
-  'English',
-  'Spanish',
-  'French',
-  'German',
-  'Chinese',
-  'Japanese',
-  'Hindi',
-  'Arabic'
-];
+
 
 export const CreateTutorial: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'basic' | 'media' | 'content' | 'preview'>('basic');
   const [formData, setFormData] = useState<TutorialFormData>({
     title: '',
     description: '',
-    shortDescription: '',
+    content: '',
+    author: '',
     category: '',
     level: 'Beginner',
-    language: 'English',
-    duration: '',
-    videoType: 'upload',
+    technologies: '',
+    estimatedReadTime: 5,
+    tutorialType: 'Article',
+    tags: '',
+    difficulty: 3,
+    isPublished: false,
+    thumbnailUrl: '',
     videoUrl: '',
+    videoDuration: 0,
+    // UI-only fields
+    videoType: 'upload',
     videoFile: null,
     thumbnailFile: null,
-    thumbnailUrl: '',
+    shortDescription: '',
+    language: 'English',
     downloadableResources: '',
-    tags: '',
-    isFree: true,
-    isPublished: false
+    isFree: true
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewThumbnail, setPreviewThumbnail] = useState<string>('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleInputChange = (field: keyof TutorialFormData, value: string | boolean | File | null) => {
+  // Helper function to validate URI
+  const isValidUri = (str: string): boolean => {
+    if (!str) return true; // Empty string is valid (optional field)
+    try {
+      const url = new URL(str);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
+  const handleInputChange = (field: keyof TutorialFormData, value: string | boolean | File | null | number | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
 
   const handleFileUpload = (field: 'videoFile' | 'thumbnailFile', file: File | null) => {
@@ -107,49 +128,129 @@ export const CreateTutorial: React.FC = () => {
     }
   };
 
+  const validateForm = (isDraft: boolean = false): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!isDraft) {
+      if (!formData.title.trim()) {
+        newErrors.title = 'Tutorial title is required';
+      }
+      if (!formData.description.trim()) {
+        newErrors.description = 'Tutorial description is required';
+      }
+      if (!formData.content.trim()) {
+        newErrors.content = 'Tutorial content is required';
+      } else if (formData.content.trim().length < 50) {
+        newErrors.content = 'Tutorial content must be at least 50 characters long';
+      }
+      if (!formData.author.trim()) {
+        newErrors.author = 'Author name is required';
+      }
+      if (!formData.category) {
+        newErrors.category = 'Category is required';
+      }
+      if (formData.thumbnailUrl && !isValidUri(formData.thumbnailUrl)) {
+        newErrors.thumbnailUrl = 'Thumbnail URL must be a valid URI (http/https) or empty';
+      }
+      if (formData.videoUrl && !isValidUri(formData.videoUrl)) {
+        newErrors.videoUrl = 'Video URL must be a valid URI (http/https) or empty';
+      }
+    } else {
+      // For drafts, only require title
+      if (!formData.title.trim()) {
+        newErrors.title = 'Title is required to save as draft';
+      }
+      // For drafts, if content is provided, it should still meet minimum length
+      if (formData.content.trim() && formData.content.trim().length < 50) {
+        newErrors.content = 'If provided, content must be at least 50 characters long';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (isDraft: boolean = false) => {
+    if (!validateForm(isDraft)) return;
+
     setIsSubmitting(true);
     
     try {
-      // Create FormData for file uploads
-      const submitData = new FormData();
-      
-      // Add basic fields
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key !== 'videoFile' && key !== 'thumbnailFile' && value !== null) {
-          submitData.append(key, value.toString());
-        }
-      });
-
-      // Add files
-      if (formData.videoFile) {
-        submitData.append('video', formData.videoFile);
-      }
-      if (formData.thumbnailFile) {
-        submitData.append('thumbnail', formData.thumbnailFile);
-      }
-
-      submitData.append('isPublished', (!isDraft).toString());
-
-      // TODO: Replace with actual API call
-      console.log('Tutorial submission data:', {
-        ...formData,
+      // Prepare tutorial payload for API
+      const tutorialPayload = {
+        title: formData.title,
+        description: formData.description,
+        shortDescription: formData.shortDescription || formData.description.substring(0, 100), // Use shortDescription or truncate description
+        content: formData.content.trim() || (formData.description.length >= 50 ? formData.description : `# ${formData.title}\n\n${formData.description}\n\nThis tutorial will provide comprehensive coverage of the topic with practical examples and detailed explanations.`), // Ensure content meets minimum length requirement
+        author: formData.author || 'Anonymous',
+        category: formData.category,
+        level: formData.level,
+        technologies: formData.technologies ? formData.technologies.split(',').map(tech => tech.trim()).filter(tech => tech) : [],
+        estimatedReadTime: formData.estimatedReadTime,
+        tutorialType: formData.tutorialType,
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
+        difficulty: formData.difficulty,
         isPublished: !isDraft,
-        videoFile: formData.videoFile?.name,
-        thumbnailFile: formData.thumbnailFile?.name
+        thumbnailUrl: formData.thumbnailUrl || '',
+        videoUrl: formData.videoUrl || '',
+        videoDuration: formData.videoDuration || 0
+      };
+
+      console.log('Tutorial API payload:', tutorialPayload);
+      
+      // Call actual API
+      const response = await fetch('http://localhost:5000/api/tutorials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${user?.token}`
+        },
+        body: JSON.stringify(tutorialPayload)
       });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Tutorial created successfully:', result);
       
       alert(isDraft ? 'Tutorial saved as draft!' : 'Tutorial published successfully!');
       
-      // Reset form or redirect
-      // navigate('/dashboard/tutorials');
+      // Reset form for new tutorial
+      setFormData({
+        title: '',
+        description: '',
+        content: '',
+        author: '',
+        category: '',
+        level: 'Beginner',
+        technologies: '',
+        estimatedReadTime: 5,
+        tutorialType: 'Article',
+        tags: '',
+        difficulty: 3,
+        isPublished: false,
+        thumbnailUrl: '',
+        videoUrl: '',
+        videoDuration: 0,
+        videoType: 'upload',
+        videoFile: null,
+        thumbnailFile: null,
+        shortDescription: '',
+        language: 'English',
+        downloadableResources: '',
+        isFree: true
+      });
+      setPreviewThumbnail('');
+      setErrors({});
       
     } catch (error) {
-      console.error('Error submitting tutorial:', error);
-      alert('Error submitting tutorial. Please try again.');
+      console.error('Tutorial creation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create tutorial. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -192,6 +293,22 @@ export const CreateTutorial: React.FC = () => {
           placeholder="Enter tutorial title"
           required
         />
+        {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
+      </div>
+
+      {/* Author */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Author Name *
+        </label>
+        <FormInput
+          type="text"
+          value={formData.author}
+          onChange={(value) => handleInputChange('author', value)}
+          placeholder="Enter author name"
+          required
+        />
+        {errors.author && <p className="mt-1 text-sm text-red-600">{errors.author}</p>}
       </div>
 
       {/* Short Description */}
@@ -219,9 +336,40 @@ export const CreateTutorial: React.FC = () => {
           onChange={(e) => handleInputChange('description', e.target.value)}
           placeholder="Detailed description of what students will learn"
           rows={6}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            errors.description ? 'border-red-500' : 'border-gray-300'
+          }`}
           required
         />
+        {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
+      </div>
+
+      {/* Tutorial Content */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Tutorial Content *
+        </label>
+        <textarea
+          value={formData.content}
+          onChange={(e) => handleInputChange('content', e.target.value)}
+          placeholder="Main tutorial content (supports Markdown)\n\n# Introduction\n\nYour tutorial content goes here...\n\nMake sure to provide detailed explanations, examples, and step-by-step instructions."
+          rows={12}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm ${
+            errors.content ? 'border-red-500' : 'border-gray-300'
+          }`}
+          required
+        />
+        <div className="flex justify-between items-center mt-1">
+          <p className="text-xs text-gray-500">
+            You can use Markdown formatting. This will be the main content of your tutorial. (Min: 50 characters)
+          </p>
+          <p className={`text-xs ${
+            formData.content.length < 50 ? 'text-red-500' : 'text-green-500'
+          }`}>
+            {formData.content.length}/50 characters
+          </p>
+        </div>
+        {errors.content && <p className="mt-1 text-sm text-red-600">{errors.content}</p>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -233,7 +381,9 @@ export const CreateTutorial: React.FC = () => {
           <select
             value={formData.category}
             onChange={(e) => handleInputChange('category', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.category ? 'border-red-500' : 'border-gray-300'
+            }`}
             required
           >
             <option value="">Select Category</option>
@@ -243,6 +393,7 @@ export const CreateTutorial: React.FC = () => {
               </option>
             ))}
           </select>
+          {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
         </div>
 
         {/* Level */}
@@ -261,36 +412,91 @@ export const CreateTutorial: React.FC = () => {
           </select>
         </div>
 
-        {/* Language */}
+        {/* Tutorial Type */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Language
+            Tutorial Type
           </label>
           <select
-            value={formData.language}
-            onChange={(e) => handleInputChange('language', e.target.value)}
+            value={formData.tutorialType}
+            onChange={(e) => handleInputChange('tutorialType', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {LANGUAGES.map((language) => (
-              <option key={language} value={language}>
-                {language}
-              </option>
-            ))}
+            <option value="Article">Article</option>
+            <option value="Video">Video</option>
+            <option value="Interactive">Interactive</option>
           </select>
         </div>
 
-        {/* Duration */}
+        {/* Difficulty (1-5 scale) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Duration
+            Difficulty Rating (1-5)
           </label>
-          <FormInput
-            type="text"
-            value={formData.duration}
-            onChange={(value) => handleInputChange('duration', value)}
-            placeholder="e.g., 15 mins, 1 hour"
+          <select
+            value={formData.difficulty}
+            onChange={(e) => handleInputChange('difficulty', parseInt(e.target.value))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value={1}>1 - Very Easy</option>
+            <option value={2}>2 - Easy</option>
+            <option value={3}>3 - Medium</option>
+            <option value={4}>4 - Hard</option>
+            <option value={5}>5 - Very Hard</option>
+          </select>
+        </div>
+
+        {/* Estimated Read Time */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Estimated Read Time (minutes)
+          </label>
+          <input
+            type="number"
+            value={formData.estimatedReadTime}
+            onChange={(e) => handleInputChange('estimatedReadTime', parseInt(e.target.value) || 5)}
+            placeholder="e.g., 15"
+            min="1"
+            max="180"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+
+        {/* Video Duration (for video tutorials) */}
+        {formData.tutorialType === 'Video' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Video Duration (seconds)
+            </label>
+            <input
+              type="number"
+              value={formData.videoDuration}
+              onChange={(e) => handleInputChange('videoDuration', parseInt(e.target.value) || 0)}
+              placeholder="e.g., 1800 (30 minutes)"
+              min="0"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Duration in seconds (e.g., 1800 = 30 minutes)
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Technologies */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Technologies
+        </label>
+        <FormInput
+          type="text"
+          value={formData.technologies}
+          onChange={(value) => handleInputChange('technologies', value)}
+          placeholder="Enter technologies separated by commas (e.g., React, JavaScript, Node.js)"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          List the main technologies covered in this tutorial
+        </p>
       </div>
 
       {/* Tags */}
@@ -302,8 +508,11 @@ export const CreateTutorial: React.FC = () => {
           type="text"
           value={formData.tags}
           onChange={(value) => handleInputChange('tags', value)}
-          placeholder="Enter tags separated by commas (e.g., react, javascript, frontend)"
+          placeholder="Enter tags separated by commas (e.g., beginner, tutorial, web-dev)"
         />
+        <p className="text-xs text-gray-500 mt-1">
+          Tags help users discover your tutorial
+        </p>
       </div>
 
       {/* Free/Paid Toggle */}
@@ -443,8 +652,11 @@ export const CreateTutorial: React.FC = () => {
                 ? 'https://www.youtube.com/watch?v=...' 
                 : 'https://...'
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.videoUrl ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {errors.videoUrl && <p className="mt-1 text-sm text-red-600">{errors.videoUrl}</p>}
         </div>
       )}
 
@@ -505,8 +717,11 @@ export const CreateTutorial: React.FC = () => {
             value={formData.thumbnailUrl}
             onChange={(e) => handleInputChange('thumbnailUrl', e.target.value)}
             placeholder="https://example.com/thumbnail.jpg"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.thumbnailUrl ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {errors.thumbnailUrl && <p className="mt-1 text-sm text-red-600">{errors.thumbnailUrl}</p>}
         </div>
       </div>
     </div>
@@ -550,22 +765,38 @@ export const CreateTutorial: React.FC = () => {
               <span className="ml-2 font-medium">{formData.level}</span>
             </div>
             <div>
-              <span className="text-gray-500">Duration:</span>
-              <span className="ml-2 font-medium">{formData.duration || 'Not specified'}</span>
+              <span className="text-gray-500">Type:</span>
+              <span className="ml-2 font-medium">{formData.tutorialType}</span>
             </div>
             <div>
-              <span className="text-gray-500">Language:</span>
-              <span className="ml-2 font-medium">{formData.language}</span>
+              <span className="text-gray-500">Difficulty:</span>
+              <span className="ml-2 font-medium">{formData.difficulty}/5</span>
             </div>
             <div>
-              <span className="text-gray-500">Access:</span>
-              <span className={`ml-2 font-medium ${
-                formData.isFree ? 'text-green-600' : 'text-blue-600'
-              }`}>
-                {formData.isFree ? 'Free' : 'Paid'}
-              </span>
+              <span className="text-gray-500">Read Time:</span>
+              <span className="ml-2 font-medium">{formData.estimatedReadTime} min</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Author:</span>
+              <span className="ml-2 font-medium">{formData.author || 'Not specified'}</span>
             </div>
           </div>
+          
+          {formData.technologies && (
+            <div>
+              <span className="text-gray-500 text-sm">Technologies:</span>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {formData.technologies.split(',').map((tech, index) => (
+                  <span
+                    key={index}
+                    className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+                  >
+                    {tech.trim()}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           
           {formData.tags && (
             <div>
@@ -608,12 +839,10 @@ export const CreateTutorial: React.FC = () => {
               <FaPlay className="mr-2" /> Preview
             </Button>
           </div>
-          {formData.duration && (
-            <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">
-              <FaClock className="inline mr-1" />
-              {formData.duration}
-            </div>
-          )}
+          <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">
+            <FaClock className="inline mr-1" />
+            {formData.estimatedReadTime} min read
+          </div>
         </div>
 
         <CardContent className="p-6">
@@ -664,9 +893,11 @@ export const CreateTutorial: React.FC = () => {
             {[
               { field: 'title', label: 'Title', required: true },
               { field: 'description', label: 'Description', required: true },
+              { field: 'content', label: 'Content', required: true },
+              { field: 'author', label: 'Author', required: true },
               { field: 'category', label: 'Category', required: true },
-              { field: 'videoUrl', label: 'Video Source', required: formData.videoType !== 'upload' },
-              { field: 'videoFile', label: 'Video File', required: formData.videoType === 'upload' }
+              { field: 'videoUrl', label: 'Video Source', required: formData.tutorialType === 'Video' && formData.videoType !== 'upload' },
+              { field: 'videoFile', label: 'Video File', required: formData.tutorialType === 'Video' && formData.videoType === 'upload' }
             ].map(({ field, label, required }) => {
               const value = formData[field as keyof TutorialFormData];
               const isValid = !required || (value && value !== '');
@@ -719,8 +950,25 @@ export const CreateTutorial: React.FC = () => {
 
       {/* Action Buttons */}
       <div className="flex justify-between items-center">
-        <div className="text-sm text-gray-500">
-          {activeTab !== 'preview' && 'Fill out all tabs to complete your tutorial'}
+        <div className="flex items-center space-x-4">
+          <div className="text-sm text-gray-500">
+            {activeTab !== 'preview' && 'Fill out all tabs to complete your tutorial'}
+          </div>
+          {/* API Test Button - remove in production */}
+          <button
+            onClick={async () => {
+              try {
+                const response = await fetch('http://localhost:5000/api/tutorials');
+                const status = response.ok ? 'Connected' : 'Error';
+                alert(`API Status: ${status} (${response.status})`);
+              } catch (error) {
+                alert('API Status: Disconnected - ' + (error as Error).message);
+              }
+            }}
+            className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
+          >
+            Test API
+          </button>
         </div>
         
         <div className="flex gap-4">
@@ -734,7 +982,7 @@ export const CreateTutorial: React.FC = () => {
           
           <Button
             onClick={() => handleSubmit(false)}
-            disabled={isSubmitting || !formData.title || !formData.description || !formData.category}
+            disabled={isSubmitting || !formData.title || !formData.description || !formData.content || !formData.author || !formData.category}
             className="min-w-[120px]"
           >
             {isSubmitting ? (
