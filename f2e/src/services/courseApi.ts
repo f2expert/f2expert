@@ -159,24 +159,58 @@ class CourseApiService {
 
   // Fetch single course by ID
   async getCourseById(courseId: string): Promise<CourseDetails> {
-    // For now, return mock data - replace with actual API call
-    // const endpoint = `/courses/${courseId}`;
-    return this.getMockCourseById(courseId);
+    try {
+      const endpoint = `/courses/${courseId}`;
+      console.log('Fetching course by ID:', courseId);
+      
+      const result = await this.makeRequest<{ data?: CourseDetails } | CourseDetails>(endpoint);
+      console.log('Course API response:', result);
+      
+      // Handle both direct course data and wrapped response
+      let courseData: CourseDetails;
+      if ('data' in result && result.data) {
+        courseData = result.data;
+      } else if ('_id' in result) {
+        courseData = result as CourseDetails;
+      } else {
+        throw new Error('Invalid course data format received from API');
+      }
+      
+      if (!courseData) {
+        throw new Error('No course data received from API');
+      }
+
+      return courseData;
+    } catch (error) {
+      console.error('Error fetching course by ID:', error);
+      // Fallback to mock data if API fails
+      console.log('Falling back to mock data for course:', courseId);
+      return this.getMockCourseById(courseId);
+    }
   }
 
   // Enroll in a course
   async enrollInCourse(courseId: string): Promise<{ success: boolean; message: string }> {
-    // Simulate API call
-    // const endpoint = `/courses/${courseId}/enroll`;
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Use courseId in simulation
-    console.log(`Enrolling in course: ${courseId}`);
-    
-    return {
-      success: true,
-      message: 'Successfully enrolled in course'
-    };
+    try {
+      const endpoint = `/courses/${courseId}/enroll`;
+      console.log(`Enrolling in course: ${courseId}`);
+      
+      const result = await this.makeRequest<{ success?: boolean; message?: string }>(endpoint, {
+        method: 'POST'
+      });
+      
+      return {
+        success: result.success ?? true,
+        message: result.message ?? 'Successfully enrolled in course'
+      };
+    } catch (error) {
+      console.error('Error enrolling in course:', error);
+      // Return error response
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to enroll in course'
+      };
+    }
   }
 
   // Get enrolled courses for current user

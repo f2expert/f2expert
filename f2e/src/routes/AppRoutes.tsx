@@ -5,8 +5,9 @@ import { Home } from '../pages/Home';
 import { About } from '../pages/About';
 import { Contact } from '../pages/Contact';
 import { Courses } from '../pages/Courses';
-import { Tutorial } from '../pages/Tutorial';
+import { Tutorial, TutorialWatch } from '../pages/Tutorial';
 import { Dashboard, Topic, TopicDetails, CreateCourse, CreateTutorial } from '../pages/Dashboard';
+import { CourseDetails } from '../pages/Courses';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
 import { ForgotPassword } from '../pages/ForgotPassword';
@@ -69,7 +70,9 @@ export default function AppRoutes() {
         { path: "about", element: <About /> },
         { path: "contact", element: <Contact /> },
         { path: "courses", element: <Courses /> },
+        { path: "courses/:courseId", element: <CourseDetails /> },
         { path: "tutorial", element: <Tutorial /> },
+        { path: "tutorials/:tutorialId", element: <TutorialWatch /> },
       ],
     },
     {

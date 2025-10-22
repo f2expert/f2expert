@@ -156,7 +156,19 @@ class TutorialApiService {
     
     try {
       console.log('Fetching tutorial by ID:', id, 'from endpoint:', endpoint);
-      const tutorial = await this.makeRequest<Tutorial>(endpoint);
+      const result = await this.makeRequest<{ data?: Tutorial } | Tutorial>(endpoint);
+      console.log('Tutorial API response:', result);
+      
+      // Handle both direct tutorial data and wrapped response
+      let tutorial: Tutorial;
+      if ('data' in result && result.data) {
+        tutorial = result.data;
+      } else if ('_id' in result) {
+        tutorial = result as Tutorial;
+      } else {
+        throw new Error('Invalid tutorial data format received from API');
+      }
+      
       console.log('Tutorial fetched successfully:', tutorial);
       return tutorial;
     } catch (error) {
