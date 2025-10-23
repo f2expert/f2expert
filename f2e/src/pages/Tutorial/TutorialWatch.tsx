@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "../../components/atoms/Button";
 import { Card, CardContent, CardHeader } from "../../components/atoms/Card";
@@ -27,6 +27,20 @@ import {
 import { YouTubeEmbed } from "react-social-media-embed";
 import { cn } from "../../lib/utils";
 
+// Comment interface
+interface Comment {
+  _id: string;
+  tutorialId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  likes: number;
+  replies?: Comment[];
+}
+
 export const TutorialWatch: React.FC = () => {
   const { tutorialId } = useParams<{ tutorialId: string }>();
   const navigate = useNavigate();
@@ -42,6 +56,12 @@ export const TutorialWatch: React.FC = () => {
   const [watchProgress, setWatchProgress] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
+  
+  // Comment state
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(false);
 
   useEffect(() => {
     // Load user progress and preferences
@@ -67,6 +87,74 @@ export const TutorialWatch: React.FC = () => {
       }
     }
   }, [tutorial, tutorialId, isAuthenticated]);
+
+  // Mock comments function
+  const getMockComments = useCallback((): Comment[] => {
+    return [
+      {
+        _id: '1',
+        tutorialId: tutorialId || '',
+        userId: 'user1',
+        userName: 'John Doe',
+        userAvatar: '/assets/student/default-avatar.png',
+        content: 'Great tutorial! Very helpful and easy to follow. The examples were particularly useful.',
+        createdAt: '2024-10-20T10:30:00Z',
+        updatedAt: '2024-10-20T10:30:00Z',
+        likes: 5
+      },
+      {
+        _id: '2',
+        tutorialId: tutorialId || '',
+        userId: 'user2',
+        userName: 'Sarah Smith',
+        userAvatar: '/assets/student/default-avatar.png',
+        content: 'Thanks for this tutorial. Could you please add more advanced examples in the next one?',
+        createdAt: '2024-10-19T15:45:00Z',
+        updatedAt: '2024-10-19T15:45:00Z',
+        likes: 3
+      },
+      {
+        _id: '3',
+        tutorialId: tutorialId || '',
+        userId: 'user3',
+        userName: 'Mike Johnson',
+        userAvatar: '/assets/student/default-avatar.png',
+        content: 'Perfect explanation! I was struggling with this concept and now it makes perfect sense.',
+        createdAt: '2024-10-18T09:15:00Z',
+        updatedAt: '2024-10-18T09:15:00Z',
+        likes: 8
+      }
+    ];
+  }, [tutorialId]);
+
+  // Load comments when tutorial changes
+  useEffect(() => {
+    const loadCommentsData = async () => {
+      if (!tutorialId) return;
+      
+      setCommentsLoading(true);
+      try {
+        const response = await fetch(`http://localhost:5000/api/tutorials/${tutorialId}/comments`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        setComments(result.data || result || []);
+      } catch (error) {
+        console.error('Error loading comments:', error);
+        // For now, use mock comments if API fails
+        setComments(getMockComments());
+      } finally {
+        setCommentsLoading(false);
+      }
+    };
+
+    if (tutorialId) {
+      loadCommentsData();
+    }
+  }, [tutorialId, getMockComments]);
 
   const toggleBookmark = () => {
     const newBookmarkState = !isBookmarked;
@@ -170,6 +258,66 @@ export const TutorialWatch: React.FC = () => {
       console.error('Error toggling dislike:', error);
       alert('Failed to update dislike status. Please try again.');
     }
+  };
+
+  // Comment management functions
+  const submitComment = async () => {
+    if (!newComment.trim() || !tutorialId || !isAuthenticated) return;
+    
+    setIsSubmittingComment(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/tutorials/${tutorialId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${getAuthToken()}`,
+        },
+        body: JSON.stringify({
+          content: newComment.trim(),
+          userId: 'current-user-id', // Replace with actual user ID
+          userName: 'Current User' // Replace with actual user name
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Add new comment to the list
+      const newCommentObj: Comment = {
+        _id: result._id || Date.now().toString(),
+        tutorialId: tutorialId,
+        userId: 'current-user-id',
+        userName: 'Current User',
+        content: newComment.trim(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        likes: 0
+      };
+      
+      setComments(prev => [newCommentObj, ...prev]);
+      setNewComment('');
+      
+      alert('Comment posted successfully!');
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+      alert('Failed to post comment. Please try again.');
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   if (isLoading) {
@@ -503,13 +651,116 @@ export const TutorialWatch: React.FC = () => {
 
                 {activeTab === "comments" && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-4">Comments</h3>
-                    <div className="text-center py-8">
-                      <FaComments className="text-4xl text-gray-300 mb-4 mx-auto" />
-                      <p className="text-gray-500">
-                        Comments feature coming soon!
-                      </p>
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-lg font-semibold">Comments ({comments.length})</h3>
                     </div>
+
+                    {/* Comment Form */}
+                    {isAuthenticated ? (
+                      <div className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <h4 className="font-medium mb-3">Add a Comment</h4>
+                        <textarea
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          placeholder="Share your thoughts about this tutorial..."
+                          rows={4}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                          maxLength={500}
+                        />
+                        <div className="flex justify-between items-center mt-3">
+                          <span className="text-xs text-gray-500">
+                            {newComment.length}/500 characters
+                          </span>
+                          <div className="space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setNewComment('')}
+                              disabled={!newComment.trim() || isSubmittingComment}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={submitComment}
+                              disabled={!newComment.trim() || isSubmittingComment}
+                            >
+                              {isSubmittingComment ? 'Posting...' : 'Post Comment'}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50 text-center">
+                        <FaUser className="text-2xl text-gray-400 mb-2 mx-auto" />
+                        <p className="text-gray-600 mb-3">Please log in to post a comment</p>
+                        <Button size="sm" onClick={() => navigate('/login')}>
+                          Log In
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Comments List */}
+                    {commentsLoading ? (
+                      <div className="space-y-4">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="animate-pulse">
+                            <div className="flex space-x-3">
+                              <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                              <div className="flex-1">
+                                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-full mb-1"></div>
+                                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : comments.length > 0 ? (
+                      <div className="space-y-4">
+                        {comments.map((comment) => (
+                          <div key={comment._id} className="border-b border-gray-100 pb-4 last:border-b-0">
+                            <div className="flex space-x-3">
+                              <img
+                                src={comment.userAvatar || '/assets/student/default-avatar.png'}
+                                alt={comment.userName}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <h5 className="font-medium text-gray-900">{comment.userName}</h5>
+                                  <span className="text-xs text-gray-500">
+                                    {formatDate(comment.createdAt)}
+                                  </span>
+                                </div>
+                                <p className="text-gray-700 text-sm leading-relaxed mb-2">
+                                  {comment.content}
+                                </p>
+                                <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                  <button className="flex items-center hover:text-blue-600 transition-colors">
+                                    <FaThumbsUp className="mr-1" />
+                                    {comment.likes} likes
+                                  </button>
+                                  <button className="hover:text-gray-700 transition-colors">
+                                    Reply
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FaComments className="text-4xl text-gray-300 mb-4 mx-auto" />
+                        <p className="text-gray-500 mb-2">
+                          No comments yet
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          Be the first to share your thoughts about this tutorial!
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -3,6 +3,7 @@ import { MESSAGES } from "../../app/constants/message.constant"
 import { HTTP_STATUS } from "../../app/constants/http-status.constant"
 import { sendError, sendResponse } from "../../app/utils/response.util"
 import * as TutorialService from "./tutorial.service"
+import * as CommentService from "../comments/comment.service"
 import { ApiResponse } from "../../app/types/ApiResponse.interface"
 
 /**
@@ -939,5 +940,144 @@ export const unlikeTutorial = async (req: Request, res: Response) => {
     return sendResponse(res, HTTP_STATUS.OK, { totalLikes: tutorial.totalLikes }, "Tutorial unliked successfully")
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
+  }
+}
+
+/**
+ * @openapi
+ * /tutorials/{id}/comments:
+ *   get:
+ *     tags:
+ *       - Tutorials
+ *     summary: Get comments for a tutorial
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Tutorial ID
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Comments retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     comments:
+ *                       type: array
+ *                     pagination:
+ *                       type: object
+ *       404:
+ *         description: Tutorial not found
+ */
+export const getTutorialComments = async (req: Request, res: Response) => {
+  try {
+    const tutorialId = req.params.id
+    const page = parseInt(req.query.page as string) || 1
+    const limit = parseInt(req.query.limit as string) || 20
+    const sortBy = req.query.sortBy as string || 'createdAt'
+    const sortOrder = req.query.sortOrder as string || 'desc'
+
+    // Verify tutorial exists
+    const tutorial = await TutorialService.getTutorialById(tutorialId)
+    if (!tutorial) {
+      return sendResponse(res, HTTP_STATUS.NOT_FOUND, null, "Tutorial not found")
+    }
+
+    const result = await CommentService.getCommentsByTutorial(tutorialId, page, limit, sortBy, sortOrder)
+    return sendResponse(res, HTTP_STATUS.OK, result, "Comments retrieved successfully")
+  } catch (err: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
+  }
+}
+
+/**
+ * @openapi
+ * /tutorials/{id}/comments:
+ *   post:
+ *     tags:
+ *       - Tutorials
+ *     summary: Add a comment to a tutorial
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Tutorial ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 2000
+ *                 example: "Great tutorial! Very helpful."
+ *               parentId:
+ *                 type: string
+ *                 description: "Parent comment ID for replies"
+ *     responses:
+ *       201:
+ *         description: Comment added successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Tutorial not found
+ */
+export const addTutorialComment = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || req.body.userId // Fallback for testing
+    
+    if (!userId) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Authentication required")
+    }
+
+    const tutorialId = req.params.id
+    
+    // Verify tutorial exists
+    const tutorial = await TutorialService.getTutorialById(tutorialId)
+    if (!tutorial) {
+      return sendResponse(res, HTTP_STATUS.NOT_FOUND, null, "Tutorial not found")
+    }
+
+    const commentData = {
+      content: req.body.content,
+      contentType: 'tutorial' as const,
+      contentId: tutorialId,
+      tutorialId: tutorialId,
+      parentId: req.body.parentId
+    }
+
+    const comment = await CommentService.createComment(commentData, userId)
+    return sendResponse(res, HTTP_STATUS.CREATED, comment, "Comment added successfully")
+  } catch (err: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, err.message)
   }
 }

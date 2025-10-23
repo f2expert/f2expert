@@ -4,6 +4,7 @@ import { HTTP_STATUS } from "../../app/constants/http-status.constant"
 
 import { sendError, sendResponse } from "../../app/utils/response.util"
 import * as CourseService from "./course.service"
+import * as CommentService from "../comments/comment.service"
 import { ApiResponse } from "../../app/types/ApiResponse.interface"
 /**
  * @openapi
@@ -553,5 +554,144 @@ export const remove = async (req: Request, res: Response) => {
     return sendResponse(res, HTTP_STATUS.NO_CONTENT, null, MESSAGES.COURSE_DELETED)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
+  }
+}
+
+/**
+ * @openapi
+ * /courses/{id}/comments:
+ *   get:
+ *     tags:
+ *       - Course
+ *     summary: Get comments for a course
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Comments retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     comments:
+ *                       type: array
+ *                     pagination:
+ *                       type: object
+ *       404:
+ *         description: Course not found
+ */
+export const getCourseComments = async (req: Request, res: Response) => {
+  try {
+    const courseId = req.params.id
+    const page = parseInt(req.query.page as string) || 1
+    const limit = parseInt(req.query.limit as string) || 20
+    const sortBy = req.query.sortBy as string || 'createdAt'
+    const sortOrder = req.query.sortOrder as string || 'desc'
+
+    // Verify course exists
+    const course = await CourseService.getCourseById(courseId)
+    if (!course) {
+      return sendResponse(res, HTTP_STATUS.NOT_FOUND, null, "Course not found")
+    }
+
+    const result = await CommentService.getCommentsByTutorial(courseId, page, limit, sortBy, sortOrder)
+    return sendResponse(res, HTTP_STATUS.OK, result, "Comments retrieved successfully")
+  } catch (err: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
+  }
+}
+
+/**
+ * @openapi
+ * /courses/{id}/comments:
+ *   post:
+ *     tags:
+ *       - Course
+ *     summary: Add a comment to a course
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 2000
+ *                 example: "Great course! Very informative."
+ *               parentId:
+ *                 type: string
+ *                 description: "Parent comment ID for replies"
+ *     responses:
+ *       201:
+ *         description: Comment added successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Course not found
+ */
+export const addCourseComment = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || req.body.userId // Fallback for testing
+    
+    if (!userId) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Authentication required")
+    }
+
+    const courseId = req.params.id
+    
+    // Verify course exists
+    const course = await CourseService.getCourseById(courseId)
+    if (!course) {
+      return sendResponse(res, HTTP_STATUS.NOT_FOUND, null, "Course not found")
+    }
+
+    const commentData = {
+      content: req.body.content,
+      contentType: 'course' as const,
+      contentId: courseId,
+      courseId: courseId,
+      parentId: req.body.parentId
+    }
+
+    const comment = await CommentService.createComment(commentData, userId)
+    return sendResponse(res, HTTP_STATUS.CREATED, comment, "Comment added successfully")
+  } catch (err: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, err.message)
   }
 }

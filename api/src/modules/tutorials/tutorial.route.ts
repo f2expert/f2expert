@@ -21,6 +21,10 @@ router.get("/:id", TutorialController.getById)
 router.post("/:id/like", TutorialController.likeTutorial)
 router.post("/:id/unlike", TutorialController.unlikeTutorial)
 
+// Tutorial comment routes
+router.get("/:id/comments", TutorialController.getTutorialComments)
+router.post("/:id/comments", TutorialController.addTutorialComment)
+
 // Admin/Author routes (should be protected with authentication middleware)
 router.post("/", validateBody(createTutorialSchema), TutorialController.create)
 router.put("/:id", validateBody(updateTutorialSchema), TutorialController.update)

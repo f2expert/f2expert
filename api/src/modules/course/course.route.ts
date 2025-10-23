@@ -11,6 +11,11 @@ router.get("/debug/create-sample", CourseController.createSampleData)
 router.get("/limited/:limit", CourseController.getLimited)
 router.get("/category/:category", CourseController.getByCategory)
 router.get("/:id", CourseController.getById)
+
+// Course comment routes
+router.get("/:id/comments", CourseController.getCourseComments)
+router.post("/:id/comments", CourseController.addCourseComment)
+
 router.post("/", validateBody(createCourseSchema), CourseController.create)
 router.put("/:id", validateBody(updateCourseSchema), CourseController.update)
 router.delete("/:id", CourseController.remove)
