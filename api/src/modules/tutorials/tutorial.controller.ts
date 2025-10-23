@@ -290,12 +290,7 @@ export const getFeatured = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 6
     const tutorials = await TutorialService.getFeaturedTutorials(limit)
     
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: tutorials
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, tutorials, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
@@ -340,12 +335,7 @@ export const getPopular = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10
     const tutorials = await TutorialService.getPopularTutorials(limit)
     
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: tutorials
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, tutorials, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
@@ -549,12 +539,7 @@ export const search = async (req: Request, res: Response) => {
     
     const tutorials = await TutorialService.searchTutorials(q as string, limit)
     
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: tutorials
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, tutorials, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
@@ -588,12 +573,7 @@ export const getStatistics = async (req: Request, res: Response) => {
   try {
     const stats = await TutorialService.getTutorialStatistics()
     
-    const response: ApiResponse = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: stats
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, stats, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
@@ -734,12 +714,8 @@ export const getStatistics = async (req: Request, res: Response) => {
 export const create = async (req: Request, res: Response) => {
   try {
     const newTutorial = await TutorialService.createTutorial(req.body)
-    const response: ApiResponse = {
-      success: true,
-      message: "Tutorial created successfully",
-      data: newTutorial
-    }
-    return sendResponse(res, HTTP_STATUS.CREATED, response)
+    
+    return sendResponse(res, HTTP_STATUS.CREATED, newTutorial, "Tutorial created successfully")
   } catch (err: any) {
     if (err.name === 'ValidationError') {
       const validationErrors = Object.values(err.errors).map((error: any) => error.message).join(', ')
@@ -809,12 +785,7 @@ export const update = async (req: Request, res: Response) => {
       return sendResponse(res, HTTP_STATUS.NOT_FOUND, null, "Tutorial not found")
     }
     
-    const response: ApiResponse = {
-      success: true,
-      message: "Tutorial updated successfully",
-      data: updatedTutorial
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, updatedTutorial, "Tutorial updated successfully")
   } catch (err: any) {
     if (err.name === 'ValidationError') {
       const validationErrors = Object.values(err.errors).map((error: any) => error.message).join(', ')
@@ -915,12 +886,7 @@ export const likeTutorial = async (req: Request, res: Response) => {
       return sendResponse(res, HTTP_STATUS.NOT_FOUND, null, "Tutorial not found")
     }
     
-    const response: ApiResponse = {
-      success: true,
-      message: "Tutorial liked successfully",
-      data: { totalLikes: tutorial.totalLikes }
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, { totalLikes: tutorial.totalLikes }, "Tutorial liked successfully")
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }
@@ -970,12 +936,7 @@ export const unlikeTutorial = async (req: Request, res: Response) => {
       return sendResponse(res, HTTP_STATUS.NOT_FOUND, null, "Tutorial not found")
     }
     
-    const response: ApiResponse = {
-      success: true,
-      message: "Tutorial unliked successfully",
-      data: { totalLikes: tutorial.totalLikes }
-    }
-    return sendResponse(res, HTTP_STATUS.OK, response)
+    return sendResponse(res, HTTP_STATUS.OK, { totalLikes: tutorial.totalLikes }, "Tutorial unliked successfully")
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }

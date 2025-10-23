@@ -100,14 +100,76 @@ export const TutorialWatch: React.FC = () => {
     }
   };
 
-  const toggleLike = () => {
-    setIsLiked(!isLiked);
-    if (isDisliked) setIsDisliked(false);
+  const toggleLike = async () => {
+    if (!tutorialId) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/tutorials/${tutorialId}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${getAuthToken()}`,
+        },
+        body: JSON.stringify({
+          action: isLiked ? 'unlike' : 'like'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Like API response:', result);
+      
+      // Update UI state
+      setIsLiked(!isLiked);
+      if (isDisliked) setIsDisliked(false);
+      
+      // Optionally show success message
+      // alert(isLiked ? 'Tutorial unliked!' : 'Tutorial liked!');
+      
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      alert('Failed to update like status. Please try again.');
+    }
   };
 
-  const toggleDislike = () => {
-    setIsDisliked(!isDisliked);
-    if (isLiked) setIsLiked(false);
+  const toggleDislike = async () => {
+    if (!tutorialId) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/tutorials/${tutorialId}/unlike`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${getAuthToken()}`,
+        },
+        body: JSON.stringify({
+          action: isDisliked ? 'undislike' : 'dislike'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Dislike API response:', result);
+      
+      // Update UI state
+      setIsDisliked(!isDisliked);
+      if (isLiked) setIsLiked(false);
+      
+      // Optionally show success message
+      // alert(isDisliked ? 'Tutorial undisliked!' : 'Tutorial disliked!');
+      
+    } catch (error) {
+      console.error('Error toggling dislike:', error);
+      alert('Failed to update dislike status. Please try again.');
+    }
   };
 
   if (isLoading) {
@@ -186,7 +248,7 @@ export const TutorialWatch: React.FC = () => {
               <div className="aspect-video">
                 {tutorial.videoUrl ? (
                   <YouTubeEmbed
-                    url={tutorial.videoUrl}
+                    url={`https://www.youtube.com/watch?v=${tutorial.videoUrl}`}
                     width={"100%"}
                     height={540}
                   />
@@ -221,7 +283,7 @@ export const TutorialWatch: React.FC = () => {
                     <div className="flex items-center space-x-6 text-sm text-gray-500">
                       <div className="flex items-center">
                         <FaEye className="mr-2" />
-                        {(tutorial.views || 0).toLocaleString()} views
+                        {(tutorial.totalViews || 0).toLocaleString()} views
                       </div>
                       <div className="flex items-center">
                         <FaClock className="mr-2" />
@@ -293,14 +355,14 @@ export const TutorialWatch: React.FC = () => {
                 <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                   <img
                     src="/assets/trainer/default-trainer.png"
-                    alt={tutorial.instructor || "Instructor"}
+                    alt={tutorial.author || "Instructor"}
                     className="w-12 h-12 rounded-full object-cover"
                   />
                   <div>
                     <h3 className="font-semibold text-gray-900">
-                      {tutorial.instructor || "Unknown Instructor"}
+                      {tutorial.author || "Unknown Author"}
                     </h3>
-                    <p className="text-sm text-gray-600">Expert Instructor</p>
+                    <p className="text-sm text-gray-600">Expert Author</p>
                   </div>
                 </div>
               </CardContent>
@@ -394,9 +456,9 @@ export const TutorialWatch: React.FC = () => {
                           </span>
                         </div>
                         <div>
-                          <span className="text-gray-500">Views:</span>
+                          <span className="text-gray-500">Likes:</span>
                           <span className="ml-2 font-medium">
-                            {(tutorial.views || 0).toLocaleString()}
+                            {(tutorial.totalLikes || 0).toLocaleString()}
                           </span>
                         </div>
                       </div>
@@ -530,11 +592,11 @@ export const TutorialWatch: React.FC = () => {
                               {relatedTutorial.title}
                             </h4>
                             <p className="text-xs text-gray-500">
-                              {relatedTutorial.instructor ||
-                                "Unknown Instructor"}
+                              {relatedTutorial.author ||
+                                "Unknown Author"}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {(relatedTutorial.views || 0).toLocaleString()}{" "}
+                              {(relatedTutorial.totalViews || 0).toLocaleString()}{" "}
                               views
                             </p>
                           </div>

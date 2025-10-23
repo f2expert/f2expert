@@ -9,7 +9,7 @@ export interface Tutorial {
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   duration: string;
   totalMinutes: number;
-  instructor: string;
+  author: string;
   instructorBio?: string;
   thumbnailUrl: string;
   videoUrl: string;
@@ -18,8 +18,8 @@ export interface Tutorial {
   isPublished: boolean;
   isFeatured: boolean;
   rating: number;
-  views: number;
-  likes: number;
+  totalViews: number;
+  totalLikes: number;
   language: string;
   difficulty: number;
   prerequisites: string[];
@@ -49,7 +49,7 @@ export interface TutorialsResponse {
 export interface TutorialFilters {
   category?: string;
   level?: string;
-  instructor?: string;
+  author?: string;
   tags?: string[];
   minDuration?: number;
   maxDuration?: number;
@@ -98,7 +98,7 @@ class TutorialApiService {
       const queryParams = new URLSearchParams();
       if (filters.category) queryParams.append('category', filters.category);
       if (filters.level) queryParams.append('level', filters.level);
-      if (filters.instructor) queryParams.append('instructor', filters.instructor);
+      if (filters.author) queryParams.append('author', filters.author);
       if (filters.search) queryParams.append('search', filters.search);
       if (filters.minDuration) queryParams.append('minDuration', filters.minDuration.toString());
       if (filters.maxDuration) queryParams.append('maxDuration', filters.maxDuration.toString());
@@ -279,7 +279,7 @@ class TutorialApiService {
         level: 'Beginner',
         duration: '45 min',
         totalMinutes: 45,
-        instructor: 'Sarah Johnson',
+        author: 'Sarah Johnson',
         instructorBio: 'Senior React Developer with 5+ years of experience',
         thumbnailUrl: '/assets/topics/react-frontend.png',
         videoUrl: 'https://example.com/react-hooks-tutorial',
@@ -288,8 +288,8 @@ class TutorialApiService {
         isPublished: true,
         isFeatured: true,
         rating: 4.8,
-        views: 1250,
-        likes: 95,
+        totalViews: 1250,
+        totalLikes: 95,
         language: 'English',
         difficulty: 2,
         prerequisites: ['Basic JavaScript', 'Basic React'],
@@ -322,7 +322,7 @@ class TutorialApiService {
         level: 'Intermediate',
         duration: '60 min',
         totalMinutes: 60,
-        instructor: 'Dr. Michael Chen',
+        author: 'Dr. Michael Chen',
         instructorBio: 'Data Scientist with PhD in Statistics',
         thumbnailUrl: '/assets/topics/python-fundamentals.png',
         videoUrl: 'https://example.com/pandas-tutorial',
@@ -331,8 +331,8 @@ class TutorialApiService {
         isPublished: true,
         isFeatured: false,
         rating: 4.9,
-        views: 980,
-        likes: 87,
+        totalViews: 980,
+        totalLikes: 87,
         language: 'English',
         difficulty: 3,
         prerequisites: ['Basic Python', 'Statistics Fundamentals'],
@@ -357,7 +357,7 @@ class TutorialApiService {
         level: 'Beginner',
         duration: '35 min',
         totalMinutes: 35,
-        instructor: 'Emily Rodriguez',
+        author: 'Emily Rodriguez',
         instructorBio: 'AWS Certified Solutions Architect',
         thumbnailUrl: '/assets/topics/cloud.png',
         videoUrl: 'https://example.com/aws-ec2-tutorial',
@@ -365,8 +365,8 @@ class TutorialApiService {
         isPublished: true,
         isFeatured: true,
         rating: 4.7,
-        views: 756,
-        likes: 62,
+        totalViews: 756,
+        totalLikes: 62,
         language: 'English',
         difficulty: 2,
         prerequisites: ['Basic Cloud Concepts', 'AWS Account'],
@@ -391,7 +391,7 @@ class TutorialApiService {
         level: 'Intermediate',
         duration: '90 min',
         totalMinutes: 90,
-        instructor: 'James Wilson',
+        author: 'James Wilson',
         instructorBio: 'Mobile App Developer specializing in React Native',
         thumbnailUrl: '/assets/topics/mobile-app-development.png',
         videoUrl: 'https://example.com/react-native-tutorial',
@@ -400,8 +400,8 @@ class TutorialApiService {
         isPublished: true,
         isFeatured: false,
         rating: 4.6,
-        views: 645,
-        likes: 54,
+        totalViews: 645,
+        totalLikes: 54,
         language: 'English',
         difficulty: 3,
         prerequisites: ['React.js', 'JavaScript ES6', 'Mobile Development Basics'],
@@ -426,7 +426,7 @@ class TutorialApiService {
         level: 'Intermediate',
         duration: '50 min',
         totalMinutes: 50,
-        instructor: 'Lisa Chen',
+        author: 'Lisa Chen',
         instructorBio: 'Full Stack JavaScript Developer',
         thumbnailUrl: '/assets/topics/full-stack.png',
         videoUrl: 'https://example.com/es6-tutorial',
@@ -434,8 +434,8 @@ class TutorialApiService {
         isPublished: true,
         isFeatured: true,
         rating: 4.8,
-        views: 1100,
-        likes: 92,
+        totalViews: 1100,
+        totalLikes: 92,
         language: 'English',
         difficulty: 3,
         prerequisites: ['Basic JavaScript', 'Programming Fundamentals'],
@@ -460,7 +460,7 @@ class TutorialApiService {
         level: 'Beginner',
         duration: '75 min',
         totalMinutes: 75,
-        instructor: 'Dr. Anita Patel',
+        author: 'Dr. Anita Patel',
         instructorBio: 'Machine Learning Researcher and Data Scientist',
         thumbnailUrl: '/assets/topics/machine-learning.png',
         videoUrl: 'https://example.com/ml-basics-tutorial',
@@ -469,8 +469,8 @@ class TutorialApiService {
         isPublished: true,
         isFeatured: false,
         rating: 4.9,
-        views: 890,
-        likes: 78,
+        totalViews: 890,
+        totalLikes: 78,
         language: 'English',
         difficulty: 2,
         prerequisites: ['Python Programming', 'Basic Statistics', 'Mathematics'],
@@ -503,7 +503,7 @@ class TutorialApiService {
         filteredTutorials = filteredTutorials.filter(t =>
           t.title.toLowerCase().includes(searchLower) ||
           t.description.toLowerCase().includes(searchLower) ||
-          t.instructor.toLowerCase().includes(searchLower)
+          t.author.toLowerCase().includes(searchLower)
         );
       }
     }

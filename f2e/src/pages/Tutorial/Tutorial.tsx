@@ -94,7 +94,7 @@ export const Tutorial: React.FC = () => {
       const matchesCategory = selectedCategory === 'all' || tutorialCategoryId === selectedCategory;
       const matchesSearch = tutorial.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            tutorial.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           tutorial.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+                           tutorial.author.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
   }, [tutorials, selectedCategory, searchTerm]);
@@ -261,10 +261,10 @@ export const Tutorial: React.FC = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center text-sm text-gray-500">
                       <FaUser className="mr-1" />
-                      {tutorial.instructor}
+                      {tutorial.author}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {tutorial.views} views
+                      {tutorial.totalViews} views
                     </div>
                   </div>
 
