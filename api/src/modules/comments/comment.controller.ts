@@ -80,7 +80,8 @@ import * as CommentService from "./comment.service"
  *   post:
  *     tags:
  *       - Comments
- *     summary: Create a new comment
+ *     summary: Create a new comment for tutorial or course
+ *     description: Create a comment on a tutorial or course. Supports nested replies up to 3 levels deep.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -88,7 +89,30 @@ import * as CommentService from "./comment.service"
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateCommentRequest'
+ *             type: object
+ *             required:
+ *               - content
+ *               - contentType
+ *               - contentId
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 2000
+ *                 example: "Great content! Very helpful."
+ *               contentType:
+ *                 type: string
+ *                 enum: [tutorial, course]
+ *                 example: "tutorial"
+ *                 description: "Type of content being commented on"
+ *               contentId:
+ *                 type: string
+ *                 example: "507f1f77bcf86cd799439011"
+ *                 description: "ID of the tutorial or course"
+ *               parentId:
+ *                 type: string
+ *                 example: "507f1f77bcf86cd799439012"
+ *                 description: "Parent comment ID for replies"
  *     responses:
  *       201:
  *         description: Comment created successfully
@@ -105,18 +129,22 @@ import * as CommentService from "./comment.service"
  *                   $ref: '#/components/schemas/Comment'
  *       400:
  *         description: Validation error
+ *       401:
+ *         description: Authentication required
  *       404:
- *         description: Tutorial or parent comment not found
+ *         description: Tutorial, course, or parent comment not found
  */
 export const createComment = async (req: Request, res: Response) => {
   try {
     // Assuming user ID comes from authentication middleware
     const userId = (req as any).user?.id || req.body.userId // Fallback for testing
-    
     if (!userId) {
       return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Authentication required")
     }
-
+    // Validate required fields for both tutorials and courses
+    if (!req.body.content || !req.body.contentType || !req.body.contentId) {
+      return sendError(res, HTTP_STATUS.BAD_REQUEST, "content, contentType, and contentId are required")
+    }
     const comment = await CommentService.createComment(req.body, userId)
     return sendResponse(res, HTTP_STATUS.CREATED, comment, "Comment created successfully")
   } catch (err: any) {
@@ -161,6 +189,67 @@ export const getCommentById = async (req: Request, res: Response) => {
       return sendResponse(res, HTTP_STATUS.NOT_FOUND, null, "Comment not found")
     }
     return sendResponse(res, HTTP_STATUS.OK, comment, "Comment retrieved successfully")
+  } catch (err: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, err.message)
+  }
+}
+
+/**
+ * @openapi
+ * /comments/{id}:
+ *   put:
+ *     tags:
+ *       - Comments
+ *     summary: Update a comment
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Comment ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 2000
+ *                 example: "Updated comment content"
+ *     responses:
+ *       200:
+ *         description: Comment updated successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Not authorized to update this comment
+ *       404:
+ *         description: Comment not found
+ */
+export const updateComment = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || req.body.userId // Fallback for testing
+    
+    if (!userId) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Authentication required")
+    }
+
+    if (!req.body.content) {
+      return sendError(res, HTTP_STATUS.BAD_REQUEST, "Content is required")
+    }
+
+    const comment = await CommentService.updateComment(req.params.id, req.body, userId)
+    return sendResponse(res, HTTP_STATUS.OK, comment, "Comment updated successfully")
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.BAD_REQUEST, err.message)
   }
@@ -299,34 +388,6 @@ export const getCommentReplies = async (req: Request, res: Response) => {
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/UpdateCommentRequest'
- *     responses:
- *       200:
- *         description: Comment updated successfully
- *       403:
- *         description: You can only edit your own comments
- *       404:
- *         description: Comment not found
- */
-export const updateComment = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id || req.body.userId // Fallback for testing
-    
-    if (!userId) {
-      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Authentication required")
-    }
-
-    const comment = await CommentService.updateComment(req.params.id, req.body, userId)
-    return sendResponse(res, HTTP_STATUS.OK, comment, "Comment updated successfully")
-  } catch (err: any) {
-    if (err.message === 'You can only edit your own comments') {
-      return sendError(res, HTTP_STATUS.FORBIDDEN, err.message)
-    }
-    return sendError(res, HTTP_STATUS.BAD_REQUEST, err.message)
-  }
-}
-
-/**
- * @openapi
  * /comments/{id}:
  *   delete:
  *     tags:
@@ -373,16 +434,36 @@ export const deleteComment = async (req: Request, res: Response) => {
  *   post:
  *     tags:
  *       - Comments
- *     summary: Like a comment
+ *     summary: Toggle like on a comment
+ *     description: |
+ *       Toggle like status on a comment. If user hasn't liked, adds like.
+ *       If user has already liked, removes like. If user has disliked, removes dislike and adds like.
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *         description: Comment ID
+ *         example: "507f1f77bcf86cd799439011"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 example: "507f1f77bcf86cd799439013"
+ *                 description: "ID of the user performing the action"
  *     responses:
  *       200:
- *         description: Comment liked successfully
+ *         description: Like status toggled successfully
  *         content:
  *           application/json:
  *             schema:
@@ -390,46 +471,40 @@ export const deleteComment = async (req: Request, res: Response) => {
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 message:
  *                   type: string
+ *                   example: "Comment liked successfully"
  *                 data:
  *                   type: object
  *                   properties:
  *                     likes:
  *                       type: number
+ *                       example: 15
+ *                     dislikes:
+ *                       type: number
+ *                       example: 2
+ *                     userAction:
+ *                       type: string
+ *                       enum: [liked, unliked]
+ *                       example: "liked"
+ *                       description: "Action performed by the user"
  *       404:
  *         description: Comment not found
  */
-export const likeComment = async (req: Request, res: Response) => {
+export const toggleLike = async (req: Request, res: Response) => {
   try {
-    const comment = await CommentService.likeComment(req.params.id)
-    return sendResponse(res, HTTP_STATUS.OK, { likes: comment.likes }, "Comment liked successfully")
-  } catch (err: any) {
-    return sendError(res, HTTP_STATUS.BAD_REQUEST, err.message)
-  }
-}
+    const userId = (req as any).user?.id || req.body.userId
+    
+    if (!userId) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Authentication required")
+    }
 
-/**
- * @openapi
- * /comments/{id}/unlike:
- *   post:
- *     tags:
- *       - Comments
- *     summary: Unlike a comment
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Comment unliked successfully
- */
-export const unlikeComment = async (req: Request, res: Response) => {
-  try {
-    const comment = await CommentService.unlikeComment(req.params.id)
-    return sendResponse(res, HTTP_STATUS.OK, { likes: comment.likes }, "Comment unliked successfully")
+    const result = await CommentService.toggleLike(req.params.id, userId)
+    const action = result.userAction === 'liked' ? 'liked' : 'unliked'
+    const message = `Comment ${action} successfully`
+    
+    return sendResponse(res, HTTP_STATUS.OK, result, message)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.BAD_REQUEST, err.message)
   }
@@ -441,47 +516,77 @@ export const unlikeComment = async (req: Request, res: Response) => {
  *   post:
  *     tags:
  *       - Comments
- *     summary: Dislike a comment
+ *     summary: Toggle dislike on a comment
+ *     description: |
+ *       Toggle dislike status on a comment. If user hasn't disliked, adds dislike.
+ *       If user has already disliked, removes dislike. If user has liked, removes like and adds dislike.
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *         description: Comment ID
+ *         example: "507f1f77bcf86cd799439011"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 example: "507f1f77bcf86cd799439013"
+ *                 description: "ID of the user performing the action"
  *     responses:
  *       200:
- *         description: Comment disliked successfully
+ *         description: Dislike status toggled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Comment disliked successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     likes:
+ *                       type: number
+ *                       example: 13
+ *                     dislikes:
+ *                       type: number
+ *                       example: 3
+ *                     userAction:
+ *                       type: string
+ *                       enum: [disliked, undisliked]
+ *                       example: "disliked"
+ *                       description: "Action performed by the user"
+ *       404:
+ *         description: Comment not found
  */
-export const dislikeComment = async (req: Request, res: Response) => {
+export const toggleDislike = async (req: Request, res: Response) => {
   try {
-    const comment = await CommentService.dislikeComment(req.params.id)
-    return sendResponse(res, HTTP_STATUS.OK, { dislikes: comment.dislikes }, "Comment disliked successfully")
-  } catch (err: any) {
-    return sendError(res, HTTP_STATUS.BAD_REQUEST, err.message)
-  }
-}
+    const userId = (req as any).user?.id || req.body.userId
+    
+    if (!userId) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Authentication required")
+    }
 
-/**
- * @openapi
- * /comments/{id}/undislike:
- *   post:
- *     tags:
- *       - Comments
- *     summary: Remove dislike from a comment
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Comment undisliked successfully
- */
-export const undislikeComment = async (req: Request, res: Response) => {
-  try {
-    const comment = await CommentService.undislikeComment(req.params.id)
-    return sendResponse(res, HTTP_STATUS.OK, { dislikes: comment.dislikes }, "Comment undisliked successfully")
+    const result = await CommentService.toggleDislike(req.params.id, userId)
+    const action = result.userAction === 'disliked' ? 'disliked' : 'undisliked'
+    const message = `Comment ${action} successfully`
+    
+    return sendResponse(res, HTTP_STATUS.OK, result, message)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.BAD_REQUEST, err.message)
   }

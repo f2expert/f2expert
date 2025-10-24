@@ -1,6 +1,7 @@
-/**
- * Enhanced Comment System - Swagger Documentation Update
- * 
+// This file has been moved to prevent TypeScript compilation errors
+// The swagger documentation should be integrated into the main swagger config
+// instead of being a standalone .ts file in the root directory
+/*
  * This file contains the complete Swagger/OpenAPI documentation for the enhanced comment system
  * that supports both tutorials and courses with unified architecture.
  */

@@ -41,21 +41,13 @@ router.get("/:parentId/replies",
   CommentController.getCommentReplies
 )
 
-// Comment interactions
+// Comment interactions (unified toggle endpoints)
 router.post("/:id/like", 
-  CommentController.likeComment
-)
-
-router.post("/:id/unlike", 
-  CommentController.unlikeComment
+  CommentController.toggleLike
 )
 
 router.post("/:id/dislike", 
-  CommentController.dislikeComment
-)
-
-router.post("/:id/undislike", 
-  CommentController.undislikeComment
+  CommentController.toggleDislike
 )
 
 // Comment reporting

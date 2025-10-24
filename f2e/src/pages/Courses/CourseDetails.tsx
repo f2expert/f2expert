@@ -25,18 +25,104 @@ import {
   FaVideo,
   FaFileAlt,
   FaQuestionCircle,
-  FaTrophy
+  FaTrophy,
+  FaThumbsUp
 } from 'react-icons/fa';
 import { cn } from '../../lib/utils';
+
+// Review interfaces
+interface ReviewStats {
+  totalReviews: number;
+  averageRating: number;
+  ratingDistribution: {
+    "1": number;
+    "2": number;
+    "3": number;
+    "4": number;
+    "5": number;
+  };
+  verifiedReviews: number;
+  approvedReviews: number;
+  pendingReviews: number;
+  reportedReviews: number;
+}
+
+interface Review {
+  _id: string;
+  courseId: {
+    _id: string;
+    title: string;
+    instructor: string;
+    category: string;
+  };
+  userId: {
+    _id: string;
+    email: string;
+    photo?: string;
+  };
+  content: string;
+  rating: number;
+  isApproved: boolean;
+  isVerifiedPurchase: boolean;
+  isAnonymous: boolean;
+  helpfulVotes: string[];
+  unhelpfulVotes: string[];
+  helpfulCount: number;
+  unhelpfulCount: number;
+  isReported: boolean;
+  reportCount: number;
+  isDeleted: boolean;
+  isEdited: boolean;
+  reports: unknown[];
+  editHistory: unknown[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+// StarRating component moved outside to prevent re-renders
+const StarRating = ({ rating, onRatingChange, readonly = false }: { 
+  rating: number; 
+  onRatingChange?: (rating: number) => void; 
+  readonly?: boolean 
+}) => {
+  return (
+    <div className="flex">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => !readonly && onRatingChange?.(star)}
+          className={cn(
+            'text-2xl transition-colors',
+            readonly ? 'cursor-default' : 'cursor-pointer hover:text-yellow-400',
+            star <= rating ? 'text-yellow-400' : 'text-gray-300'
+          )}
+          disabled={readonly}
+        >
+          <FaStar />
+        </button>
+      ))}
+    </div>
+  );
+};
 
 export const CourseDetails: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { currentCourse, isLoading, error, loadCourseById, enroll, isEnrolling } = useCourses();
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'instructor' | 'reviews'>('overview');
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
+  
+  // Review state
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
 
   // Load course details
   useEffect(() => {
@@ -44,6 +130,21 @@ export const CourseDetails: React.FC = () => {
       loadCourseById(courseId);
     }
   }, [courseId, loadCourseById]);
+
+  // Extract review data from course response
+  useEffect(() => {
+    if (currentCourse && 'reviewData' in currentCourse) {
+      const courseWithReviews = currentCourse as typeof currentCourse & {
+        reviewData: {
+          stats: ReviewStats;
+          recentReviews: Review[];
+          hasMoreReviews: boolean;
+        };
+      };
+      setReviewStats(courseWithReviews.reviewData.stats);
+      setReviews(courseWithReviews.reviewData.recentReviews || []);
+    }
+  }, [currentCourse]);
 
 
   // Early return if no courseId
@@ -87,6 +188,59 @@ export const CourseDetails: React.FC = () => {
     } else {
       navigator.clipboard.writeText(window.location.href);
       alert('Course link copied to clipboard!');
+    }
+  };
+
+  const handleReviewSubmit = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    if (!courseId || reviewRating === 0 || !reviewComment.trim()) {
+      alert('Please provide both rating and comment');
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/courses/${courseId}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${getAuthToken()}`,
+        },
+        body: JSON.stringify({
+          rating: reviewRating,
+          content: reviewComment.trim(),
+          userId: user?.id,
+          courseId: courseId,
+          // Add any additional fields that the API expects
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      await response.json();
+      
+      // Refresh course data to get updated reviews
+      if (courseId) {
+        loadCourseById(courseId);
+      }
+      
+      setShowReviewDialog(false);
+      setReviewRating(0);
+      setReviewComment('');
+      
+      alert('Review submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert('Failed to submit review. Please try again.');
+    } finally {
+      setIsSubmittingReview(false);
     }
   };
 
@@ -475,7 +629,13 @@ export const CourseDetails: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold">Student Reviews</h2>
-                    <Button variant="outline">Write a Review</Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowReviewDialog(true)}
+                      disabled={!isAuthenticated}
+                    >
+                      {isAuthenticated ? 'Write a Review' : 'Login to Review'}
+                    </Button>
                   </div>
 
                   {/* Rating Summary */}
@@ -483,29 +643,42 @@ export const CourseDetails: React.FC = () => {
                     <CardContent className="p-6">
                       <div className="flex items-center space-x-8">
                         <div className="text-center">
-                          <div className="text-4xl font-bold mb-2">{course.rating}</div>
+                          <div className="text-4xl font-bold mb-2">
+                            {reviewStats?.averageRating || course.rating || 0}
+                          </div>
                           <div className="flex text-yellow-400 mb-1">
                             {[...Array(5)].map((_, i) => (
-                              <FaStar key={i} className={i < Math.floor(course.rating) ? '' : 'text-gray-300'} />
+                              <FaStar 
+                                key={i} 
+                                className={i < Math.floor(reviewStats?.averageRating || course.rating || 0) ? '' : 'text-gray-300'} 
+                              />
                             ))}
                           </div>
-                          <div className="text-sm text-gray-500">Course Rating</div>
+                          <div className="text-sm text-gray-500">
+                            {reviewStats?.totalReviews || 0} Review{(reviewStats?.totalReviews || 0) !== 1 ? 's' : ''}
+                          </div>
                         </div>
                         
                         <div className="flex-1">
-                          {[5, 4, 3, 2, 1].map((star) => (
-                            <div key={star} className="flex items-center mb-1">
-                              <span className="text-sm w-3">{star}</span>
-                              <FaStar className="text-yellow-400 mx-2" />
-                              <div className="flex-1 h-2 bg-gray-200 rounded">
-                                <div 
-                                  className="h-full bg-yellow-400 rounded" 
-                                  style={{ width: `${star === 5 ? 80 : star === 4 ? 15 : 5}%` }}
-                                ></div>
+                          {[5, 4, 3, 2, 1].map((star) => {
+                            const count = reviewStats?.ratingDistribution?.[star.toString() as keyof typeof reviewStats.ratingDistribution] || 0;
+                            const total = reviewStats?.totalReviews || 1;
+                            const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                            
+                            return (
+                              <div key={star} className="flex items-center mb-1">
+                                <span className="text-sm w-3">{star}</span>
+                                <FaStar className="text-yellow-400 mx-2" />
+                                <div className="flex-1 h-2 bg-gray-200 rounded">
+                                  <div 
+                                    className="h-full bg-yellow-400 rounded" 
+                                    style={{ width: `${percentage}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-sm ml-2 w-8">{percentage}%</span>
                               </div>
-                              <span className="text-sm ml-2 w-8">{star === 5 ? '80%' : star === 4 ? '15%' : '5%'}</span>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     </CardContent>
@@ -513,37 +686,81 @@ export const CourseDetails: React.FC = () => {
 
                   {/* Individual Reviews */}
                   <div className="space-y-6">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <Card key={i}>
-                        <CardContent className="p-6">
-                          <div className="flex items-start space-x-4">
-                            <img
-                              src={`/assets/student/student-${i + 1}.png`}
-                              alt="Student"
-                              className="w-12 h-12 rounded-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/assets/student/default-student.png';
-                              }}
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <h4 className="font-semibold">Student {i + 1}</h4>
-                                <span className="text-sm text-gray-500">2 days ago</span>
+                    {reviews.length > 0 ? (
+                      reviews.map((review) => {
+                        // Extract user name from email if available
+                        const userName = review.isAnonymous 
+                          ? 'Anonymous User' 
+                          : review.userId.email.split('@')[0] || 'User';
+                        
+                        return (
+                          <Card key={review._id}>
+                            <CardContent className="p-6">
+                              <div className="flex items-start space-x-4">
+                                <img
+                                  src={review.userId.photo || '/assets/student/default-student.png'}
+                                  alt={userName}
+                                  className="w-12 h-12 rounded-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = '/assets/student/default-student.png';
+                                  }}
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center space-x-2">
+                                      <h4 className="font-semibold capitalize">{userName}</h4>
+                                      {review.isVerifiedPurchase && (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                          <FaCheck className="mr-1 text-xs" />
+                                          Verified Purchase
+                                        </span>
+                                      )}
+                                      {review.isEdited && (
+                                        <span className="text-xs text-gray-400">(edited)</span>
+                                      )}
+                                    </div>
+                                    <span className="text-sm text-gray-500">
+                                      {new Date(review.createdAt).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric'
+                                      })}
+                                    </span>
+                                  </div>
+                                  <div className="flex text-yellow-400 mb-2">
+                                    <StarRating rating={review.rating} readonly />
+                                  </div>
+                                  <p className="text-gray-700 mb-3 whitespace-pre-wrap">{review.content}</p>
+                                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                    <button className="flex items-center hover:text-blue-600 transition-colors">
+                                      <FaThumbsUp className="mr-1" />
+                                      Helpful ({review.helpfulCount})
+                                    </button>
+                                    {review.unhelpfulCount > 0 && (
+                                      <span className="flex items-center">
+                                        <FaThumbsUp className="mr-1 rotate-180" />
+                                        {review.unhelpfulCount}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <div className="flex text-yellow-400 mb-2">
-                                {[...Array(5)].map((_, j) => (
-                                  <FaStar key={j} className={j < 5 ? '' : 'text-gray-300'} />
-                                ))}
-                              </div>
-                              <p className="text-gray-700">
-                                Excellent course with comprehensive content and great instructor. 
-                                The practical examples really helped me understand the concepts better.
-                              </p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                            </CardContent>
+                          </Card>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-12">
+                        <FaStar className="text-4xl text-gray-300 mb-4 mx-auto" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
+                        <p className="text-gray-500 mb-6">Be the first to review this course and help other students!</p>
+                        {isAuthenticated && (
+                          <Button onClick={() => setShowReviewDialog(true)}>
+                            Write the first review
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -634,6 +851,69 @@ export const CourseDetails: React.FC = () => {
                   onClick={() => setShowEnrollDialog(false)}
                   className="flex-1"
                   disabled={isEnrolling}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Write Review Dialog */}
+      {showReviewDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="max-w-lg w-full mx-4">
+            <CardHeader>
+              <h3 className="text-xl font-bold">Write a Review</h3>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Rating *
+                  </label>
+                  <StarRating 
+                    rating={reviewRating} 
+                    onRatingChange={setReviewRating}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Your Review *
+                  </label>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Share your experience with this course..."
+                    rows={5}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                    maxLength={1000}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {reviewComment.length}/1000 characters
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4 mt-6">
+                <Button 
+                  onClick={handleReviewSubmit}
+                  disabled={isSubmittingReview || reviewRating === 0 || !reviewComment.trim()}
+                  className="flex-1"
+                >
+                  {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowReviewDialog(false);
+                    setReviewRating(0);
+                    setReviewComment('');
+                  }}
+                  className="flex-1"
+                  disabled={isSubmittingReview}
                 >
                   Cancel
                 </Button>

@@ -25,9 +25,23 @@ export interface Tutorial {
   prerequisites: string[];
   learningOutcomes: string[];
   resources: TutorialResource[];
+  comments?: Comment[];
   createdAt: string;
   updatedAt: string;
   __v: number;
+}
+
+export interface Comment {
+  _id: string;
+  tutorialId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  likes: number;
+  replies?: Comment[];
 }
 
 export interface TutorialResource {

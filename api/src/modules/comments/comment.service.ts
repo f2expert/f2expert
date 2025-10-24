@@ -108,6 +108,35 @@ export const getCommentById = async (commentId: string) => {
     .populate('author.userId', 'firstName lastName photo')
 }
 
+export const updateComment = async (commentId: string, updateData: IUpdateCommentRequest, userId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(commentId)) {
+    throw new Error('Invalid comment ID format')
+  }
+
+  const comment = await CommentModel.findById(commentId)
+  if (!comment) {
+    throw new Error('Comment not found')
+  }
+
+  // Check if user is the author of the comment
+  if (comment.author.userId.toString() !== userId) {
+    throw new Error('Not authorized to update this comment')
+  }
+
+  // Update the comment
+  const updatedComment = await CommentModel.findByIdAndUpdate(
+    commentId,
+    {
+      content: updateData.content,
+      isEdited: true,
+      updatedAt: new Date()
+    },
+    { new: true }
+  ).populate('replies')
+
+  return updatedComment
+}
+
 export const getCommentsByTutorial = async (
   tutorialId: string, 
   page: number = 1, 
@@ -198,41 +227,6 @@ export const getCommentReplies = async (parentId: string, page: number = 1, limi
   }
 }
 
-export const updateComment = async (commentId: string, updateData: IUpdateCommentRequest, userId: string) => {
-  if (!mongoose.Types.ObjectId.isValid(commentId)) {
-    throw new Error('Invalid comment ID format')
-  }
-
-  const comment = await CommentModel.findById(commentId)
-  if (!comment) {
-    throw new Error('Comment not found')
-  }
-
-  // Check if user owns the comment
-  if (comment.author.userId.toString() !== userId) {
-    throw new Error('You can only edit your own comments')
-  }
-
-  // Store edit history
-  const editHistory = comment.editHistory || []
-  editHistory.push({
-    content: comment.content,
-    editedAt: new Date()
-  })
-
-  const updatedComment = await CommentModel.findByIdAndUpdate(
-    commentId,
-    {
-      content: updateData.content,
-      isEdited: true,
-      editHistory: editHistory
-    },
-    { new: true, runValidators: true }
-  ).populate('replies')
-
-  return updatedComment
-}
-
 export const deleteComment = async (commentId: string, userId: string, isAdmin: boolean = false) => {
   if (!mongoose.Types.ObjectId.isValid(commentId)) {
     throw new Error('Invalid comment ID format')
@@ -307,11 +301,7 @@ export const unlikeComment = async (commentId: string) => {
     throw new Error('Comment not found')
   }
 
-  // Ensure likes don't go below 0
-  if (comment.likes < 0) {
-    comment.likes = 0
-    await comment.save()
-  }
+
 
   return comment
 }
@@ -349,13 +339,98 @@ export const undislikeComment = async (commentId: string) => {
     throw new Error('Comment not found')
   }
 
-  // Ensure dislikes don't go below 0
-  if (comment.dislikes < 0) {
-    comment.dislikes = 0
-    await comment.save()
-  }
+
 
   return comment
+}
+
+// Unified toggle methods
+export const toggleLike = async (commentId: string, userId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(commentId)) {
+    throw new Error('Invalid comment ID format')
+  }
+
+  const comment = await CommentModel.findById(commentId)
+  if (!comment) {
+    throw new Error('Comment not found')
+  }
+
+  const hasLiked = comment.likes.some(id => id.toString() === userId)
+  const hasDisliked = comment.dislikes.some(id => id.toString() === userId)
+  
+  let updateQuery: any = {}
+  let userAction: string
+
+  if (hasLiked) {
+    // User has already liked, remove the like
+    updateQuery = { $pull: { likes: userId } }
+    userAction = 'unliked'
+  } else {
+    // User hasn't liked, add the like
+    updateQuery = { $addToSet: { likes: userId } }
+    userAction = 'liked'
+    
+    // If user has disliked, remove the dislike
+    if (hasDisliked) {
+      updateQuery.$pull = { dislikes: userId }
+    }
+  }
+
+  const updatedComment = await CommentModel.findByIdAndUpdate(
+    commentId,
+    updateQuery,
+    { new: true }
+  )
+
+  return {
+    likes: updatedComment!.likes.length,
+    dislikes: updatedComment!.dislikes.length,
+    userAction
+  }
+}
+
+export const toggleDislike = async (commentId: string, userId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(commentId)) {
+    throw new Error('Invalid comment ID format')
+  }
+
+  const comment = await CommentModel.findById(commentId)
+  if (!comment) {
+    throw new Error('Comment not found')
+  }
+
+  const hasLiked = comment.likes.some(id => id.toString() === userId)
+  const hasDisliked = comment.dislikes.some(id => id.toString() === userId)
+  
+  let updateQuery: any = {}
+  let userAction: string
+
+  if (hasDisliked) {
+    // User has already disliked, remove the dislike
+    updateQuery = { $pull: { dislikes: userId } }
+    userAction = 'undisliked'
+  } else {
+    // User hasn't disliked, add the dislike
+    updateQuery = { $addToSet: { dislikes: userId } }
+    userAction = 'disliked'
+    
+    // If user has liked, remove the like
+    if (hasLiked) {
+      updateQuery.$pull = { likes: userId }
+    }
+  }
+
+  const updatedComment = await CommentModel.findByIdAndUpdate(
+    commentId,
+    updateQuery,
+    { new: true }
+  )
+
+  return {
+    likes: updatedComment!.likes.length,
+    dislikes: updatedComment!.dislikes.length,
+    userAction
+  }
 }
 
 export const reportComment = async (commentId: string, reportData: ICommentReportRequest, userId: string) => {

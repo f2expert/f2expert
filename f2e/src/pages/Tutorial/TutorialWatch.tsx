@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "../../components/atoms/Button";
 import { Card, CardContent, CardHeader } from "../../components/atoms/Card";
@@ -26,25 +26,12 @@ import {
 } from "react-icons/fa";
 import { YouTubeEmbed } from "react-social-media-embed";
 import { cn } from "../../lib/utils";
-
-// Comment interface
-interface Comment {
-  _id: string;
-  tutorialId: string;
-  userId: string;
-  userName: string;
-  userAvatar?: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-  likes: number;
-  replies?: Comment[];
-}
+import type { Comment } from "../../services/tutorialApi";
 
 export const TutorialWatch: React.FC = () => {
   const { tutorialId } = useParams<{ tutorialId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { tutorials } = useTutorials(); // For related tutorials
   const { tutorial, isLoading, error } = useTutorial(tutorialId); // For current tutorial
 
@@ -58,10 +45,11 @@ export const TutorialWatch: React.FC = () => {
   const [isDisliked, setIsDisliked] = useState(false);
   
   // Comment state
-  const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [commentsLoading, setCommentsLoading] = useState(false);
+  
+  // Get comments from tutorial data
+  const comments = tutorial?.comments || [];
 
   useEffect(() => {
     // Load user progress and preferences
@@ -88,73 +76,7 @@ export const TutorialWatch: React.FC = () => {
     }
   }, [tutorial, tutorialId, isAuthenticated]);
 
-  // Mock comments function
-  const getMockComments = useCallback((): Comment[] => {
-    return [
-      {
-        _id: '1',
-        tutorialId: tutorialId || '',
-        userId: 'user1',
-        userName: 'John Doe',
-        userAvatar: '/assets/student/default-avatar.png',
-        content: 'Great tutorial! Very helpful and easy to follow. The examples were particularly useful.',
-        createdAt: '2024-10-20T10:30:00Z',
-        updatedAt: '2024-10-20T10:30:00Z',
-        likes: 5
-      },
-      {
-        _id: '2',
-        tutorialId: tutorialId || '',
-        userId: 'user2',
-        userName: 'Sarah Smith',
-        userAvatar: '/assets/student/default-avatar.png',
-        content: 'Thanks for this tutorial. Could you please add more advanced examples in the next one?',
-        createdAt: '2024-10-19T15:45:00Z',
-        updatedAt: '2024-10-19T15:45:00Z',
-        likes: 3
-      },
-      {
-        _id: '3',
-        tutorialId: tutorialId || '',
-        userId: 'user3',
-        userName: 'Mike Johnson',
-        userAvatar: '/assets/student/default-avatar.png',
-        content: 'Perfect explanation! I was struggling with this concept and now it makes perfect sense.',
-        createdAt: '2024-10-18T09:15:00Z',
-        updatedAt: '2024-10-18T09:15:00Z',
-        likes: 8
-      }
-    ];
-  }, [tutorialId]);
 
-  // Load comments when tutorial changes
-  useEffect(() => {
-    const loadCommentsData = async () => {
-      if (!tutorialId) return;
-      
-      setCommentsLoading(true);
-      try {
-        const response = await fetch(`http://localhost:5000/api/tutorials/${tutorialId}/comments`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        setComments(result.data || result || []);
-      } catch (error) {
-        console.error('Error loading comments:', error);
-        // For now, use mock comments if API fails
-        setComments(getMockComments());
-      } finally {
-        setCommentsLoading(false);
-      }
-    };
-
-    if (tutorialId) {
-      loadCommentsData();
-    }
-  }, [tutorialId, getMockComments]);
 
   const toggleBookmark = () => {
     const newBookmarkState = !isBookmarked;
@@ -275,8 +197,9 @@ export const TutorialWatch: React.FC = () => {
         },
         body: JSON.stringify({
           content: newComment.trim(),
-          userId: 'current-user-id', // Replace with actual user ID
-          userName: 'Current User' // Replace with actual user name
+          contentType: "tutorial",
+          contentId: tutorialId,
+          userId: user?.id
         })
       });
 
@@ -286,19 +209,9 @@ export const TutorialWatch: React.FC = () => {
 
       const result = await response.json();
       
-      // Add new comment to the list
-      const newCommentObj: Comment = {
-        _id: result._id || Date.now().toString(),
-        tutorialId: tutorialId,
-        userId: 'current-user-id',
-        userName: 'Current User',
-        content: newComment.trim(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        likes: 0
-      };
-      
-      setComments(prev => [newCommentObj, ...prev]);
+      // Since comments will be reloaded with the tutorial data,
+      // we can show immediate feedback by logging the result
+      console.log('Comment submitted successfully:', result);
       setNewComment('');
       
       alert('Comment posted successfully!');
@@ -701,24 +614,9 @@ export const TutorialWatch: React.FC = () => {
                     )}
 
                     {/* Comments List */}
-                    {commentsLoading ? (
+                    {comments.length > 0 ? (
                       <div className="space-y-4">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="animate-pulse">
-                            <div className="flex space-x-3">
-                              <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                              <div className="flex-1">
-                                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                                <div className="h-3 bg-gray-200 rounded w-full mb-1"></div>
-                                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : comments.length > 0 ? (
-                      <div className="space-y-4">
-                        {comments.map((comment) => (
+                        {comments.map((comment: Comment) => (
                           <div key={comment._id} className="border-b border-gray-100 pb-4 last:border-b-0">
                             <div className="flex space-x-3">
                               <img

@@ -1,5 +1,6 @@
 import { CourseModel } from "./course.model"
 import { CourseDTO, CourseFilters, CourseSortOptions } from "./course.types"
+import * as ReviewService from "./review.service"
 
 export const getAllCourses = async () => {
   return CourseModel.find({ isPublished: true }).populate('instructor', 'name email')
@@ -89,7 +90,29 @@ export const getLimitedCourses = async (limit: number) => {
 }
 
 export const getCourseById = async (id: string) => {
-  return CourseModel.findById(id).populate('instructor', 'name email')
+  const course = await CourseModel.findById(id).populate('instructor', 'name email')
+  
+  if (!course) {
+    return null
+  }
+
+  // Get review statistics
+  const reviewStats = await ReviewService.getReviewStats(id)
+  
+  // Get recent reviews (first 5 approved reviews)
+  const recentReviews = await ReviewService.getReviewsByCourse(id, 1, 5, 'createdAt', 'desc')
+  
+  // Convert to plain object and add review data
+  const courseData = course.toObject()
+  
+  return {
+    ...courseData,
+    reviewData: {
+      stats: reviewStats,
+      recentReviews: recentReviews.reviews || [],
+      hasMoreReviews: recentReviews.pagination?.totalReviews > 5
+    }
+  }
 }
 
 export const getCoursesWithFilters = async (filters: CourseFilters, sort: CourseSortOptions, page: number = 1, limit: number = 10) => {

@@ -13,5 +13,9 @@ export const swaggerSpec = swaggerJSDoc({
     ],
   },
   // Path to your API route files where swagger comments are written
-  apis: ["./src/modules/**/*.ts", "./src/routes/**/*.ts"],
+  apis: [
+    "./src/modules/**/*.ts", 
+    "./src/routes/**/*.ts",
+    "./src/modules/course/review.swagger.ts"
+  ],
 })

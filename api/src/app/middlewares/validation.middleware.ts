@@ -17,7 +17,8 @@ export const validateBody = (schema: ObjectSchema) => {
         const errorMessage = error.details.map(detail => detail.message).join(", ")
         return sendError(res, HTTP_STATUS.BAD_REQUEST, errorMessage)
       }
-      
+      console.log("Request Body:", req.body);
+      console.log("Error:", error);
       req.body = value
       next()
     } catch (err: any) {

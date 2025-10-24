@@ -196,7 +196,7 @@ export const getLimited = async (req: Request, res: Response) => {
  *   get:
  *     tags:
  *       - Tutorials
- *     summary: Retrieve tutorial by ID
+ *     summary: Retrieve tutorial by ID with associated comments
  *     parameters:
  *       - in: path
  *         name: id
@@ -204,9 +204,30 @@ export const getLimited = async (req: Request, res: Response) => {
  *         schema:
  *           type: string
  *         description: Tutorial ID
+ *       - in: query
+ *         name: includeComments
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *         description: Whether to include comments in the response
+ *       - in: query
+ *         name: commentPage
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for comments pagination
+ *       - in: query
+ *         name: commentLimit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Number of comments per page
  *     responses:
  *       200:
- *         description: Tutorial details
+ *         description: Tutorial details with embedded comments
  *         content:
  *           application/json:
  *             schema:
@@ -219,7 +240,37 @@ export const getLimited = async (req: Request, res: Response) => {
  *                   type: string
  *                   example: "Success"
  *                 data:
- *                   $ref: '#/components/schemas/TutorialDetail'
+ *                   allOf:
+ *                     - $ref: '#/components/schemas/TutorialDetail'
+ *                     - type: object
+ *                       properties:
+ *                         comments:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Comment'
+ *                           description: "Array of comments for this tutorial"
+ *                         commentsPagination:
+ *                           type: object
+ *                           properties:
+ *                             currentPage:
+ *                               type: integer
+ *                               example: 1
+ *                             totalPages:
+ *                               type: integer
+ *                               example: 1
+ *                             totalComments:
+ *                               type: integer
+ *                               example: 2
+ *                             hasNext:
+ *                               type: boolean
+ *                               example: false
+ *                             hasPrev:
+ *                               type: boolean
+ *                               example: false
+ *                             limit:
+ *                               type: integer
+ *                               example: 10
+ *                           description: "Pagination information for comments"
  *       404:
  *         description: Tutorial not found
  *         content:
@@ -246,7 +297,46 @@ export const getById = async (req: Request, res: Response) => {
     // Increment view count
     await TutorialService.incrementTutorialViews(req.params.id)
 
-    return sendResponse(res, HTTP_STATUS.OK, tutorial, MESSAGES.SUCCESS)
+    // Check if comments should be included (default: true)
+    const includeComments = req.query.includeComments !== 'false'
+    
+    // Convert tutorial to plain object to add comments
+    const tutorialData: any = tutorial.toObject ? tutorial.toObject() : { ...tutorial }
+
+    if (includeComments) {
+      try {
+        const commentPage = parseInt(req.query.commentPage as string) || 1
+        const commentLimit = parseInt(req.query.commentLimit as string) || 10
+        const sortBy = 'createdAt'
+        const sortOrder = 'desc'
+
+        const commentsResult = await CommentService.getCommentsByTutorial(
+          req.params.id, 
+          commentPage, 
+          commentLimit, 
+          sortBy, 
+          sortOrder
+        )
+
+        // Add comments directly to tutorial object
+        tutorialData.comments = commentsResult.comments
+        tutorialData.commentsPagination = commentsResult.pagination
+      } catch (commentErr: any) {
+        // If comment fetching fails, still return tutorial data but log the error
+        console.error('Error fetching comments for tutorial:', commentErr.message)
+        tutorialData.comments = []
+        tutorialData.commentsPagination = {
+          currentPage: 1,
+          totalPages: 0,
+          totalComments: 0,
+          hasNext: false,
+          hasPrev: false,
+          limit: 10
+        }
+      }
+    }
+
+    return sendResponse(res, HTTP_STATUS.OK, tutorialData, MESSAGES.SUCCESS)
   } catch (err: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
   }

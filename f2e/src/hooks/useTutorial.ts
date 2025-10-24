@@ -22,15 +22,7 @@ export const useTutorial = (tutorialId?: string) => {
       console.log('useTutorial: API URL will be: http://localhost:5000/api/tutorials/' + id);
       
       const tutorial = await tutorialApiService.getTutorialById(id);
-      console.log('useTutorial: Tutorial API call successful');
-      console.log('useTutorial: Received tutorial data:', {
-        id: tutorial._id,
-        title: tutorial.title,
-        hasVideoUrl: !!tutorial.videoUrl,
-        category: tutorial.category,
-        instructor: tutorial.instructor
-      });
-      
+            
       setState(prev => ({
         ...prev,
         tutorial,

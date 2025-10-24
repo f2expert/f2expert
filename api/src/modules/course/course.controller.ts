@@ -5,6 +5,7 @@ import { HTTP_STATUS } from "../../app/constants/http-status.constant"
 import { sendError, sendResponse } from "../../app/utils/response.util"
 import * as CourseService from "./course.service"
 import * as CommentService from "../comments/comment.service"
+import * as ReviewService from "./review.service"
 import { ApiResponse } from "../../app/types/ApiResponse.interface"
 /**
  * @openapi
@@ -108,16 +109,132 @@ export const getLimited = async (req: Request, res: Response) => {
  *   get:
  *     tags:
  *       - Course
- *     summary: Retrieve course by ID
+ *     summary: Retrieve course by ID with review data
+ *     description: |
+ *       Get detailed course information including review statistics and recent reviews.
+ *       
+ *       **Includes:**
+ *       - Course details and instructor information
+ *       - Review statistics (total, average rating, distribution)
+ *       - Recent reviews (up to 5 latest approved reviews)
+ *       - Review engagement metrics
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *         description: Course ID
+ *         example: "507f1f77bcf86cd799439011"
  *     responses:
  *       200:
- *         description: Course details
+ *         description: Course details with review data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Course retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     title:
+ *                       type: string
+ *                     description:
+ *                       type: string
+ *                     instructor:
+ *                       type: object
+ *                       properties:
+ *                         name:
+ *                           type: string
+ *                         email:
+ *                           type: string
+ *                     category:
+ *                       type: string
+ *                     level:
+ *                       type: string
+ *                     price:
+ *                       type: number
+ *                     reviewData:
+ *                       type: object
+ *                       properties:
+ *                         stats:
+ *                           type: object
+ *                           properties:
+ *                             totalReviews:
+ *                               type: integer
+ *                               example: 150
+ *                             averageRating:
+ *                               type: number
+ *                               example: 4.3
+ *                             ratingDistribution:
+ *                               type: object
+ *                               properties:
+ *                                 "1":
+ *                                   type: integer
+ *                                 "2":
+ *                                   type: integer
+ *                                 "3":
+ *                                   type: integer
+ *                                 "4":
+ *                                   type: integer
+ *                                 "5":
+ *                                   type: integer
+ *                             verifiedReviews:
+ *                               type: integer
+ *                             approvedReviews:
+ *                               type: integer
+ *                             pendingReviews:
+ *                               type: integer
+ *                         recentReviews:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               _id:
+ *                                 type: string
+ *                               title:
+ *                                 type: string
+ *                               content:
+ *                                 type: string
+ *                               rating:
+ *                                 type: integer
+ *                               author:
+ *                                 type: object
+ *                                 properties:
+ *                                   name:
+ *                                     type: string
+ *                                   photo:
+ *                                     type: string
+ *                               helpfulCount:
+ *                                 type: integer
+ *                               isVerifiedPurchase:
+ *                                 type: boolean
+ *                               createdAt:
+ *                                 type: string
+ *                                 format: date-time
+ *                         hasMoreReviews:
+ *                           type: boolean
+ *                           example: true
+ *       404:
+ *         description: Course not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *             example:
+ *               success: false
+ *               message: "Course not found"
+ *               data: null
+ *       500:
+ *         description: Internal server error
  */
 export const getById = async (req: Request, res: Response) => {
   try {
@@ -692,6 +809,367 @@ export const addCourseComment = async (req: Request, res: Response) => {
     const comment = await CommentService.createComment(commentData, userId)
     return sendResponse(res, HTTP_STATUS.CREATED, comment, "Comment added successfully")
   } catch (err: any) {
+    return sendError(res, HTTP_STATUS.BAD_REQUEST, err.message)
+  }
+}
+
+/**
+ * @openapi
+ * /courses/{id}/reviews:
+ *   get:
+ *     tags:
+ *       - Course Reviews
+ *     summary: Get reviews for a course
+ *     description: |
+ *       Retrieve paginated reviews for a specific course with filtering and sorting options.
+ *       
+ *       **Features:**
+ *       - Pagination support
+ *       - Multiple sorting options
+ *       - Rating filters
+ *       - Only approved reviews are returned
+ *       - Includes helpful/unhelpful vote counts
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *         example: "507f1f77bcf86cd799439011"
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Number of reviews per page
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, rating, helpfulCount, updatedAt]
+ *           default: createdAt
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Sort order
+ *       - in: query
+ *         name: minRating
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 5
+ *         description: Minimum rating filter
+ *       - in: query
+ *         name: maxRating
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 5
+ *         description: Maximum rating filter
+ *     responses:
+ *       200:
+ *         description: Reviews retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Reviews retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     reviews:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           title:
+ *                             type: string
+ *                           content:
+ *                             type: string
+ *                           rating:
+ *                             type: integer
+ *                           author:
+ *                             type: object
+ *                             properties:
+ *                               name:
+ *                                 type: string
+ *                               photo:
+ *                                 type: string
+ *                           helpfulCount:
+ *                             type: integer
+ *                           unhelpfulCount:
+ *                             type: integer
+ *                           isVerifiedPurchase:
+ *                             type: boolean
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ *                         totalReviews:
+ *                           type: integer
+ *                         hasNext:
+ *                           type: boolean
+ *                         hasPrev:
+ *                           type: boolean
+ *       404:
+ *         description: Course not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *             example:
+ *               success: false
+ *               message: "Course not found"
+ *               data: null
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+export const getCourseReviews = async (req: Request, res: Response) => {
+  try {
+    const courseId = req.params.id
+    const page = parseInt(req.query.page as string) || 1
+    const limit = parseInt(req.query.limit as string) || 10
+    const sortBy = req.query.sortBy as string || 'createdAt'
+    const sortOrder = req.query.sortOrder as string || 'desc'
+
+    // Build filters
+    const filters: any = {}
+    if (req.query.minRating) filters.rating = { $gte: parseInt(req.query.minRating as string) }
+    if (req.query.maxRating) {
+      filters.rating = { ...filters.rating, $lte: parseInt(req.query.maxRating as string) }
+    }
+
+    // Verify course exists
+    const course = await CourseService.getCourseById(courseId)
+    if (!course) {
+      return sendResponse(res, HTTP_STATUS.NOT_FOUND, null, "Course not found")
+    }
+
+    const result = await ReviewService.getReviewsByCourse(courseId, page, limit, sortBy, sortOrder, filters)
+    
+    return sendResponse(res, HTTP_STATUS.OK, result, "Reviews retrieved successfully")
+  } catch (err: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
+  }
+}
+
+/**
+ * @openapi
+ * /courses/{id}/reviews:
+ *   post:
+ *     tags:
+ *       - Course Reviews
+ *     summary: Add a review to a course
+ *     description: |
+ *       Add a review for a specific course. Users can only review each course once.
+ *       
+ *       **Features:**
+ *       - One review per user per course
+ *       - Reviews require approval before being visible
+ *       - Support for anonymous reviews
+ *       - Automatic verification of course enrollment (if implemented)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *         example: "507f1f77bcf86cd799439011"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *               - rating
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 minLength: 10
+ *                 maxLength: 200
+ *                 example: "Excellent course with great content!"
+ *                 description: "Review title (optional)"
+ *               content:
+ *                 type: string
+ *                 minLength: 50
+ *                 maxLength: 2000
+ *                 example: "This course provided comprehensive coverage of the subject matter. The instructor was knowledgeable and the examples were practical and relevant to real-world scenarios."
+ *                 description: "Detailed review content"
+ *               rating:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 example: 5
+ *                 description: "Rating from 1 to 5 stars"
+ *               isAnonymous:
+ *                 type: boolean
+ *                 default: false
+ *                 example: false
+ *                 description: "Whether to post the review anonymously"
+ *               userId:
+ *                 type: string
+ *                 example: "507f1f77bcf86cd799439013"
+ *                 description: "User ID (for testing, usually from auth)"
+ *           examples:
+ *             positiveReview:
+ *               summary: Positive Review
+ *               value:
+ *                 title: "Outstanding course - highly recommended!"
+ *                 content: "This course exceeded my expectations. The content was well-structured, the instructor was engaging, and I learned practical skills that I can apply immediately in my work. The assignments were challenging but fair, and the community support was excellent."
+ *                 rating: 5
+ *                 isAnonymous: false
+ *             reviewWithoutTitle:
+ *               summary: Review Without Title
+ *               value:
+ *                 content: "The course content is solid and covers the basics well. However, some of the advanced topics could use more depth. The instructor is knowledgeable but the pace is sometimes too fast for beginners. Overall, a decent learning experience."
+ *                 rating: 4
+ *                 isAnonymous: true
+ *     responses:
+ *       201:
+ *         description: Review added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Review added successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     title:
+ *                       type: string
+ *                     content:
+ *                       type: string
+ *                     rating:
+ *                       type: integer
+ *                     isApproved:
+ *                       type: boolean
+ *                       example: false
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *       400:
+ *         description: Validation error or user already reviewed this course
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "You have already reviewed this course"
+ *       401:
+ *         description: Authentication required
+ *       404:
+ *         description: Course not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *             example:
+ *               success: false
+ *               message: "Course not found"
+ *               data: null
+ *       409:
+ *         description: User already reviewed this course
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *             example:
+ *               success: false
+ *               message: "You have already reviewed this course"
+ *               data: null
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+export const addCourseReview = async (req: Request, res: Response) => {
+  try {
+    console.log("addCourseReview - Request body:", req.body);
+    console.log("addCourseReview - Request params:", req.params);
+    
+    const userId = (req as any).user?.id || req.body.userId // Fallback for testing
+    console.log("addCourseReview - User ID:", userId);
+    
+    if (!userId) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Authentication required")
+    }
+
+    const courseId = req.params.id
+    console.log("addCourseReview - Course ID:", courseId);
+    
+    // Verify course exists
+    const course = await CourseService.getCourseById(courseId)
+    if (!course) {
+      return sendResponse(res, HTTP_STATUS.NOT_FOUND, null, "Course not found")
+    }
+
+    const reviewData = {
+      courseId: courseId,
+      content: req.body.content,
+      rating: req.body.rating,
+      isAnonymous: req.body.isAnonymous || false
+    }
+
+    console.log("addCourseReview - Review data to create:", reviewData);
+
+    const review = await ReviewService.createReview(reviewData, userId)
+    console.log("addCourseReview - Created review:", review);
+    
+    return sendResponse(res, HTTP_STATUS.CREATED, review, "Review added successfully. It will be visible after approval.")
+  } catch (err: any) {
+    console.error("addCourseReview - Error:", err);
     return sendError(res, HTTP_STATUS.BAD_REQUEST, err.message)
   }
 }

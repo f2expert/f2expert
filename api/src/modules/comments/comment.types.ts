@@ -15,8 +15,8 @@ export interface ICommentDTO {
     content: string
     editedAt: Date
   }[]
-  likes?: number
-  dislikes?: number
+  likes?: string[]
+  dislikes?: string[]
   isReported?: boolean
   reportCount?: number
   level?: number

@@ -2,13 +2,16 @@ import { Schema, model, Document } from "mongoose"
 
 export interface IComment extends Document {
   content: string
+  contentType: 'tutorial' | 'course'
+  contentId: Schema.Types.ObjectId
   author: {
     userId: Schema.Types.ObjectId
     name: string
     email: string
     photo?: string
   }
-  tutorialId: Schema.Types.ObjectId
+  tutorialId?: Schema.Types.ObjectId
+  courseId?: Schema.Types.ObjectId
   parentId?: Schema.Types.ObjectId // For nested replies
   isApproved: boolean
   isEdited: boolean
@@ -16,8 +19,8 @@ export interface IComment extends Document {
     content: string
     editedAt: Date
   }[]
-  likes: number
-  dislikes: number
+  likes: Schema.Types.ObjectId[]
+  dislikes: Schema.Types.ObjectId[]
   isReported: boolean
   reportCount: number
   reports?: {
@@ -85,16 +88,14 @@ const commentSchema = new Schema<IComment>(
       content: String,
       editedAt: Date
     }],
-    likes: {
-      type: Number,
-      default: 0,
-      min: 0
-    },
-    dislikes: {
-      type: Number,
-      default: 0,
-      min: 0
-    },
+    likes: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    dislikes: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }],
     isReported: {
       type: Boolean,
       default: false
