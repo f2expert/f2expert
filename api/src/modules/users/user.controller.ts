@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import * as UserService from "./user.service"
+import * as EnrollmentService from "../enrollments/enrollment.service"
 import { sendError, sendResponse } from "../../app/utils/response.util"
 import { HTTP_STATUS } from "../../app/constants/http-status.constant"
 import { ICreateUserRequest, IUpdateUserRequest } from "./user.types"
@@ -1099,6 +1100,51 @@ export const deleteUserPhoto = async (req: Request, res: Response) => {
  *                     token:
  *                       type: string
  *                       description: JWT authentication token
+ *                     enrollments:
+ *                       type: array
+ *                       description: User's course enrollments
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                             description: Enrollment ID
+ *                           status:
+ *                             type: string
+ *                             enum: [enrolled, completed, cancelled]
+ *                             description: Enrollment status
+ *                           enrolledAt:
+ *                             type: string
+ *                             format: date-time
+ *                             description: Date of enrollment
+ *                           courseId:
+ *                             type: object
+ *                             description: Course details
+ *                             properties:
+ *                               _id:
+ *                                 type: string
+ *                               title:
+ *                                 type: string
+ *                               description:
+ *                                 type: string
+ *                               instructor:
+ *                                 type: string
+ *                               category:
+ *                                 type: string
+ *                               level:
+ *                                 type: string
+ *                               price:
+ *                                 type: number
+ *                               thumbnailUrl:
+ *                                 type: string
+ *                               duration:
+ *                                 type: string
+ *                               totalHours:
+ *                                 type: number
+ *                               rating:
+ *                                 type: number
+ *                               totalStudents:
+ *                                 type: number
  *       400:
  *         description: Missing required fields
  *       401:
@@ -1140,6 +1186,11 @@ export const loginUser = async (req: Request, res: Response) => {
       email: user.email, 
       role: user.role 
     })
+
+    // Get user enrollments
+    console.log("Fetching enrollments for user ID:", (user._id as any).toString())
+    const enrollments = await EnrollmentService.getEnrollmentsByUserId((user._id as any).toString())
+    console.log("Found enrollments:", enrollments)
 
     // Prepare complete user data with role-specific information
     const userData: any = {
@@ -1183,7 +1234,8 @@ export const loginUser = async (req: Request, res: Response) => {
 
     return sendResponse(res, HTTP_STATUS.OK, {
       user: userData,
-      token
+      token,
+      enrollments: enrollments || []
     }, "Login successful")
 
   } catch (error: any) {
