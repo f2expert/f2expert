@@ -86,7 +86,8 @@ export const getById = async (req: Request, res: Response) => {
  *                 type: string
  *               status:
  *                 type: string
- *                 enum: [active, completed, cancelled]
+ *                 enum: [enrolled, completed, cancelled]
+ *                 default: enrolled
  *     responses:
  *       201:
  *         description: Enrollment created successfully
@@ -133,7 +134,7 @@ export const create = async (req: Request, res: Response) => {
  *                 type: string
  *               status:
  *                 type: string
- *                 enum: [active, completed, cancelled]
+ *                 enum: [enrolled, completed, cancelled]
  *     responses:
  *       200:
  *         description: Enrollment updated successfully

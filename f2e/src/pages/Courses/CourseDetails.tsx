@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
 import { Card, CardContent, CardHeader } from '../../components/atoms/Card';
 import { Skeleton } from '../../components/atoms/Skeleton';
@@ -111,7 +111,7 @@ export const CourseDetails: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const { currentCourse, isLoading, error, loadCourseById, enroll, isEnrolling } = useCourses();
+  const { currentCourse, isLoading, error, loadCourseById } = useCourses();
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'instructor' | 'reviews'>('overview');
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
@@ -123,6 +123,7 @@ export const CourseDetails: React.FC = () => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
+  const [isEnrolling, setIsEnrolling] = useState(false);
 
   // Load course details
   useEffect(() => {
@@ -167,14 +168,46 @@ export const CourseDetails: React.FC = () => {
       return;
     }
 
-    if (!courseId) return;
+    if (!courseId || !user?.id) return;
 
-    const result = await enroll(courseId);
-    if (result.success) {
-      alert('Successfully enrolled in the course!');
-      setShowEnrollDialog(false);
-    } else {
-      alert(`Enrollment failed: ${result.error}`);
+    setIsEnrolling(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/enrollments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${getAuthToken()}`,
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          courseId: courseId,
+          status: 'enrolled'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('Successfully enrolled in the course!');
+        setShowEnrollDialog(false);
+        
+        // Refresh course data to get updated enrollment status
+        if (courseId) {
+          loadCourseById(courseId);
+        }
+      } else {
+        throw new Error(result.message || 'Enrollment failed');
+      }
+    } catch (error) {
+      console.error('Error enrolling in course:', error);
+      alert(`Enrollment failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsEnrolling(false);
     }
   };
 
@@ -281,19 +314,7 @@ export const CourseDetails: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <Link to="/" className="hover:text-purple-600">Home</Link>
-            <span>/</span>
-            <Link to="/courses" className="hover:text-purple-600">Courses</Link>
-            <span>/</span>
-            <span className="text-gray-900 font-medium truncate">{course.title}</span>
-          </div>
-        </div>
-      </div>
-
+      
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
