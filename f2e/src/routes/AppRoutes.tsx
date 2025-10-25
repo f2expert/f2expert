@@ -6,7 +6,7 @@ import { About } from '../pages/About';
 import { Contact } from '../pages/Contact';
 import { Courses } from '../pages/Courses';
 import { Tutorial, TutorialWatch } from '../pages/Tutorial';
-import { Dashboard, Topic, TopicDetails, CreateCourse, CreateTutorial } from '../pages/Dashboard';
+import { Dashboard, Topic, TopicDetails, CreateCourse, CreateTutorial, EnrolledCourses } from '../pages/Dashboard';
 import { CourseDetails } from '../pages/Courses';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
@@ -106,6 +106,7 @@ export default function AppRoutes() {
         { path: "profile", element: <Profile /> },
         { path: "fee-details", element: <FeeDetails /> },
         { path: "notifications", element: <Notifications /> },
+        { path: "enrolled-courses", element: <EnrolledCourses /> },
         { path: ":lang/", element: <Topic /> },
         { path: ":lang/:topic", element: <TopicDetails /> }
       ],

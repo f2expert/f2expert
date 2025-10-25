@@ -16,3 +16,10 @@ export {
   type RefundResponse,
   PAYMENT_CONFIG
 } from './paymentApi';
+export {
+  enrollmentApiService,
+  type EnrollmentDetails,
+  type EnrollmentsResponse,
+  type EnrollmentFilters,
+  type EnrollmentStats
+} from './enrollmentApi';
