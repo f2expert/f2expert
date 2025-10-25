@@ -38,3 +38,23 @@ export const getEnrollmentsByUserId = async (userId: string) => {
     return []
   }
 }
+
+export const getEnrollmentsByUserIdSimplified = async (userId: string) => {
+  try {
+    console.log("Searching simplified enrollments for userId:", userId)
+    
+    // Convert string to ObjectId for proper comparison
+    const userObjectId = new Types.ObjectId(userId)
+    console.log("Converted to ObjectId:", userObjectId)
+
+    const enrollments = await EnrollmentModel.find({ userId: userObjectId, status: { $ne: "cancelled" } })
+      .select('_id courseId status createdAt')
+      .lean()
+    
+    console.log("Simplified enrollment service found:", enrollments?.length || 0, "enrollments")
+    return enrollments
+  } catch (error) {
+    console.error("Error in getEnrollmentsByUserIdSimplified:", error)
+    return []
+  }
+}

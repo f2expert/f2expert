@@ -10,7 +10,6 @@ export interface LoginResponse {
   success: boolean;
   message: string;
   data: {
-    token: string;
     user: {
       _id: string;
       firstName: string;
@@ -41,6 +40,13 @@ export interface LoginResponse {
         emergencyContact: Record<string, unknown>;
       };
     };
+    token: string;
+    enrollments: {
+      _id: string;
+      courseId: string;
+      status: string;
+      createdAt: string;
+    }[];
   };
 }
 
@@ -70,6 +76,12 @@ export interface AuthUser {
     enrollmentDate: string;
     emergencyContact: Record<string, unknown>;
   };
+  enrollments?: {
+    _id: string;
+    courseId: string;
+    status: string;
+    createdAt: string;
+  }[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -214,9 +226,10 @@ class AuthApiService {
         throw new Error(response.message || 'Login failed');
       }
 
-      // Extract user and token from response
+      // Extract user, token, and enrollments from response
       const userData = response.data.user;
       const tokenValue = response.data.token;
+      const enrollments = response.data.enrollments || [];
 
       // Ensure we have required data
       if (!tokenValue || !userData) {
@@ -245,6 +258,7 @@ class AuthApiService {
         isActive: userData.isActive,
         isEmailVerified: userData.isEmailVerified,
         studentInfo: userData.studentInfo,
+        enrollments: enrollments,
         createdAt: userData.createdAt,
         updatedAt: userData.updatedAt,
       };

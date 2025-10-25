@@ -1102,49 +1102,28 @@ export const deleteUserPhoto = async (req: Request, res: Response) => {
  *                       description: JWT authentication token
  *                     enrollments:
  *                       type: array
- *                       description: User's course enrollments
+ *                       description: User's course enrollments (simplified)
  *                       items:
  *                         type: object
  *                         properties:
  *                           _id:
  *                             type: string
  *                             description: Enrollment ID
+ *                             example: "68fbca0a93412e139f6f0868"
+ *                           courseId:
+ *                             type: string
+ *                             description: Course ID
+ *                             example: "68ea3d080c5167bd4aaec90f"
  *                           status:
  *                             type: string
  *                             enum: [enrolled, completed, cancelled]
  *                             description: Enrollment status
- *                           enrolledAt:
+ *                             example: "enrolled"
+ *                           createdAt:
  *                             type: string
  *                             format: date-time
  *                             description: Date of enrollment
- *                           courseId:
- *                             type: object
- *                             description: Course details
- *                             properties:
- *                               _id:
- *                                 type: string
- *                               title:
- *                                 type: string
- *                               description:
- *                                 type: string
- *                               instructor:
- *                                 type: string
- *                               category:
- *                                 type: string
- *                               level:
- *                                 type: string
- *                               price:
- *                                 type: number
- *                               thumbnailUrl:
- *                                 type: string
- *                               duration:
- *                                 type: string
- *                               totalHours:
- *                                 type: number
- *                               rating:
- *                                 type: number
- *                               totalStudents:
- *                                 type: number
+ *                             example: "2025-10-24T18:48:42.408Z"
  *       400:
  *         description: Missing required fields
  *       401:
@@ -1187,9 +1166,9 @@ export const loginUser = async (req: Request, res: Response) => {
       role: user.role 
     })
 
-    // Get user enrollments
+    // Get user enrollments (simplified for login response)
     console.log("Fetching enrollments for user ID:", (user._id as any).toString())
-    const enrollments = await EnrollmentService.getEnrollmentsByUserId((user._id as any).toString())
+    const enrollments = await EnrollmentService.getEnrollmentsByUserIdSimplified((user._id as any).toString())
     console.log("Found enrollments:", enrollments)
 
     // Prepare complete user data with role-specific information

@@ -65,6 +65,7 @@ export interface CourseDetails {
   difficulty: number;
   rating: number;
   totalStudents: number;
+  totalEnrollments: number;
   certificateProvided: boolean;
   hasProjects: boolean;
   hasAssignments: boolean;
@@ -315,7 +316,8 @@ class CourseApiService {
         isFeatured: true,
         difficulty: 3,
         rating: 4.8,
-        totalStudents: 8950,
+        totalStudents: 25420,
+        totalEnrollments: 25420,
         certificateProvided: true,
         hasProjects: true,
         hasAssignments: true,
@@ -395,7 +397,8 @@ class CourseApiService {
         isFeatured: false,
         difficulty: 4,
         rating: 4.6,
-        totalStudents: 5670,
+        totalStudents: 32100,
+        totalEnrollments: 32100,
         certificateProvided: true,
         hasProjects: true,
         hasAssignments: true,
@@ -475,7 +478,8 @@ class CourseApiService {
         isFeatured: false,
         difficulty: 2,
         rating: 4.7,
-        totalStudents: 12450,
+        totalStudents: 18350,
+        totalEnrollments: 18350,
         certificateProvided: true,
         hasProjects: true,
         hasAssignments: false,
@@ -549,7 +553,8 @@ class CourseApiService {
         isFeatured: true,
         difficulty: 3,
         rating: 4.9,
-        totalStudents: 9800,
+        totalStudents: 28750,
+        totalEnrollments: 28750,
         certificateProvided: true,
         hasProjects: true,
         hasAssignments: true,

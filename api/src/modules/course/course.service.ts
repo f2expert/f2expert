@@ -1,6 +1,7 @@
 import { CourseModel } from "./course.model"
 import { CourseDTO, CourseFilters, CourseSortOptions } from "./course.types"
 import * as ReviewService from "./review.service"
+import { EnrollmentModel } from "../enrollments/enrollment.model"
 
 export const getAllCourses = async () => {
   return CourseModel.find({ isPublished: true }).populate('instructor', 'name email')
@@ -102,11 +103,15 @@ export const getCourseById = async (id: string) => {
   // Get recent reviews (first 5 approved reviews)
   const recentReviews = await ReviewService.getReviewsByCourse(id, 1, 5, 'createdAt', 'desc')
   
+  // Get total enrollments count
+  const totalEnrollments = await EnrollmentModel.countDocuments({ courseId: id })
+  
   // Convert to plain object and add review data
   const courseData = course.toObject()
   
   return {
     ...courseData,
+    totalEnrollments,
     reviewData: {
       stats: reviewStats,
       recentReviews: recentReviews.reviews || [],

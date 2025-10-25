@@ -1,4 +1,5 @@
 export { useAuth } from './useAuth';
+export { useEnrollments } from './useEnrollments';
 export { useSidebarData } from './useSidebarData';
 export { useSidebarRedux } from './useSidebarRedux';
 export { useCourses } from './useCourses';

@@ -28,6 +28,12 @@ export interface User {
     enrollmentDate: string;
     emergencyContact: Record<string, unknown>;
   };
+  enrollments?: {
+    _id: string;
+    courseId: string;
+    status: string;
+    createdAt: string;
+  }[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -38,6 +44,12 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
   token: string | null;
+  enrollments: {
+    _id: string;
+    courseId: string;
+    status: string;
+    createdAt: string;
+  }[];
 }
 
 // Initial state
@@ -47,6 +59,7 @@ const initialState: AuthState = {
   isLoading: false,
   error: null,
   token: null,
+  enrollments: [],
 };
 
 // Async thunks
@@ -166,6 +179,25 @@ const authSlice = createSlice({
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
+        if (action.payload.enrollments) {
+          state.enrollments = action.payload.enrollments;
+        }
+        localStorage.setItem('user', JSON.stringify(state.user));
+      }
+    },
+    addEnrollment: (state, action: PayloadAction<{ _id: string; courseId: string; status: string; createdAt: string }>) => {
+      const newEnrollment = action.payload;
+      state.enrollments = [...state.enrollments, newEnrollment];
+      if (state.user) {
+        state.user.enrollments = state.enrollments;
+        localStorage.setItem('user', JSON.stringify(state.user));
+      }
+    },
+    removeEnrollment: (state, action: PayloadAction<string>) => {
+      const enrollmentId = action.payload;
+      state.enrollments = state.enrollments.filter(enrollment => enrollment._id !== enrollmentId);
+      if (state.user) {
+        state.user.enrollments = state.enrollments;
         localStorage.setItem('user', JSON.stringify(state.user));
       }
     },
@@ -175,6 +207,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.user = null;
       state.token = null;
+      state.enrollments = [];
       state.error = null;
       // Clear localStorage safely
       try {
@@ -197,6 +230,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.token = action.payload.token;
+        state.enrollments = action.payload.user.enrollments || [];
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -204,6 +238,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
+        state.enrollments = [];
         state.error = action.payload as string;
       });
 
@@ -217,6 +252,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
+        state.enrollments = [];
         state.error = null;
       })
       .addCase(logoutUser.rejected, (state, action) => {
@@ -238,10 +274,12 @@ const authSlice = createSlice({
           state.isAuthenticated = true;
           state.user = action.payload.user;
           state.token = action.payload.token;
+          state.enrollments = action.payload.user.enrollments || [];
         } else {
           state.isAuthenticated = false;
           state.user = null;
           state.token = null;
+          state.enrollments = [];
         }
       })
       .addCase(checkAuthStatus.rejected, (state, action) => {
@@ -249,6 +287,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
+        state.enrollments = [];
         state.error = action.payload as string;
       });
 
@@ -275,5 +314,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, updateUser, logoutImmediate } = authSlice.actions;
+export const { clearError, updateUser, logoutImmediate, addEnrollment, removeEnrollment } = authSlice.actions;
 export default authSlice.reducer;

@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
 import { Card, CardContent, CardHeader } from '../../components/atoms/Card';
 import { Skeleton } from '../../components/atoms/Skeleton';
-import { useCourses } from '../../hooks';
+import { useCourses, useEnrollments } from '../../hooks';
 import { useAuth } from '../../hooks/useAuth';
+import { useAppDispatch } from '../../store/hooks';
+import { addEnrollment, removeEnrollment } from '../../store/slices/authSlice';
 import { 
   FaPlay, 
   FaClock, 
@@ -26,7 +28,8 @@ import {
   FaFileAlt,
   FaQuestionCircle,
   FaTrophy,
-  FaThumbsUp
+  FaThumbsUp,
+  FaTimes
 } from 'react-icons/fa';
 import { cn } from '../../lib/utils';
 
@@ -112,9 +115,13 @@ export const CourseDetails: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const { currentCourse, isLoading, error, loadCourseById } = useCourses();
+  const { isEnrolledInCourse, getEnrollmentForCourse } = useEnrollments();
+  const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'instructor' | 'reviews'>('overview');
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelingEnrollment, setIsCancelingEnrollment] = useState(false);
   
   // Review state
   const [showReviewDialog, setShowReviewDialog] = useState(false);
@@ -147,6 +154,25 @@ export const CourseDetails: React.FC = () => {
     }
   }, [currentCourse]);
 
+  // Check if user is enrolled and can cancel
+  const isEnrolled = courseId ? isEnrolledInCourse(courseId) : false;
+  const currentEnrollment = courseId ? getEnrollmentForCourse(courseId) : null;
+  
+  const canCancelEnrollment = () => {
+    if (!currentEnrollment) return false;
+    const enrollmentDate = new Date(currentEnrollment.createdAt);
+    const now = new Date();
+    const daysDiff = Math.floor((now.getTime() - enrollmentDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysDiff <= 15;
+  };
+
+  const getDaysRemainingForCancellation = () => {
+    if (!currentEnrollment) return 0;
+    const enrollmentDate = new Date(currentEnrollment.createdAt);
+    const now = new Date();
+    const daysDiff = Math.floor((now.getTime() - enrollmentDate.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.max(0, 15 - daysDiff);
+  };
 
   // Early return if no courseId
   if (!courseId) {
@@ -193,6 +219,15 @@ export const CourseDetails: React.FC = () => {
       const result = await response.json();
       
       if (result.success) {
+        // Add enrollment to Redux store
+        const newEnrollment = {
+          _id: result.data?._id || Date.now().toString(),
+          courseId: courseId,
+          status: 'enrolled',
+          createdAt: new Date().toISOString()
+        };
+        dispatch(addEnrollment(newEnrollment));
+        
         alert('Successfully enrolled in the course!');
         setShowEnrollDialog(false);
         
@@ -221,6 +256,56 @@ export const CourseDetails: React.FC = () => {
     } else {
       navigator.clipboard.writeText(window.location.href);
       alert('Course link copied to clipboard!');
+    }
+  };
+
+  const handleCancelEnrollment = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    if (!courseId || !currentEnrollment || !user?.id) return;
+
+    setIsCancelingEnrollment(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/enrollments/${currentEnrollment._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${getAuthToken()}`,
+        },
+        body: JSON.stringify({
+          status: 'cancelled'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Remove enrollment from Redux store
+        dispatch(removeEnrollment(currentEnrollment._id));
+        
+        alert('Enrollment cancelled successfully!');
+        setShowCancelDialog(false);
+        
+        // Refresh course data to get updated enrollment status
+        if (courseId) {
+          loadCourseById(courseId);
+        }
+      } else {
+        throw new Error(result.message || 'Cancellation failed');
+      }
+    } catch (error) {
+      console.error('Error cancelling enrollment:', error);
+      alert(`Cancellation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsCancelingEnrollment(false);
     }
   };
 
@@ -353,7 +438,7 @@ export const CourseDetails: React.FC = () => {
                     ))}
                   </div>
                   <span className="font-semibold">{course.rating}</span>
-                  <span className="text-gray-300 ml-2">({course.totalStudents.toLocaleString()} students)</span>
+                  <span className="text-gray-300 ml-2">({course.totalEnrollments.toLocaleString()} Enrollments)</span>
                 </div>
                 
                 <div className="flex items-center">
@@ -431,14 +516,52 @@ export const CourseDetails: React.FC = () => {
                   </div>
 
                   <div className="space-y-3 mb-6 text-black">
-                    <Button
-                      onClick={() => setShowEnrollDialog(true)}
-                      className="w-full"
-                      size="lg"
-                      disabled={isEnrolling}
-                    >
-                      {isEnrolling ? 'Enrolling...' : 'Enroll Now'}
-                    </Button>
+                    {isEnrolled ? (
+                      <div className="space-y-2">
+                        <div className="bg-green-100 border border-green-300 rounded-lg p-3 text-center">
+                          <div className="flex items-center justify-center text-green-700 mb-1">
+                            <FaCheck className="mr-2" />
+                            <span className="font-semibold">Enrolled</span>
+                          </div>
+                          <p className="text-sm text-green-600">
+                            Enrolled on {new Date(currentEnrollment?.createdAt || '').toLocaleDateString()}
+                          </p>
+                        </div>
+                        
+                        {canCancelEnrollment() ? (
+                          <div className="space-y-2">
+                            <Button
+                              onClick={() => setShowCancelDialog(true)}
+                              variant="outline"
+                              className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                              size="lg"
+                              disabled={isCancelingEnrollment}
+                            >
+                              <FaTimes className="mr-2" />
+                              {isCancelingEnrollment ? 'Cancelling...' : 'Cancel Enrollment'}
+                            </Button>
+                            <p className="text-xs text-gray-500 text-center">
+                              {getDaysRemainingForCancellation()} days remaining for free cancellation
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 text-center">
+                            <p className="text-sm text-gray-600">
+                              Cancellation period expired (15 days limit)
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => setShowEnrollDialog(true)}
+                        className="w-full"
+                        size="lg"
+                        disabled={isEnrolling}
+                      >
+                        {isEnrolling ? 'Enrolling...' : 'Enroll Now'}
+                      </Button>
+                    )}
                     
                     <div className="grid grid-cols-2 gap-2">
                       <Button
@@ -874,6 +997,54 @@ export const CourseDetails: React.FC = () => {
                   disabled={isEnrolling}
                 >
                   Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Cancel Enrollment Confirmation Dialog */}
+      {showCancelDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="max-w-md w-full mx-4">
+            <CardHeader>
+              <h3 className="text-xl font-bold text-red-600">Cancel Enrollment</h3>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-center text-red-500 text-6xl mb-4">
+                  <FaTimes />
+                </div>
+                <p className="text-gray-700 text-center">
+                  Are you sure you want to cancel your enrollment in <strong>"{course.title}"</strong>?
+                </p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-sm text-yellow-700">
+                    <strong>Note:</strong> You have {getDaysRemainingForCancellation()} days remaining for free cancellation. 
+                    After this period, cancellation may not be available.
+                  </p>
+                </div>
+                <p className="text-sm text-gray-600 text-center">
+                  This action cannot be undone. You will lose access to all course materials.
+                </p>
+              </div>
+              
+              <div className="flex gap-4 mt-6">
+                <Button 
+                  onClick={handleCancelEnrollment}
+                  disabled={isCancelingEnrollment}
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                >
+                  {isCancelingEnrollment ? 'Cancelling...' : 'Yes, Cancel Enrollment'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowCancelDialog(false)}
+                  className="flex-1"
+                  disabled={isCancelingEnrollment}
+                >
+                  Keep Enrollment
                 </Button>
               </div>
             </CardContent>

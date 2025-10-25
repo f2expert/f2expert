@@ -6,6 +6,7 @@ import { createEnrollmentSchema, updateEnrollmentSchema } from "./enrollment.val
 const router = Router()
 
 router.get("/", EnrollmentController.getAll)
+router.get("/user/:userId", EnrollmentController.getEnrollmentsByUserId)
 router.get("/:id", EnrollmentController.getById)
 router.post("/", validateBody(createEnrollmentSchema), EnrollmentController.create)
 router.put("/:id", validateBody(updateEnrollmentSchema), EnrollmentController.update)

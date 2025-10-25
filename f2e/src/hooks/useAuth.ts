@@ -25,11 +25,15 @@ export const useAuth = () => {
   }, [dispatch]);
 
   // Login function
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string) => {
     const result = await dispatch(loginUser({ email, password }));
     if (loginUser.rejected.match(result)) {
       throw new Error(result.payload as string);
     }
+    if (loginUser.fulfilled.match(result)) {
+      return result.payload.user;
+    }
+    return null;
   };
 
   // Logout function (immediate, no loading state)
@@ -54,6 +58,7 @@ export const useAuth = () => {
     isLoading: authState.isLoading,
     error: authState.error,
     token: authState.token,
+    enrollments: authState.enrollments,
     
     // Actions
     login,

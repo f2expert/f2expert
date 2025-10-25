@@ -7,5 +7,7 @@ export const createEnrollmentSchema = Joi.object({
 })
 
 export const updateEnrollmentSchema = Joi.object({
+  userId: Joi.string().optional(),
+  courseId: Joi.string().optional(),
   status: Joi.string().valid("enrolled", "completed", "cancelled").optional()
-})
+}).min(1)

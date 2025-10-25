@@ -227,6 +227,17 @@ export const getCommentById = async (req: Request, res: Response) => {
  *     responses:
  *       200:
  *         description: Comment updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Comment'
  *       400:
  *         description: Validation error
  *       401:
@@ -370,25 +381,6 @@ export const getCommentReplies = async (req: Request, res: Response) => {
 /**
  * @openapi
  * /comments/{id}:
- *   put:
- *     tags:
- *       - Comments
- *     summary: Update a comment
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateCommentRequest'
- * /comments/{id}:
  *   delete:
  *     tags:
  *       - Comments
@@ -401,9 +393,21 @@ export const getCommentReplies = async (req: Request, res: Response) => {
  *         required: true
  *         schema:
  *           type: string
+ *         description: Comment ID
  *     responses:
  *       200:
  *         description: Comment deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *       401:
+ *         description: Authentication required
  *       403:
  *         description: You can only delete your own comments
  *       404:

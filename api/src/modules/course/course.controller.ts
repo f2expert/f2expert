@@ -162,6 +162,10 @@ export const getLimited = async (req: Request, res: Response) => {
  *                       type: string
  *                     price:
  *                       type: number
+ *                     totalEnrollments:
+ *                       type: integer
+ *                       description: Total number of enrollments for this course
+ *                       example: 125
  *                     reviewData:
  *                       type: object
  *                       properties:

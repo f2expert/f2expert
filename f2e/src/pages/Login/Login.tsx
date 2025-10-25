@@ -95,9 +95,10 @@ export const Login: React.FC = () => {
       console.log('🔑 Attempting login for:', formData.email);
       
       // Use Redux login method and wait for completion
-      await login(formData.email, formData.password);
+      const loginResult = await login(formData.email, formData.password);
       
-      console.log('✅ Login successful, auth state should update and trigger redirect...');
+      console.log('✅ Login successful, received data:', loginResult);
+      console.log('✅ User enrollments:', loginResult?.enrollments || []);
       
       // Don't set isLoading to false here - let the useEffect handle it
       // The redirect useEffect will handle setting isLoading to false
