@@ -8,3 +8,4 @@ export { Dashboard, CreateCourse, CreateTutorial } from './Dashboard';
 export { Login } from './Login';
 export { Register } from './Register';
 export { ForgotPassword } from './ForgotPassword';
+export { PaymentHistory } from './PaymentHistory';

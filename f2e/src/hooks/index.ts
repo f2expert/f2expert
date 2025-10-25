@@ -7,3 +7,4 @@ export { useTrainers } from './useTrainers';
 export { useTutorials } from './useTutorials';
 export { useTutorial } from './useTutorial';
 export { useMenuApi } from './useMenuApi';
+export { usePayment } from './usePayment';

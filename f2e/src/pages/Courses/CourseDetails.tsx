@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
 import { Card, CardContent, CardHeader } from '../../components/atoms/Card';
 import { Skeleton } from '../../components/atoms/Skeleton';
-import { useCourses, useEnrollments } from '../../hooks';
+import { PaymentGateway } from '../../components/molecules/PaymentGateway';
+import { useCourses, useEnrollments, usePayment } from '../../hooks';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppDispatch } from '../../store/hooks';
 import { addEnrollment, removeEnrollment } from '../../store/slices/authSlice';
@@ -12,7 +13,6 @@ import {
   FaClock, 
   FaUsers, 
   FaStar, 
-  FaUser, 
   FaCalendarAlt, 
   FaBookOpen, 
   FaCheck, 
@@ -119,7 +119,7 @@ export const CourseDetails: React.FC = () => {
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'instructor' | 'reviews'>('overview');
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [showEnrollDialog, setShowEnrollDialog] = useState(false);
+  const [showPaymentGateway, setShowPaymentGateway] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelingEnrollment, setIsCancelingEnrollment] = useState(false);
   
@@ -130,7 +130,10 @@ export const CourseDetails: React.FC = () => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
-  const [isEnrolling, setIsEnrolling] = useState(false);
+  const [isEnrolling] = useState(false);
+  
+  // Payment integration
+  const { isProcessing: isProcessingPayment, resetPayment } = usePayment();
 
   // Load course details
   useEffect(() => {
@@ -188,63 +191,7 @@ export const CourseDetails: React.FC = () => {
     );
   }
 
-  const handleEnroll = async () => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
 
-    if (!courseId || !user?.id) return;
-
-    setIsEnrolling(true);
-    try {
-      const response = await fetch('http://localhost:5000/api/enrollments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`,
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          courseId: courseId,
-          status: 'enrolled'
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        // Add enrollment to Redux store
-        const newEnrollment = {
-          _id: result.data?._id || Date.now().toString(),
-          courseId: courseId,
-          status: 'enrolled',
-          createdAt: new Date().toISOString()
-        };
-        dispatch(addEnrollment(newEnrollment));
-        
-        alert('Successfully enrolled in the course!');
-        setShowEnrollDialog(false);
-        
-        // Refresh course data to get updated enrollment status
-        if (courseId) {
-          loadCourseById(courseId);
-        }
-      } else {
-        throw new Error(result.message || 'Enrollment failed');
-      }
-    } catch (error) {
-      console.error('Error enrolling in course:', error);
-      alert(`Enrollment failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsEnrolling(false);
-    }
-  };
 
   const handleShare = () => {
     if (navigator.share) {
@@ -307,6 +254,39 @@ export const CourseDetails: React.FC = () => {
     } finally {
       setIsCancelingEnrollment(false);
     }
+  };
+
+  const handlePaymentSuccess = async (enrollmentId: string) => {
+    try {
+      // Add enrollment to Redux store
+      if (courseId && user?.id) {
+        const newEnrollment = {
+          _id: enrollmentId,
+          courseId: courseId,
+          status: 'enrolled' as const,
+          createdAt: new Date().toISOString()
+        };
+        dispatch(addEnrollment(newEnrollment));
+      }
+      
+      setShowPaymentGateway(false);
+      resetPayment();
+      
+      // Refresh course data
+      if (courseId) {
+        loadCourseById(courseId);
+      }
+      
+      alert('Payment successful! Welcome to the course!');
+    } catch (error) {
+      console.error('Error handling payment success:', error);
+      alert('Payment successful but there was an issue with enrollment. Please contact support.');
+    }
+  };
+
+  const handlePaymentError = (error: string) => {
+    console.error('Payment error:', error);
+    alert(`Payment failed: ${error}`);
   };
 
   const handleReviewSubmit = async () => {
@@ -440,11 +420,6 @@ export const CourseDetails: React.FC = () => {
                   <span className="font-semibold">{course.rating}</span>
                   <span className="text-gray-300 ml-2">({course.totalEnrollments.toLocaleString()} Enrollments)</span>
                 </div>
-                
-                <div className="flex items-center">
-                  <FaUser className="mr-2" />
-                  <span>{course.instructor}</span>
-                </div>
 
                 <div className="flex items-center">
                   <FaClock className="mr-2" />
@@ -456,6 +431,49 @@ export const CourseDetails: React.FC = () => {
                   <span>Last updated: {new Date(course.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
+
+              <div className='mb-5'>
+                  <Card>
+                    <CardContent className="p-6 text-black">
+                      <div className="flex items-start space-x-6">
+                        <img
+                          src="/assets/trainer/default-trainer.png"
+                          alt={course.instructor}
+                          className="w-24 h-24 rounded-full object-cover"
+                        />
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold mb-2">{course.instructor}</h3>
+                          <p className="text-gray-600 mb-4">Senior Software Engineer & Technical Trainer</p>
+                          
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className="flex items-center">
+                              <FaUsers className="text-purple-600 mr-2" />
+                              <span className="text-sm">10,000+ Students</span>
+                            </div>
+                            <div className="flex items-center">
+                              <FaStar className="text-yellow-500 mr-2" />
+                              <span className="text-sm">4.8 Rating</span>
+                            </div>
+                            <div className="flex items-center">
+                              <FaBookOpen className="text-purple-600 mr-2" />
+                              <span className="text-sm">25 Courses</span>
+                            </div>
+                            <div className="flex items-center">
+                              <FaTrophy className="text-purple-600 mr-2" />
+                              <span className="text-sm">5+ Years Experience</span>
+                            </div>
+                          </div>
+
+                          <p className="text-gray-700">
+                            An experienced professional with extensive knowledge in software development 
+                            and training. Passionate about sharing knowledge and helping students achieve 
+                            their career goals in technology.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
 
               {/* Course Features */}
               <div className="flex flex-wrap gap-3">
@@ -554,12 +572,12 @@ export const CourseDetails: React.FC = () => {
                       </div>
                     ) : (
                       <Button
-                        onClick={() => setShowEnrollDialog(true)}
+                        onClick={() => setShowPaymentGateway(true)}
                         className="w-full"
                         size="lg"
-                        disabled={isEnrolling}
+                        disabled={isEnrolling || isProcessingPayment}
                       >
-                        {isEnrolling ? 'Enrolling...' : 'Enroll Now'}
+                        {isEnrolling || isProcessingPayment ? 'Processing...' : `Purchase for ${course.currency}${course.price}`}
                       </Button>
                     )}
                     
@@ -625,13 +643,12 @@ export const CourseDetails: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 bg-white p-8 rounded-lg shadow">
               {/* Tabs */}
               <div className="flex flex-wrap border-b mb-8">
                 {[
                   { id: 'overview', label: 'Overview', icon: FaBookOpen },
-                  { id: 'curriculum', label: 'Curriculum', icon: FaPlay },
-                  { id: 'instructor', label: 'Instructor', icon: FaUser },
+                  { id: 'curriculum', label: 'Curriculum', icon: FaPlay },                  
                   { id: 'reviews', label: 'Reviews', icon: FaStar }
                 ].map(({ id, label, icon: Icon }) => (
                   <button
@@ -721,53 +738,7 @@ export const CourseDetails: React.FC = () => {
                     ))}
                   </div>
                 </div>
-              )}
-
-              {activeTab === 'instructor' && (
-                <div>
-                  <h2 className="text-2xl font-bold mb-6">About the Instructor</h2>
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-6">
-                        <img
-                          src="/assets/trainer/default-trainer.png"
-                          alt={course.instructor}
-                          className="w-24 h-24 rounded-full object-cover"
-                        />
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold mb-2">{course.instructor}</h3>
-                          <p className="text-gray-600 mb-4">Senior Software Engineer & Technical Trainer</p>
-                          
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="flex items-center">
-                              <FaUsers className="text-purple-600 mr-2" />
-                              <span className="text-sm">10,000+ Students</span>
-                            </div>
-                            <div className="flex items-center">
-                              <FaStar className="text-yellow-500 mr-2" />
-                              <span className="text-sm">4.8 Rating</span>
-                            </div>
-                            <div className="flex items-center">
-                              <FaBookOpen className="text-purple-600 mr-2" />
-                              <span className="text-sm">25 Courses</span>
-                            </div>
-                            <div className="flex items-center">
-                              <FaTrophy className="text-purple-600 mr-2" />
-                              <span className="text-sm">5+ Years Experience</span>
-                            </div>
-                          </div>
-
-                          <p className="text-gray-700">
-                            An experienced professional with extensive knowledge in software development 
-                            and training. Passionate about sharing knowledge and helping students achieve 
-                            their career goals in technology.
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+              )}              
 
               {activeTab === 'reviews' && (
                 <div>
@@ -971,38 +942,18 @@ export const CourseDetails: React.FC = () => {
         </div>
       </section>
 
-      {/* Enrollment Confirmation Dialog */}
-      {showEnrollDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="max-w-md w-full mx-4">
-            <CardHeader>
-              <h3 className="text-xl font-bold">Confirm Enrollment</h3>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to enroll in "{course.title}" for {course.currency}{course.price}?
-              </p>
-              <div className="flex gap-4">
-                <Button 
-                  onClick={handleEnroll} 
-                  disabled={isEnrolling}
-                  className="flex-1"
-                >
-                  {isEnrolling ? 'Processing...' : 'Confirm Enrollment'}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowEnrollDialog(false)}
-                  className="flex-1"
-                  disabled={isEnrolling}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Payment Gateway */}
+      <PaymentGateway
+        course={course}
+        isOpen={showPaymentGateway}
+        onClose={() => {
+          setShowPaymentGateway(false);
+          resetPayment();
+        }}
+        onPaymentSuccess={handlePaymentSuccess}
+        onPaymentError={handlePaymentError}
+        isProcessing={isProcessingPayment}
+      />
 
       {/* Cancel Enrollment Confirmation Dialog */}
       {showCancelDialog && (

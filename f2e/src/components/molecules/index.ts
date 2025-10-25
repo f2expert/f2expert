@@ -10,3 +10,7 @@ export { TutorialCard } from './TutorialCard';
 // Radix-based molecules
 export { ConfirmDialog } from './ConfirmDialog';
 export { UserMenu } from './UserMenu';
+
+// Payment components
+export { PaymentGateway } from './PaymentGateway';
+export { PaymentMethodManager } from './PaymentMethodManager';

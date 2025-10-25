@@ -5,6 +5,7 @@ import tutorialsReducer from './slices/tutorialsSlice';
 import userReducer from './slices/userSlice';
 import sidebarReducer from './slices/sidebarSlice';
 import sidebarDataReducer from './slices/sidebarDataSlice';
+import paymentReducer from './slices/paymentSlice';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     user: userReducer,
     sidebar: sidebarReducer,
     sidebarData: sidebarDataReducer,
+    payment: paymentReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
