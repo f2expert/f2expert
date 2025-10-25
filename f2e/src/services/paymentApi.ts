@@ -1,7 +1,7 @@
 // Types for payment-related data
 export interface PaymentMethod {
   id: string;
-  type: 'card' | 'paypal' | 'bank_transfer' | 'upi';
+  type: 'card' | 'bank_transfer' | 'upi';
   brand?: string;
   last4?: string;
   expiryMonth?: number;
@@ -82,10 +82,9 @@ export interface RefundResponse {
 // Payment gateway configuration (can be extended for multiple providers)
 export const PAYMENT_CONFIG = {
   STRIPE_PUBLIC_KEY: import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_your_test_key_here',
-  PAYPAL_CLIENT_ID: import.meta.env.VITE_PAYPAL_CLIENT_ID || 'your_paypal_client_id',
   UPI_MERCHANT_ID: import.meta.env.VITE_UPI_MERCHANT_ID || 'your_merchant_id',
   SUPPORTED_CURRENCIES: ['USD', 'EUR', 'GBP', 'INR'],
-  SUPPORTED_PAYMENT_METHODS: ['card', 'paypal', 'bank_transfer', 'upi'],
+  SUPPORTED_PAYMENT_METHODS: ['card', 'bank_transfer', 'upi'],
   UPI_APPS: ['phonepe', 'googlepay', 'paytm', 'bhim', 'amazonpay'],
 };
 

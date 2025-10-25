@@ -43,7 +43,7 @@ export const PAYMENT_CONFIG = {
 
 // Enhanced PaymentMethod interface
 interface PaymentMethod {
-  type: 'card' | 'paypal' | 'bank_transfer' | 'upi';
+  type: 'card' | 'bank_transfer' | 'upi';
   upiId?: string; // For UPI payments
 }
 ```

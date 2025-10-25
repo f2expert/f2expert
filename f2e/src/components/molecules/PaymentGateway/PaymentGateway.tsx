@@ -7,7 +7,6 @@ import { Separator } from '../../atoms/Separator';
 import { cn } from '../../../lib/utils';
 import { 
   FaCreditCard, 
-  FaPaypal, 
   FaUniversity, 
   FaShieldAlt, 
   FaLock,
@@ -58,7 +57,7 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
   onUpiSelected,
   isProcessing = false
 }) => {
-  const [selectedMethod, setSelectedMethod] = useState<'card' | 'paypal' | 'bank' | 'upi'>('card');
+  const [selectedMethod, setSelectedMethod] = useState<'card' | 'bank' | 'upi'>('card');
   const [savedMethods, setSavedMethods] = useState<PaymentMethod[]>([]);
   const [useNewCard, setUseNewCard] = useState(true);
   const [selectedSavedCard, setSelectedSavedCard] = useState<string | null>(null);
@@ -431,7 +430,7 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
             <h3 className="text-xl font-semibold mb-6">Payment Method</h3>
 
             {/* Payment Method Selection */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-6">
+            <div className="grid grid-cols-3 gap-2 mb-6">
               <Button
                 variant={selectedMethod === 'card' ? 'primary' : 'outline'}
                 className="flex flex-col items-center p-4 h-auto"
@@ -448,15 +447,6 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
               >
                 <div className="text-2xl mb-2 font-bold text-purple-600">₹</div>
                 <span className="text-sm">UPI</span>
-              </Button>
-              
-              <Button
-                variant={selectedMethod === 'paypal' ? 'primary' : 'outline'}
-                className="flex flex-col items-center p-4 h-auto"
-                onClick={() => setSelectedMethod('paypal')}
-              >
-                <FaPaypal className="text-2xl mb-2" />
-                <span className="text-sm">PayPal</span>
               </Button>
               
               <Button
@@ -594,16 +584,6 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
                     </label>
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* PayPal */}
-            {selectedMethod === 'paypal' && (
-              <div className="text-center py-8">
-                <FaPaypal className="text-6xl text-blue-600 mb-4 mx-auto" />
-                <p className="text-gray-600 mb-4">
-                  You will be redirected to PayPal to complete your payment securely.
-                </p>
               </div>
             )}
 

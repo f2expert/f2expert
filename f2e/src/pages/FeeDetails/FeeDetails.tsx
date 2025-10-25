@@ -69,7 +69,7 @@ export const FeeDetails: React.FC = () => {
       description: 'React Masterclass Course',
       amount: 49.99,
       status: 'paid',
-      method: 'PayPal',
+      method: 'UPI',
       invoiceUrl: '/invoices/inv_002.pdf'
     },
     {
