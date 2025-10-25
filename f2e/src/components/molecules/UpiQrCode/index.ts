@@ -1,0 +1,1 @@
+export { UpiQrCode } from './UpiQrCode';

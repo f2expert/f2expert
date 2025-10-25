@@ -14,3 +14,5 @@ export { UserMenu } from './UserMenu';
 // Payment components
 export { PaymentGateway } from './PaymentGateway';
 export { PaymentMethodManager } from './PaymentMethodManager';
+export { UpiQrCode } from './UpiQrCode';
+export { StudentDiscountBanner } from './StudentDiscountBanner';

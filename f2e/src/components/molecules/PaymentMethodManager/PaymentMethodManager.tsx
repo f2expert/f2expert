@@ -51,8 +51,12 @@ export const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({
     }
   };
 
-  const getCardBrandIcon = (brand?: string) => {
-    const brandLower = brand?.toLowerCase();
+  const getPaymentMethodIcon = (method: PaymentMethod) => {
+    if (method.type === 'upi') {
+      return <div className="w-8 h-5 bg-purple-600 rounded text-white text-xs flex items-center justify-center font-bold">₹</div>;
+    }
+    
+    const brandLower = method.brand?.toLowerCase();
     switch (brandLower) {
       case 'visa':
         return <div className="w-8 h-5 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">VISA</div>;
@@ -105,33 +109,44 @@ export const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({
               method.isDefault && 'ring-2 ring-purple-500 ring-opacity-20 bg-purple-50'
             )}>
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {getCardBrandIcon(method.brand)}
-                    
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium capitalize">
-                          {method.brand} ending in {method.last4}
-                        </span>
-                        {method.isDefault && (
-                          <Badge variant="default" className="bg-purple-100 text-purple-800">
-                            <FaCheck className="mr-1 text-xs" />
-                            Default
-                          </Badge>
-                        )}
-                      </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      {getPaymentMethodIcon(method)}
                       
-                      <div className="flex items-center text-sm text-gray-500 mt-1">
-                        <FaCalendarAlt className="mr-1" />
-                        <span>Expires {method.expiryMonth?.toString().padStart(2, '0')}/{method.expiryYear}</span>
-                        <span className="mx-2">•</span>
-                        <span>Added {new Date(method.createdAt).toLocaleDateString()}</span>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium capitalize">
+                            {method.type === 'upi' 
+                              ? `UPI: ${method.upiId}`
+                              : `${method.brand} ending in ${method.last4}`
+                            }
+                          </span>
+                          {method.isDefault && (
+                            <Badge variant="default" className="bg-purple-100 text-purple-800">
+                              <FaCheck className="mr-1 text-xs" />
+                              Default
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center text-sm text-gray-500 mt-1">
+                          {method.type === 'upi' ? (
+                            <>
+                              <span className="text-purple-600 font-medium">UPI Payment Method</span>
+                              <span className="mx-2">•</span>
+                              <span>Added {new Date(method.createdAt).toLocaleDateString()}</span>
+                            </>
+                          ) : (
+                            <>
+                              <FaCalendarAlt className="mr-1" />
+                              <span>Expires {method.expiryMonth?.toString().padStart(2, '0')}/{method.expiryYear}</span>
+                              <span className="mx-2">•</span>
+                              <span>Added {new Date(method.createdAt).toLocaleDateString()}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
+                    </div>                  <div className="flex items-center space-x-2">
                     {!method.isDefault && (
                       <Button
                         variant="outline"

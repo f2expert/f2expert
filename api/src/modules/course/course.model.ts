@@ -83,7 +83,7 @@ const courseSchema = new Schema<CourseDocument>(
     }],
     price: { type: Number, required: true, min: 0 },
     originalPrice: { type: Number, min: 0 },
-    currency: { type: String, enum: CURRENCIES, default: 'USD' },
+    currency: { type: String, enum: CURRENCIES, default: 'INR' },
     duration: { type: String, required: true },
     totalHours: { type: Number, required: true, min: 1 },
     totalLectures: { type: Number, required: true, min: 1 },

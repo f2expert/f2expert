@@ -1,0 +1,1 @@
+export { StudentDiscountBanner } from './StudentDiscountBanner';

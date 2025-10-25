@@ -69,7 +69,7 @@ export const commonValidationSchemas = {
     return required ? schema.required() : schema.optional()
   },
 
-  currency: () => Joi.string().valid(...CURRENCIES).default('USD'),
+  currency: () => Joi.string().valid(...CURRENCIES).default('INR'),
 
   language: () => Joi.string().valid(...LANGUAGES).default('English'),
 

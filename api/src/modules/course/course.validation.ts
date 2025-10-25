@@ -56,7 +56,7 @@ export const createCourseSchema = Joi.object({
     'any.required': 'Price is required'
   }),
   originalPrice: Joi.number().min(0).precision(2).optional(),
-  currency: Joi.string().valid(...CURRENCIES).default('USD'),
+  currency: Joi.string().valid(...CURRENCIES).default('INR'),
   duration: Joi.string().required(),
   totalHours: Joi.number().min(1).required().messages({
     'number.min': 'Total hours must be at least 1',

@@ -33,7 +33,7 @@ export const createSampleCourses = async () => {
         { module: "Backend Development", topics: ["Node.js", "Express", "MongoDB"], duration: "3 weeks" }
       ],
       price: 499.99,
-      currency: "USD",
+      currency: "INR",
       duration: "12 weeks",
       totalHours: 60,
       totalLectures: 45,
@@ -66,7 +66,7 @@ export const createSampleCourses = async () => {
         { module: "Data Analysis", topics: ["Pandas", "NumPy", "Data cleaning"], duration: "3 weeks" }
       ],
       price: 399.99,
-      currency: "USD",
+      currency: "INR",
       duration: "10 weeks",
       totalHours: 40,
       totalLectures: 35,

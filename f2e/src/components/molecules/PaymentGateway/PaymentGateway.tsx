@@ -25,6 +25,7 @@ interface PaymentGatewayProps {
   onClose: () => void;
   onPaymentSuccess: (enrollmentId: string) => void;
   onPaymentError: (error: string) => void;
+  onUpiSelected?: () => void;
   isProcessing?: boolean;
 }
 
@@ -34,6 +35,12 @@ interface CardFormData {
   cvv: string;
   cardholderName: string;
   saveCard: boolean;
+}
+
+interface UpiFormData {
+  upiId: string;
+  selectedApp: string;
+  saveUpi: boolean;
 }
 
 interface CouponData {
@@ -48,9 +55,10 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
   onClose,
   onPaymentSuccess,
   onPaymentError,
+  onUpiSelected,
   isProcessing = false
 }) => {
-  const [selectedMethod, setSelectedMethod] = useState<'card' | 'paypal' | 'bank'>('card');
+  const [selectedMethod, setSelectedMethod] = useState<'card' | 'paypal' | 'bank' | 'upi'>('card');
   const [savedMethods, setSavedMethods] = useState<PaymentMethod[]>([]);
   const [useNewCard, setUseNewCard] = useState(true);
   const [selectedSavedCard, setSelectedSavedCard] = useState<string | null>(null);
@@ -64,6 +72,13 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
     cvv: '',
     cardholderName: '',
     saveCard: false
+  });
+
+  // UPI form state
+  const [upiForm, setUpiForm] = useState<UpiFormData>({
+    upiId: '',
+    selectedApp: 'phonepe',
+    saveUpi: false
   });
 
   // Coupon state
@@ -107,13 +122,20 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
         },
         {
           id: 'pm_2',
+          type: 'upi',
+          upiId: 'student@paytm',
+          isDefault: false,
+          createdAt: '2024-02-01'
+        },
+        {
+          id: 'pm_3',
           type: 'card',
           brand: 'mastercard',
           last4: '8888',
           expiryMonth: 8,
           expiryYear: 2026,
           isDefault: false,
-          createdAt: '2024-02-01'
+          createdAt: '2024-02-15'
         }
       ];
       setSavedMethods(mockMethods);
@@ -198,8 +220,27 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
     }));
   };
 
+  const handleUpiInputChange = (field: keyof UpiFormData, value: string | boolean) => {
+    setUpiForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const validateUpiId = (upiId: string): boolean => {
+    // UPI ID format: username@bank (e.g., john@paytm, user@oksbi)
+    const upiRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+$/;
+    return upiRegex.test(upiId);
+  };
+
   const handlePayment = async () => {
     if (!validateForm()) return;
+
+    // Handle UPI payment - redirect to QR code
+    if (selectedMethod === 'upi' && onUpiSelected) {
+      onUpiSelected();
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -210,13 +251,19 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
       const mockEnrollmentId = `enroll_${Date.now()}`;
       onPaymentSuccess(mockEnrollmentId);
       
-      // Reset form
+      // Reset forms
       setCardForm({
         cardNumber: '',
         expiryDate: '',
         cvv: '',
         cardholderName: '',
         saveCard: false
+      });
+      
+      setUpiForm({
+        upiId: '',
+        selectedApp: 'phonepe',
+        saveUpi: false
       });
       
     } catch (error) {
@@ -235,6 +282,11 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
         }
       } else if (!selectedSavedCard) {
         onPaymentError('Please select a payment method');
+        return false;
+      }
+    } else if (selectedMethod === 'upi') {
+      if (!upiForm.upiId || !validateUpiId(upiForm.upiId)) {
+        onPaymentError('Please enter a valid UPI ID (e.g., user@paytm)');
         return false;
       }
     }
@@ -379,7 +431,7 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
             <h3 className="text-xl font-semibold mb-6">Payment Method</h3>
 
             {/* Payment Method Selection */}
-            <div className="grid grid-cols-3 gap-2 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-6">
               <Button
                 variant={selectedMethod === 'card' ? 'primary' : 'outline'}
                 className="flex flex-col items-center p-4 h-auto"
@@ -387,6 +439,15 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
               >
                 <FaCreditCard className="text-2xl mb-2" />
                 <span className="text-sm">Card</span>
+              </Button>
+              
+              <Button
+                variant={selectedMethod === 'upi' ? 'primary' : 'outline'}
+                className="flex flex-col items-center p-4 h-auto"
+                onClick={() => setSelectedMethod('upi')}
+              >
+                <div className="text-2xl mb-2 font-bold text-purple-600">₹</div>
+                <span className="text-sm">UPI</span>
               </Button>
               
               <Button
@@ -546,6 +607,94 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
               </div>
             )}
 
+            {/* UPI Payment */}
+            {selectedMethod === 'upi' && (
+              <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <div className="text-4xl mb-4 text-purple-600 font-bold">₹</div>
+                  <h3 className="text-lg font-semibold mb-2">Pay with UPI</h3>
+                  <p className="text-gray-600 text-sm">
+                    Quick and secure payments using your UPI ID
+                  </p>
+                </div>
+
+                {/* UPI Apps Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Choose your preferred UPI app
+                  </label>
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    {['phonepe', 'googlepay', 'paytm'].map((app) => (
+                      <button
+                        key={app}
+                        type="button"
+                        onClick={() => handleUpiInputChange('selectedApp', app)}
+                        className={cn(
+                          'p-3 border rounded-lg text-center transition-colors',
+                          upiForm.selectedApp === app
+                            ? 'border-purple-500 bg-purple-50 text-purple-700'
+                            : 'border-gray-200 hover:border-gray-300'
+                        )}
+                      >
+                        <div className="font-medium capitalize text-sm">
+                          {app === 'phonepe' ? 'PhonePe' : 
+                           app === 'googlepay' ? 'Google Pay' : 
+                           'Paytm'}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* UPI ID Input */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    UPI ID *
+                  </label>
+                  <Input
+                    placeholder="yourname@paytm"
+                    value={upiForm.upiId}
+                    onChange={(e) => handleUpiInputChange('upiId', e.target.value)}
+                    className={cn(
+                      validateUpiId(upiForm.upiId) || !upiForm.upiId 
+                        ? '' 
+                        : 'border-red-300 focus:border-red-500'
+                    )}
+                  />
+                  {upiForm.upiId && !validateUpiId(upiForm.upiId) && (
+                    <p className="text-red-600 text-sm mt-1">
+                      Please enter a valid UPI ID (e.g., user@paytm)
+                    </p>
+                  )}
+                </div>
+
+                {/* Save UPI Option */}
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={upiForm.saveUpi}
+                    onChange={(e) => handleUpiInputChange('saveUpi', e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700">Save this UPI ID for future payments</span>
+                </label>
+
+                {/* UPI Benefits */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center text-green-800 mb-2">
+                    <FaCheck className="mr-2" />
+                    <span className="font-medium">UPI Benefits</span>
+                  </div>
+                  <ul className="text-sm text-green-700 space-y-1">
+                    <li>• Instant payment confirmation</li>
+                    <li>• No additional charges</li>
+                    <li>• Bank-level security</li>
+                    <li>• 24/7 availability</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
             {/* Bank Transfer */}
             {selectedMethod === 'bank' && (
               <div className="text-center py-8">
@@ -584,7 +733,7 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
               ) : (
                 <>
                   <FaLock className="mr-2" />
-                  Pay {course.currency}{totalAmount.toFixed(2)}
+                  {selectedMethod === 'upi' ? `Pay ₹${totalAmount.toFixed(2)} with UPI` : `Pay ${course.currency}${totalAmount.toFixed(2)}`}
                 </>
               )}
             </Button>

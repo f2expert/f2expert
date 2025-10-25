@@ -350,7 +350,7 @@ export const getById = async (req: Request, res: Response) => {
  *                 example: 399.99
  *               currency:
  *                 type: string
- *                 example: "USD"
+ *                 example: "INR"
  *               duration:
  *                 type: string
  *                 example: "12 weeks"

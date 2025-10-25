@@ -4,6 +4,7 @@ import { Button } from '../../components/atoms/Button';
 import { Card, CardContent, CardHeader } from '../../components/atoms/Card';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { PaymentGateway } from '../../components/molecules/PaymentGateway';
+import { UpiQrCode } from '../../components/molecules/UpiQrCode';
 import { useCourses, useEnrollments, usePayment } from '../../hooks';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppDispatch } from '../../store/hooks';
@@ -120,6 +121,7 @@ export const CourseDetails: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'instructor' | 'reviews'>('overview');
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showPaymentGateway, setShowPaymentGateway] = useState(false);
+  const [showUpiQrCode, setShowUpiQrCode] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelingEnrollment, setIsCancelingEnrollment] = useState(false);
   
@@ -287,6 +289,11 @@ export const CourseDetails: React.FC = () => {
   const handlePaymentError = (error: string) => {
     console.error('Payment error:', error);
     alert(`Payment failed: ${error}`);
+  };
+
+  const handleUpiPaymentComplete = (transactionId: string) => {
+    setShowUpiQrCode(false);
+    handlePaymentSuccess(transactionId);
   };
 
   const handleReviewSubmit = async () => {
@@ -952,8 +959,28 @@ export const CourseDetails: React.FC = () => {
         }}
         onPaymentSuccess={handlePaymentSuccess}
         onPaymentError={handlePaymentError}
+        onUpiSelected={() => {
+          setShowPaymentGateway(false);
+          setShowUpiQrCode(true);
+        }}
         isProcessing={isProcessingPayment}
       />
+
+      {/* UPI QR Code */}
+      {showUpiQrCode && (
+        <UpiQrCode
+          merchantId="f2expert@paytm"
+          amount={course.price}
+          currency={course.currency}
+          courseName={course.title}
+          studentName={user?.email?.split('@')[0]}
+          onPaymentComplete={handleUpiPaymentComplete}
+          onCancel={() => {
+            setShowUpiQrCode(false);
+            setShowPaymentGateway(true);
+          }}
+        />
+      )}
 
       {/* Cancel Enrollment Confirmation Dialog */}
       {showCancelDialog && (
