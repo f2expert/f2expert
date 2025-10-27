@@ -39,8 +39,8 @@ export default function Topic() {
   };
 
   return (
-    <div className="container flex overflow-auto">
-      <div className="align-left mt-4 mx-4 w-full">
+    <div className="min-h-screen">
+      <div className="w-full">
 
         {/* Error State */}
         {error && (
@@ -79,7 +79,8 @@ export default function Topic() {
             {tutorials.length > 0 ? (
               <>
                 <div className="mb-4 text-sm text-gray-600">
-                  Found {technology}{tutorials.length} tutorial{tutorials.length !== 1 ? 's' : ''} for {technology}
+                  <h1 className="text-3xl font-bold text-gray-900">{technology.charAt(0).toUpperCase() + technology.slice(1)}</h1>
+                  Found {tutorials.length} tutorial{tutorials.length !== 1 ? 's' : ''} for {technology}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {tutorials.map(tutorial => (

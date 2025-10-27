@@ -71,7 +71,7 @@ export const Protected: React.FC<ProtectedProps> = ({
           </div>
         </header>
         <Separator/>
-        <div className="flex flex-1 bg-gray-50 flex-col gap-4 p-4 max-h-[calc(100vh-65px)] overflow-y-auto">
+        <div className="flex flex-1 bg-gray-50 flex-col gap-4 p-4 max-h-[calc(100vh-65px)] overflow-y-auto shadow-inner">
           {/* Uncomment below to show sidebar data manager for testing */}
           {/* <SidebarDataManager /> */}
           <Outlet />

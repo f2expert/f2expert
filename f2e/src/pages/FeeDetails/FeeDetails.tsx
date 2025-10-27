@@ -350,7 +350,7 @@ export const FeeDetails: React.FC = () => {
   );
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl">
+    <div className="min-h-screen">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Fee Details</h1>
         <p className="text-gray-600 mt-2">Manage your subscription, view payment history, and update billing information.</p>

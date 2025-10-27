@@ -496,7 +496,7 @@ export const Notifications: React.FC = () => {
   );
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl">
+    <div className="min-h-screen">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
         <p className="text-gray-600 mt-2">Manage your notifications and stay updated with your learning journey.</p>

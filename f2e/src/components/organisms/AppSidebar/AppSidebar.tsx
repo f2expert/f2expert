@@ -95,7 +95,7 @@ console.log('AppSidebar render: ', { user});
         open ? "w-80" : "w-16"
       )}>
         <div className="flex flex-col h-full w-full overflow-hidden">
-          <div className="p-1">
+          <div className="p-1" style={{ paddingBottom: "3px" }}>
             <TeamSwitcher teams={teams} />
           </div>
           <Separator />
