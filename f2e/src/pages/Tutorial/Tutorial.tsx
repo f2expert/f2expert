@@ -307,7 +307,7 @@ export const Tutorial: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-indigo-600 text-white">
+      <section className="py-16 bg-white text-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Ready to Start Learning?
@@ -329,7 +329,7 @@ export const Tutorial: React.FC = () => {
               to="/register"
               variant="outline"
               size="lg"
-              className="border-white text-white hover:bg-white hover:text-indigo-600"
+              className="border-gray-300 text-gray-900 hover:bg-gray-100 hover:text-gray-600"
             >
               Sign Up Free
             </Button>

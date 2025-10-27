@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
 import { useCourses } from '../../hooks';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { FaSearch } from 'react-icons/fa';
 
 interface FilterOptions {
   category: string;
@@ -78,6 +79,19 @@ export const Courses: React.FC = () => {
             <p className="text-xl mb-8 max-w-2xl mx-auto">
               Choose from our comprehensive range of courses designed to advance your IT career
             </p>
+            {/* Search Bar */}
+                        <div className="max-w-md mx-auto">
+                          <div className="relative">
+                            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input
+                type="text"
+                placeholder="Search courses, instructors, or topics..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-3 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+                          </div>
+                        </div>
           </div>
         </div>
       </section>
@@ -85,20 +99,7 @@ export const Courses: React.FC = () => {
       {/* Search and Filters */}
       <section className="py-8 bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Search Bar */}
-          <div className="mb-6">
-            <div className="relative max-w-md mx-auto">
-              <input
-                type="text"
-                placeholder="Search courses, instructors, or topics..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-              <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-            </div>
-          </div>
-
+          
           {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div>
@@ -300,7 +301,7 @@ export const Courses: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-purple-600 text-white">
+      <section className="py-16 bg-white text-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">
             Can't Find the Right Course?
@@ -315,7 +316,7 @@ export const Courses: React.FC = () => {
               </Button>
             </Link>
             <Link to="/about">
-              <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-purple-600">
+              <Button variant="outline" size="lg" className="border-gray-300 text-gray-900 hover:bg-gray-100 hover:text-gray-600">
                 Learn About Us
               </Button>
             </Link>

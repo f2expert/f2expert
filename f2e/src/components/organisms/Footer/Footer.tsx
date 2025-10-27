@@ -68,7 +68,7 @@ export const Footer: React.FC<FooterProps> = ({
   void showTrainingCenter;
   
   return (
-    <footer className={cn("w-full bg-gray-800 text-white", className)} {...props}>
+    <footer className={cn("w-full bg-[#012a52] text-white", className)} {...props}>
       {/* Main Footer Content 
       <div className={cn("px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16")}>
         <div className="max-w-7xl mx-auto">*/}
@@ -112,11 +112,11 @@ export const Footer: React.FC<FooterProps> = ({
 
       {/* Footer Bottom */}
       {(showCopyright || showSocial) && (
-        <div className="border-t bg-gray-900 border-gray-800">
+        <div className="border-t border-gray-800">
           <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
               {showCopyright && (
-                <div className="text-xs sm:text-sm text-gray-400 text-center sm:text-left">
+                <div className="text-xs sm:text-sm text-center sm:text-left">
                   <p>
                     © {copyrightYear} {companyName}. All rights reserved.
                   </p>
@@ -141,7 +141,7 @@ export const Footer: React.FC<FooterProps> = ({
               {showSocial && (
                 <SocialBar
                   socialLinks={socialLinks}
-                  className="flex space-x-3 sm:space-x-4"
+                  className="flex space-x-3 sm:space-x-4 text-white"
                 />
               )}
             </div>
