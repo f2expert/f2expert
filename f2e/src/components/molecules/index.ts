@@ -1,5 +1,4 @@
 export { LogoGroup } from './LogoGroup';
-export { Counter } from './Counter';
 export { ErrorHandler } from './ErrorHandler';
 export { SocialBar } from './SocialBar';
 export { ContactInfo } from './ContactInfo';
