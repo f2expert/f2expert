@@ -45,6 +45,9 @@ import path from "path"
  *         relationship:
  *           type: string
  *           maxLength: 50
+ *         email:
+ *           type: string
+ *           format: email
  *
  *     Certification:
  *       type: object
@@ -76,8 +79,6 @@ import path from "path"
  *         enrollmentDate:
  *           type: string
  *           format: date-time
- *         emergencyContact:
- *           $ref: '#/components/schemas/EmergencyContact'
  *         educationLevel:
  *           type: string
  *           enum: [high_school, bachelor, master, phd, other]
@@ -179,6 +180,8 @@ import path from "path"
  *           type: string
  *           enum: [admin, trainer, student]
  *           example: "student"
+ *         emergencyContact:
+ *           $ref: '#/components/schemas/EmergencyContact'
  *
  *     UpdateUserRequest:
  *       type: object
@@ -212,6 +215,8 @@ import path from "path"
  *           format: uri
  *         isActive:
  *           type: boolean
+ *         emergencyContact:
+ *           $ref: '#/components/schemas/EmergencyContact'
  *
  *     UserResponse:
  *       type: object
@@ -244,6 +249,8 @@ import path from "path"
  *           type: string
  *         bio:
  *           type: string
+ *         emergencyContact:
+ *           $ref: '#/components/schemas/EmergencyContact'
  *         studentInfo:
  *           $ref: '#/components/schemas/StudentInfo'
  *         trainerInfo:
@@ -587,8 +594,6 @@ import path from "path"
  *           schema:
  *             type: object
  *             properties:
- *               emergencyContact:
- *                 $ref: '#/components/schemas/EmergencyContact'
  *               educationLevel:
  *                 type: string
  *                 enum: [high_school, bachelor, master, phd, other]

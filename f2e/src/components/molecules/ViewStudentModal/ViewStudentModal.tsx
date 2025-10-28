@@ -70,8 +70,8 @@ export const ViewStudentModal: React.FC<ViewStudentModalProps> = ({
                   {student.firstName} {student.lastName}
                 </h2>
                 <p className="text-gray-600">Student ID: {student.studentId}</p>
-                <span className={`inline-flex px-3 py-1 mt-2 text-sm font-semibold rounded-full ${getStatusColor(student.status)}`}>
-                  {student.status}
+                <span className={`inline-flex px-3 py-1 mt-2 text-sm font-semibold rounded-full ${getStatusColor(student.isActive ? 'active' : 'inactive')}`}>
+                  {student.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
             </div>

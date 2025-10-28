@@ -13,7 +13,8 @@ const addressSchema = Joi.object({
 const emergencyContactSchema = Joi.object({
   name: Joi.string().max(100).optional(),
   phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).optional(),
-  relationship: Joi.string().max(50).optional()
+  relationship: Joi.string().max(50).optional(),
+  email: Joi.string().email().optional()
 })
 
 // Certification schema
@@ -80,6 +81,7 @@ export const createUserSchema = Joi.object({
     }),
   
   gender: Joi.string()
+    .lowercase()
     .valid('male', 'female', 'other')
     .optional(),
   
@@ -91,6 +93,8 @@ export const createUserSchema = Joi.object({
     .messages({
       'string.uri': 'Photo must be a valid URL'
     }),
+  
+  emergencyContact: emergencyContactSchema.optional(),
   
   role: Joi.string()
     .valid('admin', 'trainer', 'student')
@@ -108,16 +112,19 @@ export const updateUserSchema = Joi.object({
   email: Joi.string().email().optional(),
   phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).optional(),
   dateOfBirth: Joi.date().max('now').optional(),
-  gender: Joi.string().valid('male', 'female', 'other').optional(),
+  gender: Joi.string()
+    .lowercase()
+    .valid('male', 'female', 'other')
+    .optional(),
   address: addressSchema.optional(),
   bio: Joi.string().max(500).optional(),
   photo: Joi.string().uri().optional(),
-  isActive: Joi.boolean().optional()
+  isActive: Joi.boolean().optional(),
+  emergencyContact: emergencyContactSchema.optional()
 })
 
 // Student Info Update Schema
 export const updateStudentInfoSchema = Joi.object({
-  emergencyContact: emergencyContactSchema.optional(),
   educationLevel: Joi.string()
     .valid('high_school', 'bachelor', 'master', 'phd', 'other')
     .optional(),

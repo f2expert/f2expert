@@ -26,9 +26,11 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
     firstName: '',
     lastName: '',
     email: '',
+    password: 'Demo@12345',
     phone: '',
     dateOfBirth: '',
     gender: 'Male',
+    role: 'student',
     address: {
       street: '',
       city: '',
@@ -41,11 +43,12 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
       relationship: '',
       phone: '',
       email: ''
-    },
-    courseIds: []
+    }
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
+  const [apiError, setApiError] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string>('');
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
 
@@ -94,21 +97,55 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
+      // Clear API error when successfully moving to next step
+      setApiError('');
       setCurrentStep(prev => Math.min(prev + 1, totalSteps));
     }
   };
 
   const handlePrevious = () => {
+    // Clear API error when moving back to make corrections
+    setApiError('');
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
   const handleSubmit = async () => {
     if (validateStep(currentStep)) {
       try {
+        // Clear any previous API errors
+        setApiError('');
+        
+        // Call the API through the parent component
         await onSave(formData);
-        handleClose();
+        
+        // If we get here, the API call was successful
+        // Show success message briefly, then close modal
+        setSuccessMessage('Student added successfully!');
+        
+        // Close the modal after a brief delay
+        setTimeout(() => {
+          handleClose();
+        }, 1500);
       } catch (error) {
         console.error('Failed to save student:', error);
+        
+        // Set user-friendly error message
+        if (error instanceof Error) {
+          // Check for specific error types
+          if (error.message.includes('email')) {
+            setApiError('Email address is already in use. Please use a different email.');
+          } else if (error.message.includes('phone')) {
+            setApiError('Phone number is already in use. Please use a different phone number.');
+          } else if (error.message.includes('network')) {
+            setApiError('Network error. Please check your connection and try again.');
+          } else if (error.message.includes('validation')) {
+            setApiError('Please check your input data and try again.');
+          } else {
+            setApiError(error.message || 'Failed to add student. Please try again.');
+          }
+        } else {
+          setApiError('An unexpected error occurred. Please try again.');
+        }
       }
     }
   };
@@ -118,9 +155,11 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
       firstName: '',
       lastName: '',
       email: '',
+        password: 'Demo@12345',
       phone: '',
       dateOfBirth: '',
       gender: 'Male',
+      role: 'student',
       address: {
         street: '',
         city: '',
@@ -133,15 +172,21 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
         relationship: '',
         phone: '',
         email: ''
-      },
-      courseIds: []
+      }
     });
     setErrors({});
+    setApiError('');
+    setSuccessMessage('');
     setCurrentStep(1);
     onClose();
   };
 
   const updateFormData = (field: string, value: string | string[]) => {
+    // Clear API error when user starts typing to correct input
+    if (apiError) {
+      setApiError('');
+    }
+
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
       setFormData(prev => ({
@@ -604,6 +649,48 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
           </div>
         </DialogHeader>
 
+        {/* API Error Display */}
+        {apiError && (
+          <div className="mx-6 mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-red-800">
+                  Error Adding Student
+                </h4>
+                <p className="text-sm text-red-700 mt-1">
+                  {apiError}
+                </p>
+              </div>
+              <button
+                onClick={() => setApiError('')}
+                className="text-red-400 hover:text-red-600"
+                title="Dismiss error"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Success Message Display */}
+        {successMessage && (
+          <div className="mx-6 mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 text-green-600 flex items-center justify-center">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-green-800">
+                  {successMessage}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="py-6">
           {renderStepIndicator()}
           {renderCurrentStep()}
@@ -614,24 +701,24 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
             <Button
               variant="outline"
               onClick={handlePrevious}
-              disabled={currentStep === 1}
+              disabled={currentStep === 1 || !!successMessage}
             >
               Previous
             </Button>
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleClose}>
+              <Button variant="outline" onClick={handleClose} disabled={!!successMessage}>
                 Cancel
               </Button>
               
               {currentStep < totalSteps ? (
-                <Button onClick={handleNext}>
+                <Button onClick={handleNext} disabled={!!successMessage}>
                   Next
                 </Button>
               ) : (
                 <Button 
                   onClick={handleSubmit} 
-                  disabled={isLoading}
+                  disabled={isLoading || !!successMessage}
                   className="flex items-center gap-2"
                 >
                   {isLoading ? (

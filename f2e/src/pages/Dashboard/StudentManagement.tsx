@@ -29,6 +29,7 @@ interface Student {
   firstName: string;
   lastName: string;
   email: string;
+  password: string;
   phone: string;
   dateOfBirth: string;
   gender: 'Male' | 'Female' | 'Other';
@@ -40,7 +41,7 @@ interface Student {
     zipCode: string;
   };
   enrollmentDate: string;
-  status: 'active' | 'inactive' | 'suspended' | 'graduated';
+  isActive: boolean;
   courses: {
     courseId: string;
     courseName: string;
@@ -109,152 +110,45 @@ export const StudentManagement: React.FC = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       setLoading(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock students data (moved here to avoid dependency issues)
-      const initialMockStudents: Student[] = [
-        {
-          _id: '1',
-          studentId: 'STU001',
-          firstName: 'Rajesh',
-          lastName: 'Kumar',
-          email: 'rajesh.kumar@email.com',
-          phone: '+91-9876543210',
-          dateOfBirth: '1998-05-15',
-          gender: 'Male',
-          address: {
-            street: '123 MG Road',
-            city: 'Bangalore',
-            state: 'Karnataka',
-            country: 'India',
-            zipCode: '560001'
-          },
-          enrollmentDate: '2024-01-15',
-          status: 'active',
-          courses: [
-            {
-              courseId: '1',
-              courseName: 'Full Stack Web Development',
-              enrollmentDate: '2024-01-15',
-              status: 'enrolled',
-              attendance: 85,
-              grade: 'A'
-            }
-          ],
-          emergencyContact: {
-            name: 'Sita Kumar',
-            relationship: 'Mother',
-            phone: '+91-9876543211',
-            email: 'sita.kumar@email.com'
-          },
-          totalFeesPaid: 45000,
-          pendingFees: 5000,
-          lastPaymentDate: '2024-10-01',
-          attendance: {
-            totalClasses: 120,
-            attendedClasses: 102,
-            attendancePercentage: 85
-          },
-          createdAt: '2024-01-15T00:00:00Z',
-          updatedAt: '2024-10-25T00:00:00Z'
-        },
-        {
-          _id: '2',
-          studentId: 'STU002',
-          firstName: 'Priya',
-          lastName: 'Sharma',
-          email: 'priya.sharma@email.com',
-          phone: '+91-8765432109',
-          dateOfBirth: '1999-08-22',
-          gender: 'Female',
-          address: {
-            street: '456 Park Street',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            country: 'India',
-            zipCode: '400001'
-          },
-          enrollmentDate: '2024-02-01',
-          status: 'active',
-          courses: [
-            {
-              courseId: '2',
-              courseName: 'Data Science & Analytics',
-              enrollmentDate: '2024-02-01',
-              status: 'enrolled',
-              attendance: 92
-            }
-          ],
-          emergencyContact: {
-            name: 'Raj Sharma',
-            relationship: 'Father',
-            phone: '+91-8765432108'
-          },
-          totalFeesPaid: 50000,
-          pendingFees: 0,
-          lastPaymentDate: '2024-10-15',
-          attendance: {
-            totalClasses: 100,
-            attendedClasses: 92,
-            attendancePercentage: 92
-          },
-          createdAt: '2024-02-01T00:00:00Z',
-          updatedAt: '2024-10-26T00:00:00Z'
-        },
-        {
-          _id: '3',
-          studentId: 'STU003',
-          firstName: 'Amit',
-          lastName: 'Patel',
-          email: 'amit.patel@email.com',
-          phone: '+91-7654321098',
-          dateOfBirth: '1997-12-10',
-          gender: 'Male',
-          address: {
-            street: '789 Ring Road',
-            city: 'Ahmedabad',
-            state: 'Gujarat',
-            country: 'India',
-            zipCode: '380001'
-          },
-          enrollmentDate: '2023-11-01',
-          status: 'graduated',
-          courses: [
-            {
-              courseId: '1',
-              courseName: 'Full Stack Web Development',
-              enrollmentDate: '2023-11-01',
-              status: 'completed',
-              attendance: 95,
-              grade: 'A+'
-            }
-          ],
-          emergencyContact: {
-            name: 'Meera Patel',
-            relationship: 'Sister',
-            phone: '+91-7654321097'
-          },
-          totalFeesPaid: 50000,
-          pendingFees: 0,
-          lastPaymentDate: '2024-04-15',
-          attendance: {
-            totalClasses: 120,
-            attendedClasses: 114,
-            attendancePercentage: 95
-          },
-          createdAt: '2023-11-01T00:00:00Z',
-          updatedAt: '2024-06-15T00:00:00Z'
-        }
-      ];
-      
-      setStudents(initialMockStudents);
-      setFilteredStudents(initialMockStudents);
-      setLoading(false);
+      try {
+        console.log('Fetching students from API...');
+        
+        // Call the actual API to get students with role=student
+        const result = await studentManagementApiService.getStudents();
+        
+        console.log('Students loaded successfully:', result);
+        
+        // Set the students from the API response
+        setStudents(result.students || []);
+        setFilteredStudents(result.students || []);
+      } catch (error) {
+        console.error('Failed to load students from API:', error);
+        
+        // Fallback to empty array if API fails
+        setStudents([]);
+        setFilteredStudents([]);
+        
+        // Optionally show an error message to the user
+        // You could add a toast notification here
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchStudents();
   }, []);
+
+  // Function to refresh students list
+  const refreshStudents = async () => {
+    try {
+      console.log('Refreshing students list...');
+      const result = await studentManagementApiService.getStudents();
+      setStudents(result.students || []);
+      setFilteredStudents(result.students || []);
+    } catch (error) {
+      console.error('Failed to refresh students:', error);
+    }
+  };
 
   useEffect(() => {
     const filtered = students.filter(student => {
@@ -265,15 +159,17 @@ export const StudentManagement: React.FC = () => {
         student.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.phone.includes(searchTerm);
 
-      const matchesStatus = filters.status === 'all' || student.status === filters.status;
+      const matchesStatus = filters.status === 'all' || 
+        (filters.status === 'active' && student.isActive) || 
+        (filters.status === 'inactive' && !student.isActive);
       const matchesGender = filters.gender === 'all' || student.gender === filters.gender;
-      const matchesCity = filters.city === 'all' || student.address.city === filters.city;
+      const matchesCity = filters.city === 'all' || (student.address && student.address.city === filters.city);
       
       const enrollmentYear = new Date(student.enrollmentDate).getFullYear().toString();
       const matchesYear = filters.enrollmentYear === 'all' || enrollmentYear === filters.enrollmentYear;
       
       const matchesCourse = filters.course === 'all' || 
-        student.courses.some(course => course.courseId === filters.course);
+        (student.courses && student.courses.some(course => course.courseId === filters.course));
 
       return matchesSearch && matchesStatus && matchesGender && matchesCity && matchesYear && matchesCourse;
     });
@@ -312,14 +208,10 @@ export const StudentManagement: React.FC = () => {
     setFilteredStudents(filtered);
   }, [students, searchTerm, filters, sortBy, sortOrder]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'suspended': return 'bg-red-100 text-red-800';
-      case 'graduated': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const getStatusColor = (isActive: boolean) => {
+    return isActive 
+      ? 'bg-green-100 text-green-800' 
+      : 'bg-gray-100 text-gray-800';
   };
 
   const getAttendanceColor = (percentage: number) => {
@@ -351,13 +243,14 @@ export const StudentManagement: React.FC = () => {
   const handleAddStudent = async (studentData: CreateStudentData) => {
     setIsAddingStudent(true);
     try {
+        console.log('Adding student:', studentData);
       // Call the API to create a new student
       const newStudent = await studentManagementApiService.createStudent(studentData);
       
-      // Update the students list with the new student
-      setStudents(prevStudents => [...prevStudents, newStudent]);
-      
       console.log('Student added successfully:', newStudent);
+      
+      // Refresh the students list to get the latest data from the server
+      await refreshStudents();
     } catch (error) {
       console.error('Failed to add student:', error);
       
@@ -368,12 +261,13 @@ export const StudentManagement: React.FC = () => {
         firstName: studentData.firstName,
         lastName: studentData.lastName,
         email: studentData.email,
+        password: "demo@12345",
         phone: studentData.phone,
         dateOfBirth: studentData.dateOfBirth,
         gender: studentData.gender,
         address: studentData.address,
         enrollmentDate: new Date().toISOString().split('T')[0],
-        status: 'active',
+        isActive: true,
         courses: [],
         emergencyContact: studentData.emergencyContact,
         totalFeesPaid: 0,
@@ -400,14 +294,10 @@ export const StudentManagement: React.FC = () => {
       // Call the API to update the student
       const updatedStudent = await studentManagementApiService.updateStudent(studentId, updateData);
       
-      // Update the students list with the updated student
-      setStudents(prevStudents => 
-        prevStudents.map(student => 
-          student._id === studentId ? updatedStudent : student
-        )
-      );
-      
       console.log('Student updated successfully:', updatedStudent);
+      
+      // Refresh the students list to get the latest data from the server
+      await refreshStudents();
     } catch (error) {
       console.error('Failed to update student:', error);
       
@@ -456,19 +346,13 @@ export const StudentManagement: React.FC = () => {
     try {
       // Update student status to active
       const updateData: UpdateStudentData = {
-        status: 'active'
+        isActive: true
       };
       
       await studentManagementApiService.updateStudent(student._id, updateData);
       
-      // Update local state
-      setStudents(prevStudents => 
-        prevStudents.map(s => 
-          s._id === student._id 
-            ? { ...s, status: 'active' as const, updatedAt: new Date().toISOString() }
-            : s
-        )
-      );
+      // Refresh the students list to get the latest data from the server
+      await refreshStudents();
       
       console.log('Student activated successfully:', student.firstName, student.lastName);
     } catch (error) {
@@ -477,7 +361,7 @@ export const StudentManagement: React.FC = () => {
       setStudents(prevStudents => 
         prevStudents.map(s => 
           s._id === student._id 
-            ? { ...s, status: 'active' as const, updatedAt: new Date().toISOString() }
+            ? { ...s, isActive: true, updatedAt: new Date().toISOString() }
             : s
         )
       );
@@ -515,14 +399,10 @@ export const StudentManagement: React.FC = () => {
     try {
       await studentManagementApiService.softDeleteStudent(deletingStudent._id);
       
-      // Update the student status to inactive in local state
-      setStudents(prevStudents => 
-        prevStudents.map(student => 
-          student._id === deletingStudent._id 
-            ? { ...student, status: 'inactive' as const, updatedAt: new Date().toISOString() }
-            : student
-        )
-      );
+      console.log('Student soft deleted successfully');
+      
+      // Refresh the students list to get the latest data from the server
+      await refreshStudents();
       
       // If the student was selected, remove from selection
       setSelectedStudents(prevSelected => 
@@ -660,7 +540,7 @@ export const StudentManagement: React.FC = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Active Students</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {students.filter(s => s.status === 'active').length}
+                  {students.filter(s => s.isActive).length}
                 </p>
               </div>
             </div>
@@ -870,7 +750,7 @@ export const StudentManagement: React.FC = () => {
                   <tr 
                     key={student._id} 
                     className={`hover:bg-gray-50 ${
-                      student.status === 'inactive' 
+                      !student.isActive 
                         ? 'bg-gray-50 opacity-75' 
                         : ''
                     }`}
@@ -897,7 +777,7 @@ export const StudentManagement: React.FC = () => {
                             <div className="text-sm font-medium text-gray-900">
                               {student.firstName} {student.lastName}
                             </div>
-                            {student.status === 'inactive' && (
+                            {!student.isActive && (
                               <span title="Inactive Student">
                                 <UserX className="h-4 w-4 text-gray-400" />
                               </span>
@@ -928,8 +808,8 @@ export const StudentManagement: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(student.status)}`}>
-                        {student.status}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(student.isActive)}`}>
+                        {student.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -966,7 +846,7 @@ export const StudentManagement: React.FC = () => {
                         >
                           <Edit3 className="h-4 w-4" />
                         </button>
-                        {student.status === 'inactive' ? (
+                        {!student.isActive ? (
                           <button
                             onClick={() => handleActivateStudent(student)}
                             className="text-green-600 hover:text-green-900"

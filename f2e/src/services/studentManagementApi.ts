@@ -3,15 +3,72 @@
 // Mock API Base URL (replace with actual API endpoint)
 const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5000/api';
 
+// API Response interfaces
+interface ApiUser {
+  _id: string;
+  id?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: 'male' | 'female' | 'other';
+  role: string;
+  isActive: boolean;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  fullName?: string;
+  roleDisplay?: string;
+  photo?: string;
+  bio?: string;
+  lastLogin?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+  };
+  studentInfo?: {
+    studentId: string;
+    enrollmentDate: string;
+  };
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+    email?: string;
+  };
+  preferences?: {
+    notifications: {
+      email: boolean;
+      sms: boolean;
+      push: boolean;
+    };
+    language: string;
+    timezone: string;
+  };
+}
+
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data: ApiUser[];
+}
+
 export interface Student {
   _id: string;
   studentId: string;
   firstName: string;
   lastName: string;
   email: string;
+  password: string;
   phone: string;
   dateOfBirth: string;
   gender: 'Male' | 'Female' | 'Other';
+  role?: string;
   address: {
     street: string;
     city: string;
@@ -20,7 +77,7 @@ export interface Student {
     zipCode: string;
   };
   enrollmentDate: string;
-  status: 'active' | 'inactive' | 'suspended' | 'graduated';
+  isActive: boolean;
   courses: {
     courseId: string;
     courseName: string;
@@ -48,7 +105,7 @@ export interface Student {
 }
 
 export interface StudentFilters {
-  status?: string;
+  status?: string; // Keep as 'status' for UI filtering (active/inactive/all)
   course?: string;
   gender?: string;
   city?: string;
@@ -70,9 +127,11 @@ export interface CreateStudentData {
   firstName: string;
   lastName: string;
   email: string;
+  password: string;
   phone: string;
   dateOfBirth: string;
   gender: 'Male' | 'Female' | 'Other';
+  role?: string;
   address: {
     street: string;
     city: string;
@@ -90,7 +149,7 @@ export interface CreateStudentData {
 }
 
 export interface UpdateStudentData extends Partial<CreateStudentData> {
-  status?: 'active' | 'inactive' | 'suspended' | 'graduated';
+  isActive?: boolean;
 }
 
 export interface AttendanceRecord {
@@ -126,7 +185,7 @@ export interface BulkOperation {
 }
 
 class StudentManagementApiService {
-  private baseUrl = '/students';
+  private baseUrl = '/users';
 
   private async makeRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -159,50 +218,92 @@ class StudentManagementApiService {
     }
   }
 
+  // Helper function to map API response to Student interface
+  private mapApiUserToStudent(apiUser: ApiUser): Student {
+    return {
+      _id: apiUser._id || apiUser.id || '',
+      studentId: apiUser.studentInfo?.studentId || `STU${Date.now()}`,
+      firstName: apiUser.firstName,
+      lastName: apiUser.lastName,
+      email: apiUser.email,
+      password: 'Demo@12345', // Default password for display
+      phone: apiUser.phone,
+      dateOfBirth: apiUser.dateOfBirth,
+      gender: apiUser.gender === 'male' ? 'Male' : apiUser.gender === 'female' ? 'Female' : 'Other',
+      role: apiUser.role,
+      address: {
+        street: apiUser.address?.street || '',
+        city: apiUser.address?.city || '',
+        state: apiUser.address?.state || '',
+        country: apiUser.address?.country || 'India',
+        zipCode: apiUser.address?.zipCode || ''
+      },
+      enrollmentDate: apiUser.studentInfo?.enrollmentDate || apiUser.createdAt,
+      isActive: apiUser.isActive,
+      courses: [], // Default empty array, can be populated if course data is available
+      emergencyContact: {
+        name: apiUser.emergencyContact?.name || '',
+        relationship: apiUser.emergencyContact?.relationship || '',
+        phone: apiUser.emergencyContact?.phone || '',
+        email: apiUser.emergencyContact?.email || ''
+      },
+      totalFeesPaid: 0, // Default values
+      pendingFees: 0,
+      lastPaymentDate: '',
+      attendance: {
+        totalClasses: 0,
+        attendedClasses: 0,
+        attendancePercentage: 0
+      },
+      createdAt: apiUser.createdAt,
+      updatedAt: apiUser.updatedAt
+    };
+  }
+
   // Get all students with filtering and pagination
-  async getStudents(
-    filters?: StudentFilters,
-    page: number = 1,
-    limit: number = 20,
-    sortBy: string = 'createdAt',
-    sortOrder: 'asc' | 'desc' = 'desc'
-  ): Promise<{
+  async getStudents(): Promise<{
     students: Student[];
-    totalCount: number;
-    totalPages: number;
-    currentPage: number;
   }> {
     try {
       const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        sortBy,
-        sortOrder,
-        ...(filters && Object.fromEntries(
-          Object.entries(filters).filter(([, value]) => value && value !== 'all')
-        ))
+        role: 'student', // Always filter for students only 
       });
 
-      const result = await this.makeRequest<{
-        students: Student[];
-        totalCount: number;
-        totalPages: number;
-        currentPage: number;
-      }>(`${this.baseUrl}?${params.toString()}`);
+      console.log('Fetching students from:', `${API_BASE_URL}${this.baseUrl}?${params.toString()}`);
+
+      const result = await this.makeRequest<ApiResponse>(`${this.baseUrl}?role=student`);
       
-      return result;
+      // Log successful response for debugging
+      console.log('Raw API response:', result);
+      
+      // Map the API response to our Student interface
+      const mappedStudents = result.data?.map(user => this.mapApiUserToStudent(user)) || [];
+      
+      console.log('Mapped students:', mappedStudents);
+      
+      return {
+        students: mappedStudents
+      };
     } catch (error) {
-      console.error('Failed to fetch students:', error);
+      console.error('Failed to fetch students from API:', error);
+      console.log('Falling back to mock data...');
       // Return mock data as fallback
-      return this.getMockStudents(filters, page, limit, sortBy, sortOrder);
+      return this.getMockStudents();
     }
   }
 
   // Get student by ID
   async getStudentById(studentId: string): Promise<Student> {
     try {
-      const result = await this.makeRequest<Student>(`${this.baseUrl}/${studentId}`);
-      return result;
+      console.log('Fetching student by ID from:', `${API_BASE_URL}${this.baseUrl}/${studentId}`);
+      const result = await this.makeRequest<{
+        success: boolean;
+        message: string;
+        data: ApiUser;
+      }>(`${this.baseUrl}/${studentId}`);
+      
+      // Map the API response to Student interface
+      return this.mapApiUserToStudent(result.data);
     } catch (error) {
       console.error('Failed to fetch student:', error);
       throw error;
@@ -212,11 +313,25 @@ class StudentManagementApiService {
   // Create new student
   async createStudent(studentData: CreateStudentData): Promise<Student> {
     try {
-      const result = await this.makeRequest<Student>(this.baseUrl, {
+      // Ensure the role is set to 'student' for consistency
+      const studentWithRole = {
+        ...studentData,
+        role: 'student'
+      };
+
+      console.log('Creating student at:', `${API_BASE_URL}${this.baseUrl}`);
+
+      const result = await this.makeRequest<{
+        success: boolean;
+        message: string;
+        data: ApiUser;
+      }>(this.baseUrl, {
         method: 'POST',
-        body: JSON.stringify(studentData),
+        body: JSON.stringify(studentWithRole),
       });
-      return result;
+      
+      // Map the created user to Student interface
+      return this.mapApiUserToStudent(result.data);
     } catch (error) {
       console.error('Failed to create student:', error);
       throw error;
@@ -226,11 +341,17 @@ class StudentManagementApiService {
   // Update student
   async updateStudent(studentId: string, updateData: UpdateStudentData): Promise<Student> {
     try {
-      const result = await this.makeRequest<Student>(`${this.baseUrl}/${studentId}`, {
+      const result = await this.makeRequest<{
+        success: boolean;
+        message: string;
+        data: ApiUser;
+      }>(`${this.baseUrl}/${studentId}`, {
         method: 'PUT',
         body: JSON.stringify(updateData),
       });
-      return result;
+      
+      // Map the updated user to Student interface
+      return this.mapApiUserToStudent(result.data);
     } catch (error) {
       console.error('Failed to update student:', error);
       throw error;
@@ -405,8 +526,6 @@ class StudentManagementApiService {
     filters?: StudentFilters,
     page: number = 1,
     limit: number = 20,
-    sortBy: string = 'createdAt',
-    sortOrder: 'asc' | 'desc' = 'desc'
   ) {
     // Mock students data
     const mockStudents: Student[] = [
@@ -416,9 +535,11 @@ class StudentManagementApiService {
         firstName: 'Rajesh',
         lastName: 'Kumar',
         email: 'rajesh.kumar@email.com',
+        password: 'demo@12345',
         phone: '+91-9876543210',
         dateOfBirth: '1998-05-15',
         gender: 'Male',
+        role: 'student',
         address: {
           street: '123 MG Road',
           city: 'Bangalore',
@@ -427,7 +548,7 @@ class StudentManagementApiService {
           zipCode: '560001'
         },
         enrollmentDate: '2024-01-15',
-        status: 'active',
+        isActive: true,
         courses: [
           {
             courseId: '1',
@@ -523,9 +644,11 @@ class StudentManagementApiService {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
+        password: 'demo@12345',
         phone: '+1234567890',
         dateOfBirth: '1995-05-15',
         gender: 'Male',
+        role: 'student',
         address: {
           street: '123 Main St',
           city: 'New York',
@@ -534,7 +657,7 @@ class StudentManagementApiService {
           zipCode: '10001'
         },
         enrollmentDate: '2024-01-15',
-        status: 'inactive', // Changed to inactive for soft delete
+        isActive: false, // Changed to inactive for soft delete
         courses: [],
         emergencyContact: {
           name: 'Jane Doe',
@@ -589,9 +712,11 @@ class StudentManagementApiService {
         firstName: 'Mock',
         lastName: 'Student',
         email: 'mock@example.com',
+        password: 'demo@12345',
         phone: '+1234567890',
         dateOfBirth: '1995-05-15',
         gender: 'Male' as const,
+        role: 'student',
         address: {
           street: '123 Main St',
           city: 'New York',
@@ -600,7 +725,7 @@ class StudentManagementApiService {
           zipCode: '10001'
         },
         enrollmentDate: '2024-01-15',
-        status: 'inactive' as const, // Changed to inactive for soft delete
+        isActive: false, // Changed to inactive for soft delete
         courses: [],
         emergencyContact: {
           name: 'Jane Doe',

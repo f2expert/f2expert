@@ -44,7 +44,7 @@ export const EditStudentModal: React.FC<EditStudentModalProps> = ({
       phone: '',
       email: ''
     },
-    status: 'active'
+    isActive: true
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -74,7 +74,7 @@ export const EditStudentModal: React.FC<EditStudentModalProps> = ({
           phone: student.emergencyContact.phone,
           email: student.emergencyContact.email || ''
         },
-        status: student.status
+        isActive: student.isActive
       });
       setCurrentStep(1);
       setErrors({});
@@ -120,7 +120,7 @@ export const EditStudentModal: React.FC<EditStudentModalProps> = ({
         break;
 
       case 4: // Status
-        if (!formData.status) newErrors.status = 'Status is required';
+        if (formData.isActive === undefined) newErrors.isActive = 'Status is required';
         break;
     }
 
@@ -155,7 +155,7 @@ export const EditStudentModal: React.FC<EditStudentModalProps> = ({
     onClose();
   };
 
-  const updateFormData = (field: string, value: string) => {
+  const updateFormData = (field: string, value: string | boolean) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
       setFormData(prev => ({
@@ -535,36 +535,71 @@ export const EditStudentModal: React.FC<EditStudentModalProps> = ({
       
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Current Status *
+          <label className="block text-sm font-medium text-gray-700 mb-4">
+            Student Account Status *
           </label>
-          <select
-            value={formData.status || 'active'}
-            onChange={(e) => updateFormData('status', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.status ? 'border-red-500' : 'border-gray-300'
-            }`}
-          >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="suspended">Suspended</option>
-            <option value="graduated">Graduated</option>
-          </select>
-          {errors.status && (
-            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+          
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <input
+                type="radio"
+                id="active"
+                name="isActive"
+                checked={formData.isActive === true}
+                onChange={() => updateFormData('isActive', true)}
+                className="mr-3 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="active" className="flex items-center cursor-pointer">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                  <span className="text-sm font-medium text-gray-700">Active</span>
+                </div>
+              </label>
+            </div>
+            
+            <div className="flex items-center">
+              <input
+                type="radio"
+                id="inactive"
+                name="isActive"
+                checked={formData.isActive === false}
+                onChange={() => updateFormData('isActive', false)}
+                className="mr-3 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="inactive" className="flex items-center cursor-pointer">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-gray-400 rounded-full mr-2"></div>
+                  <span className="text-sm font-medium text-gray-700">Inactive</span>
+                </div>
+              </label>
+            </div>
+          </div>
+          
+          {errors.isActive && (
+            <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
               <AlertCircle className="h-4 w-4" />
-              {errors.status}
+              {errors.isActive}
             </p>
           )}
         </div>
 
         <div className="bg-gray-50 rounded-lg p-4">
           <h4 className="font-medium text-gray-900 mb-2">Status Information</h4>
-          <div className="text-sm text-gray-600 space-y-1">
-            <p><strong>Active:</strong> Student is currently enrolled and attending classes</p>
-            <p><strong>Inactive:</strong> Student is temporarily not attending classes</p>
-            <p><strong>Suspended:</strong> Student has been suspended from the program</p>
-            <p><strong>Graduated:</strong> Student has completed the program successfully</p>
+          <div className="text-sm text-gray-600 space-y-2">
+            <div className="flex items-start space-x-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full mt-1 flex-shrink-0"></div>
+              <div>
+                <p className="font-medium">Active</p>
+                <p>Student can access courses, submit assignments, and participate in all activities</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-2">
+              <div className="w-3 h-3 bg-gray-400 rounded-full mt-1 flex-shrink-0"></div>
+              <div>
+                <p className="font-medium">Inactive</p>
+                <p>Student account is temporarily disabled and cannot access the platform</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -631,13 +666,9 @@ export const EditStudentModal: React.FC<EditStudentModalProps> = ({
           <h4 className="font-medium text-gray-900 mb-2">Status</h4>
           <div className="text-sm text-gray-600">
             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-              formData.status === 'active' ? 'bg-green-100 text-green-800' :
-              formData.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-              formData.status === 'suspended' ? 'bg-red-100 text-red-800' :
-              formData.status === 'graduated' ? 'bg-blue-100 text-blue-800' :
-              'bg-gray-100 text-gray-800'
+              formData.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
             }`}>
-              {formData.status}
+              {formData.isActive ? 'Active' : 'Inactive'}
             </span>
           </div>
         </div>

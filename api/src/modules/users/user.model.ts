@@ -29,15 +29,18 @@ export interface IUser extends Document {
   photo?: string // URL to user's profile photo
   bio?: string
   
+  // Emergency Contact (common for all roles)
+  emergencyContact?: {
+    name?: string
+    phone?: string
+    relationship?: string
+    email?: string
+  }
+  
   // Role-specific Information
   studentInfo?: {
     studentId?: string
     enrollmentDate?: Date
-    emergencyContact?: {
-      name?: string
-      phone?: string
-      relationship?: string
-    }
     educationLevel?: "high_school" | "bachelor" | "master" | "phd" | "other"
     previousExperience?: string
     careerGoals?: string
@@ -133,15 +136,18 @@ const userSchema = new Schema<IUser>(
     photo: { type: String },
     bio: { type: String, maxlength: 500 },
     
+    // Emergency Contact (common for all roles)
+    emergencyContact: {
+      name: { type: String },
+      phone: { type: String },
+      relationship: { type: String },
+      email: { type: String }
+    },
+    
     // Role-specific Information
     studentInfo: {
       studentId: { type: String, unique: true, sparse: true },
       enrollmentDate: { type: Date, default: Date.now },
-      emergencyContact: {
-        name: { type: String },
-        phone: { type: String },
-        relationship: { type: String }
-      },
       educationLevel: { 
         type: String, 
         enum: ["high_school", "bachelor", "master", "phd", "other"] 
