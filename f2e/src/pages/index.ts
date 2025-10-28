@@ -11,7 +11,8 @@ export {
   Topic, 
   TopicDetails, 
   EnrolledCourses, 
-  StudentManagement 
+  StudentManagement,
+  TrainerManagement 
 } from './Dashboard';
 export { Login } from './Login';
 export { Register } from './Register';

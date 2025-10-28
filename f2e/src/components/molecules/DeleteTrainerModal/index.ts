@@ -1,0 +1,1 @@
+export { DeleteTrainerModal } from './DeleteTrainerModal';

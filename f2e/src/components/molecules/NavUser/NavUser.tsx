@@ -7,6 +7,7 @@ import {
   PlusCircle,
   BookOpen,
   Users,
+  UserCheck,
 } from "lucide-react"
 
 import {
@@ -107,6 +108,10 @@ console.log('NavUser render: ',  user );
               <DropdownMenuItem >
                 <Users />
                 <Link to="/dashboard/student-management">Student Management</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem >
+                <UserCheck />
+                <Link to="/dashboard/trainer-management">Trainer Management</Link>
               </DropdownMenuItem>
               <DropdownMenuItem >
                 <Bell />

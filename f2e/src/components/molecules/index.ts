@@ -9,10 +9,18 @@ export { TutorialCard } from './TutorialCard';
 // Radix-based molecules
 export { ConfirmDialog } from './ConfirmDialog';
 export { UserMenu } from './UserMenu';
+
+// Student Management Modals
 export { AddStudentModal } from './AddStudentModal';
 export { EditStudentModal } from './EditStudentModal';
 export { ViewStudentModal } from './ViewStudentModal';
 export { DeleteStudentModal } from './DeleteStudentModal';
+
+// Trainer Management Modals
+export { AddTrainerModal } from './AddTrainerModal';
+export { EditTrainerModal } from './EditTrainerModal';
+export { ViewTrainerModal } from './ViewTrainerModal';
+export { DeleteTrainerModal } from './DeleteTrainerModal';
 
 // Payment components
 export { PaymentGateway } from './PaymentGateway';

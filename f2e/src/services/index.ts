@@ -34,3 +34,11 @@ export {
   type BulkOperation,
   type PaymentRecord
 } from './studentManagementApi';
+export {
+  trainerManagementApiService,
+  type Trainer as TrainerManagement,
+  type TrainerStats,
+  type TrainerFilters,
+  type CreateTrainerData,
+  type UpdateTrainerData
+} from './trainerManagementApi';
