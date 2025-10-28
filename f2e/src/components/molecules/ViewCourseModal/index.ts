@@ -1,0 +1,1 @@
+export { ViewCourseModal } from './ViewCourseModal';

@@ -22,6 +22,12 @@ export { EditTrainerModal } from './EditTrainerModal';
 export { ViewTrainerModal } from './ViewTrainerModal';
 export { DeleteTrainerModal } from './DeleteTrainerModal';
 
+// Course Management Modals
+export { ViewCourseModal } from './ViewCourseModal';
+export { EditCourseModal } from './EditCourseModal';
+export { DeleteCourseModal } from './DeleteCourseModal';
+export { AddCourseModal } from './AddCourseModal';
+
 // Payment components
 export { PaymentGateway } from './PaymentGateway';
 export { PaymentMethodManager } from './PaymentMethodManager';

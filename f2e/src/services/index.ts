@@ -42,3 +42,11 @@ export {
   type CreateTrainerData,
   type UpdateTrainerData
 } from './trainerManagementApi';
+export {
+  courseManagementApiService,
+  type Course as CourseManagement,
+  type CourseStats,
+  type CourseFilters,
+  type CreateCourseData,
+  type UpdateCourseData
+} from './courseManagementApi';

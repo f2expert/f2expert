@@ -6,3 +6,4 @@ export { default as TopicDetails } from './TopicDetails';
 export { default as EnrolledCourses } from './EnrolledCourses';
 export { default as StudentManagement } from './StudentManagement';
 export { default as TrainerManagement } from './TrainerManagement';
+export { default as CourseManagement } from './CourseManagement';
