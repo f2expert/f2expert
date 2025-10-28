@@ -394,6 +394,7 @@ export const FeeDetails: React.FC = () => {
       {activeTab === 'current' && renderCurrentSubscription()}
       {activeTab === 'history' && renderPaymentHistory()}
       {activeTab === 'billing' && renderBillingSettings()}
+      <div className="py-2" />
     </div>
   );
 };

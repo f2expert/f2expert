@@ -6,6 +6,7 @@ import {
   LogOut,
   PlusCircle,
   BookOpen,
+  Users,
 } from "lucide-react"
 
 import {
@@ -102,6 +103,10 @@ console.log('NavUser render: ',  user );
               <DropdownMenuItem >
                 <BookOpen />
                 <Link to="/dashboard/enrolled-courses">Enrolled Courses</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem >
+                <Users />
+                <Link to="/dashboard/student-management">Student Management</Link>
               </DropdownMenuItem>
               <DropdownMenuItem >
                 <Bell />

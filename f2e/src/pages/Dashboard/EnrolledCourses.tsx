@@ -435,6 +435,7 @@ export const EnrolledCourses: React.FC = () => {
           </div>
         )}
       </div>
+      <div className="py-2" />
     </div>
   );
 };

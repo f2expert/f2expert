@@ -1,0 +1,1 @@
+export { ViewStudentModal } from './ViewStudentModal';

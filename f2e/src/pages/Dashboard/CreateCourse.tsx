@@ -1696,6 +1696,7 @@ export const CreateCourse: React.FC = () => {
           </div>
         </div>
       </form>
+      <div className="py-2" />
     </div>
   );
 };

@@ -1,0 +1,1 @@
+export { DeleteStudentModal } from './DeleteStudentModal';

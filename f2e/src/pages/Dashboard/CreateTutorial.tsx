@@ -996,6 +996,7 @@ export const CreateTutorial: React.FC = () => {
           </Button>
         </div>
       </div>
+      <div className="py-2" />
     </div>
   );
 };

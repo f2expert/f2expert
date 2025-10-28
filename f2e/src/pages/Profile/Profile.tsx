@@ -815,6 +815,7 @@ export const Profile: React.FC = () => {
       {activeTab === 'profile' && renderProfileTab()}
       {activeTab === 'settings' && renderSettingsTab()}
       {activeTab === 'security' && renderSecurityTab()}
+      <div className="py-2" />
     </div>
   );
 };

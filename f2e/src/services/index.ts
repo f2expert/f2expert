@@ -23,3 +23,14 @@ export {
   type EnrollmentFilters,
   type EnrollmentStats
 } from './enrollmentApi';
+export {
+  studentManagementApiService,
+  type Student,
+  type StudentStats,
+  type StudentFilters,
+  type CreateStudentData,
+  type UpdateStudentData,
+  type AttendanceRecord,
+  type BulkOperation,
+  type PaymentRecord
+} from './studentManagementApi';

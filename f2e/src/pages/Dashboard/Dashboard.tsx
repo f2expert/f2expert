@@ -371,6 +371,7 @@ export const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
+        <div className="py-2" />
       </div>
   );
 };

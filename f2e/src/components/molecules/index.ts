@@ -9,6 +9,10 @@ export { TutorialCard } from './TutorialCard';
 // Radix-based molecules
 export { ConfirmDialog } from './ConfirmDialog';
 export { UserMenu } from './UserMenu';
+export { AddStudentModal } from './AddStudentModal';
+export { EditStudentModal } from './EditStudentModal';
+export { ViewStudentModal } from './ViewStudentModal';
+export { DeleteStudentModal } from './DeleteStudentModal';
 
 // Payment components
 export { PaymentGateway } from './PaymentGateway';
