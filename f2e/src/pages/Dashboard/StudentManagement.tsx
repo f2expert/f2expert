@@ -14,9 +14,7 @@ import {
   Trash2, 
   Mail, 
   Phone, 
-  BookOpen, 
   UserCheck, 
-  UserX,
   Download,
   Upload,
   Eye
@@ -494,8 +492,8 @@ export const StudentManagement: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen">
+      <div className="w-full">
         {/* Header */}
         <div className="mb-8 flex justify-between items-center">
           <div>
@@ -516,63 +514,6 @@ export const StudentManagement: React.FC = () => {
               Add Student
             </Button>
           </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Students</p>
-                <p className="text-2xl font-bold text-gray-900">{students.length}</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <UserCheck className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Active Students</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {students.filter(s => s.isActive).length}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <BookOpen className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Avg Attendance</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {Math.round(students.reduce((acc, s) => acc + s.attendance.attendancePercentage, 0) / students.length)}%
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <UserX className="h-6 w-6 text-red-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Pending Fees</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ₹{students.reduce((acc, s) => acc + s.pendingFees, 0).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </Card>
         </div>
 
         {/* Search and Filters */}
@@ -714,7 +655,7 @@ export const StudentManagement: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left">
+                  <th className="px-3 py-3 text-left">
                     <input
                       type="checkbox"
                       checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
@@ -722,25 +663,25 @@ export const StudentManagement: React.FC = () => {
                       className="rounded border-gray-300"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Student
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Contact
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Course
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Attendance
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Fees
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -755,7 +696,7 @@ export const StudentManagement: React.FC = () => {
                         : ''
                     }`}
                   >
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-4">
                       <input
                         type="checkbox"
                         checked={selectedStudents.includes(student._id)}
@@ -763,33 +704,21 @@ export const StudentManagement: React.FC = () => {
                         className="rounded border-gray-300"
                       />
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-sm font-medium text-blue-600">
-                              {student.firstName[0]}{student.lastName[0]}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
+                    <td className="px-3 py-4">
+                      <div className="flex">                        
+                        <div className="">
                           <div className="flex items-center gap-2">
                             <div className="text-sm font-medium text-gray-900">
                               {student.firstName} {student.lastName}
-                            </div>
-                            {!student.isActive && (
-                              <span title="Inactive Student">
-                                <UserX className="h-4 w-4 text-gray-400" />
-                              </span>
-                            )}
+                            </div>                            
                           </div>
                           <div className="text-sm text-gray-500">
-                            ID: {student.studentId}
+                            {student.studentId}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="text-sm text-gray-900 flex items-center">
                         <Mail className="h-4 w-4 mr-1 text-gray-400" />
                         {student.email}
@@ -799,7 +728,7 @@ export const StudentManagement: React.FC = () => {
                         {student.phone}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="text-sm text-gray-900">
                         {student.courses[0]?.courseName || 'No Course'}
                       </div>
@@ -807,12 +736,12 @@ export const StudentManagement: React.FC = () => {
                         Enrolled: {new Date(student.enrollmentDate).toLocaleDateString()}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(student.isActive)}`}>
                         {student.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className={`text-sm font-medium ${getAttendanceColor(student.attendance.attendancePercentage)}`}>
                         {student.attendance.attendancePercentage}%
                       </div>
@@ -820,7 +749,7 @@ export const StudentManagement: React.FC = () => {
                         {student.attendance.attendedClasses}/{student.attendance.totalClasses} classes
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="text-sm text-gray-900">
                         Paid: ₹{student.totalFeesPaid.toLocaleString()}
                       </div>
@@ -830,7 +759,7 @@ export const StudentManagement: React.FC = () => {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex space-x-2">
                         <button
                           onClick={() => openViewModal(student)}
@@ -944,6 +873,7 @@ export const StudentManagement: React.FC = () => {
         studentIds={selectedStudents}
         isMultiple={true}
       />
+      <div className="py-2" />
     </div>
   );
 };
