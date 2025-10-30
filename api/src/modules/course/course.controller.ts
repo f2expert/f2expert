@@ -340,6 +340,45 @@ export const getById = async (req: Request, res: Response) => {
  *                         type: string
  *                     duration:
  *                       type: string
+ *               modules:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "1761727313374"
+ *                     title:
+ *                       type: string
+ *                       example: "HTML Introduction"
+ *                     description:
+ *                       type: string
+ *                       example: "We are going explain about the HTML language and its history"
+ *                     lessons:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: "1761727313374"
+ *                           title:
+ *                             type: string
+ *                             example: "Lesson1"
+ *                           description:
+ *                             type: string
+ *                             example: "About HTML"
+ *                           videoUrl:
+ *                             type: string
+ *                             format: uri
+ *                             example: "https://www.youtube.com/shorts/Ok3TQXserUI"
+ *                           duration:
+ *                             type: string
+ *                             example: "15"
+ *                           resources:
+ *                             type: array
+ *                             items:
+ *                               type: string
  *               price:
  *                 type: number
  *                 minimum: 0

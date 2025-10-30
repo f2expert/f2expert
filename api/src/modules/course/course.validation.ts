@@ -7,6 +7,22 @@ const syllabusSchema = Joi.object({
   duration: Joi.string().required()
 })
 
+const lessonSchema = Joi.object({
+  id: Joi.string().required(),
+  title: Joi.string().required(),
+  description: Joi.string().required(),
+  videoUrl: Joi.string().uri().optional(),
+  duration: Joi.string().required(),
+  resources: Joi.array().items(Joi.string().allow('').optional()).optional()
+})
+
+const moduleSchema = Joi.object({
+  id: Joi.string().required(),
+  title: Joi.string().required(),
+  description: Joi.string().required(),
+  lessons: Joi.array().items(lessonSchema).min(1).required()
+})
+
 const classScheduleSchema = Joi.object({
   day: Joi.string().valid(...WEEKDAYS).required(),
   startTime: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
@@ -51,6 +67,7 @@ export const createCourseSchema = Joi.object({
     'any.required': 'Learning outcomes are required'
   }),
   syllabus: Joi.array().items(syllabusSchema).optional(),
+  modules: Joi.array().items(moduleSchema).optional(),
   price: Joi.number().min(0).precision(2).required().messages({
     'number.min': 'Price must be 0 or positive',
     'any.required': 'Price is required'
@@ -102,6 +119,7 @@ export const updateCourseSchema = Joi.object({
   prerequisites: Joi.array().items(Joi.string()).optional(),
   learningOutcomes: Joi.array().items(Joi.string()).min(1).optional(),
   syllabus: Joi.array().items(syllabusSchema).optional(),
+  modules: Joi.array().items(moduleSchema).optional(),
   price: Joi.number().min(0).precision(2).optional(),
   originalPrice: Joi.number().min(0).precision(2).optional(),
   currency: Joi.string().valid(...CURRENCIES).optional(),

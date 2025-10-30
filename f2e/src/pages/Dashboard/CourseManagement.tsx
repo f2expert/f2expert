@@ -467,13 +467,6 @@ const CourseManagement: React.FC = () => {
         </Card>
       )}
 
-      {/* Results Summary */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-600">
-          Showing {filteredCourses.length} of {courses.length} courses
-        </p>
-      </div>
-
       {/* Courses Table */}
       <Card>
         <div className="overflow-x-auto">
@@ -617,6 +610,16 @@ const CourseManagement: React.FC = () => {
           )}
         </div>
       </Card>
+
+      {/* Pagination would go here */}
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-sm text-gray-700">
+            Showing {filteredCourses.length} of {courses.length} courses
+          </p>
+          <div className="flex space-x-2">
+            {/* Pagination controls would go here */}
+          </div>
+        </div>
 
       {/* View Course Modal */}
       {isViewModalOpen && selectedCourse && (

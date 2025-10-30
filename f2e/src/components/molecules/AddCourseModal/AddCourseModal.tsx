@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { FaPlus, FaTrash, FaUpload, FaVideo } from 'react-icons/fa';
+import { Card } from '../../atoms/Card';
+import { BookOpen, FileText, DollarSign, Eye, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../atoms/Dialog';
 import { Button } from '../../atoms/Button';
 import { Input } from '../../atoms/Input';
-import { Card } from '../../atoms/Card';
+
 
 interface AddCourseModalProps {
   isOpen: boolean;
@@ -70,7 +72,17 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
   onCourseAdded,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'basic' | 'content' | 'pricing' | 'preview'>('basic');
+  const [currentStep, setCurrentStep] = useState<'basic' | 'content' | 'pricing' | 'preview'>('basic');
+  
+  // Steps configuration for progress indicator
+  const steps = [
+    { key: 'basic', title: 'Basic Info', icon: FileText },
+    { key: 'content', title: 'Course Content', icon: BookOpen },
+    { key: 'pricing', title: 'Pricing', icon: DollarSign },
+    { key: 'preview', title: 'Preview', icon: Eye }
+  ];
+
+  const currentStepIndex = steps.findIndex(step => step.key === currentStep);
 
   const [courseData, setCourseData] = useState<CourseFormData>({
     title: '',
@@ -348,6 +360,112 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  // Validate current step before proceeding
+  const validateCurrentStep = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    switch (currentStep) {
+      case 'basic':
+        // Validate basic info fields
+        if (!courseData.title?.trim()) {
+          newErrors.title = 'Course title is required';
+        }
+        if (!courseData.description?.trim()) {
+          newErrors.description = 'Course description is required';
+        }
+        if (!courseData.instructor?.trim()) {
+          newErrors.instructor = 'Instructor name is required';
+        }
+        if (!courseData.category?.trim()) {
+          newErrors.category = 'Category is required';
+        }
+        if (!courseData.duration?.trim()) {
+          newErrors.duration = 'Duration is required';
+        }
+        // Validate thumbnailUrl if provided
+        if (courseData.thumbnailUrl?.trim() && !isValidUri(courseData.thumbnailUrl)) {
+          newErrors.thumbnailUrl = 'Thumbnail URL must be a valid URI (http/https) or empty';
+        }
+        break;
+
+      case 'content':
+        // Content validation - ensure at least one module with one lesson
+        if (modules.length === 0) {
+          newErrors.content = 'At least one module is required';
+        } else {
+          const hasEmptyModules = modules.some(module => 
+            !module.title?.trim() || module.lessons.length === 0
+          );
+          const hasEmptyLessons = modules.some(module =>
+            module.lessons.some(lesson => !lesson.title?.trim())
+          );
+          
+          if (hasEmptyModules) {
+            newErrors.content = 'All modules must have a title and at least one lesson';
+          } else if (hasEmptyLessons) {
+            newErrors.content = 'All lessons must have a title';
+          }
+        }
+        break;
+
+      case 'pricing':
+        // Validate pricing fields
+        if (courseData.isFree === false && (!courseData.price || courseData.price <= 0)) {
+          newErrors.price = 'Price must be greater than 0 for paid courses';
+        }
+        break;
+
+      case 'preview':
+        // No additional validation needed for preview
+        break;
+    }
+
+    setErrors(newErrors);
+    
+    // If there are errors, scroll to the first error element
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        const firstErrorField = Object.keys(newErrors)[0];
+        const errorElement = document.querySelector(`[name="${firstErrorField}"], #${firstErrorField}`);
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+    
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Navigation functions for steps
+  const handleNext = () => {
+    if (validateCurrentStep() && currentStepIndex < steps.length - 1) {
+      setCurrentStep(steps[currentStepIndex + 1].key as 'basic' | 'content' | 'pricing' | 'preview');
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStep(steps[currentStepIndex - 1].key as 'basic' | 'content' | 'pricing' | 'preview');
+    }
+  };
+
+  // Helper function to determine thumbnail URL for submission
+  const getThumbnailUrlForSubmission = (): string | null => {
+    // Priority 1: Manual URL entry
+    if (courseData.thumbnailUrl && courseData.thumbnailUrl.trim()) {
+      return courseData.thumbnailUrl;
+    }
+    
+    // Priority 2: For demo purposes, use preview if file is selected but not uploaded
+    if (thumbnailPreview && thumbnailFile) {
+      // Convert blob URL to a placeholder or use a default
+      return '/assets/topics/default-course.png'; // Fallback to default image
+    }
+    
+    // Priority 3: No thumbnail
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -383,8 +501,8 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
         hasQuizzes: courseData.hasQuizzes,
         supportProvided: courseData.supportProvided,
         jobAssistance: courseData.jobAssistance,
-        thumbnailUrl: courseData.thumbnailUrl || '', // Ensure it's a string, empty if not set
-        videoPreviewUrl: courseData.videoPreviewUrl || '',
+        thumbnailUrl: "http://localhost:3000"+getThumbnailUrlForSubmission(),
+        videoPreviewUrl: courseData.videoPreviewUrl && courseData.videoPreviewUrl.trim() ? courseData.videoPreviewUrl : null,
         tags: courseData.tags.filter(tag => tag.trim()),
         enrollmentStartDate: new Date().toISOString(),
         enrollmentEndDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days from now
@@ -398,8 +516,6 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
         )
       };
 
-      
-      // Call actual API
       const response = await fetch('http://localhost:5000/api/courses', {
         method: 'POST',
         headers: {
@@ -475,7 +591,7 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
       URL.revokeObjectURL(thumbnailPreview);
       setThumbnailPreview('');
     }
-    setActiveTab('basic');
+    setCurrentStep('basic');
     setErrors({});
     
     // Reset modules to initial state
@@ -764,7 +880,10 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium mb-2">Course Thumbnail</label>
+          <label className="block text-sm font-medium mb-2">
+            Course Thumbnail 
+            <span className="text-xs font-normal text-gray-500 ml-1">(Optional)</span>
+          </label>
           <div className="space-y-3">
             {/* File Input */}
             <div className="flex items-center space-x-4">
@@ -851,6 +970,17 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
             <p className="text-xs text-gray-500">
               Supported formats: JPG, PNG, GIF. Max size: 5MB. Recommended: 1280x720px
             </p>
+            
+            {/* Status indicator */}
+            <div className="text-xs">
+              {courseData.thumbnailUrl ? (
+                <span className="text-green-600">✓ Thumbnail URL provided</span>
+              ) : thumbnailFile ? (
+                <span className="text-blue-600">📁 File selected - will use default thumbnail for demo</span>
+              ) : (
+                <span className="text-gray-500">💡 No thumbnail - will use default image</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1073,115 +1203,7 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
     </div>
   );
 
-  const renderContent = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Course Modules</h3>
-        <Button
-          variant="outline"
-          onClick={addModule}
-          className="flex items-center space-x-2"
-        >
-          <FaPlus className="text-sm" />
-          <span>Add Module</span>
-        </Button>
-      </div>
 
-      {modules.map((module, moduleIndex) => (
-        <Card key={module.id} className="border">
-          <div className="p-4">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1 space-y-3">
-                <Input
-                  value={module.title}
-                  onChange={(e) => updateModule(module.id, 'title', e.target.value)}
-                  placeholder={`Module ${moduleIndex + 1} title`}
-                  className="font-medium"
-                />
-                <Input
-                  value={module.description}
-                  onChange={(e) => updateModule(module.id, 'description', e.target.value)}
-                  placeholder="Module description"
-                />
-              </div>
-              {modules.length > 1 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => removeModule(module.id)}
-                  className="ml-4 text-red-600 hover:text-red-700"
-                >
-                  <FaTrash />
-                </Button>
-              )}
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="font-medium">Lessons</h4>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addLesson(module.id)}
-                  className="flex items-center space-x-2"
-                >
-                  <FaPlus className="text-sm" />
-                  <span>Add Lesson</span>
-                </Button>
-              </div>
-
-              {module.lessons.map((lesson, lessonIndex) => (
-                <div key={lesson.id} className="border rounded-lg p-4 bg-gray-50">
-                  <div className="flex justify-between items-start mb-3">
-                    <h5 className="font-medium">Lesson {lessonIndex + 1}</h5>
-                    {module.lessons.length > 1 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeLesson(module.id, lesson.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <FaTrash />
-                      </Button>
-                    )}
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      value={lesson.title}
-                      onChange={(e) => updateLesson(module.id, lesson.id, 'title', e.target.value)}
-                      placeholder="Lesson title"
-                    />
-                    <Input
-                      value={lesson.duration}
-                      onChange={(e) => updateLesson(module.id, lesson.id, 'duration', e.target.value)}
-                      placeholder="Duration (e.g., 15 min)"
-                    />
-                  </div>
-                  
-                  <div className="mt-3">
-                    <Input
-                      value={lesson.description}
-                      onChange={(e) => updateLesson(module.id, lesson.id, 'description', e.target.value)}
-                      placeholder="Lesson description"
-                    />
-                  </div>
-                  
-                  <div className="mt-3">
-                    <Input
-                      value={lesson.videoUrl}
-                      onChange={(e) => updateLesson(module.id, lesson.id, 'videoUrl', e.target.value)}
-                      placeholder="Video URL"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
 
   const renderPricing = () => (
     <div className="space-y-6">
@@ -1302,6 +1324,122 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
     </div>
   );
 
+  const renderCourseContent = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Course Modules</h3>
+        <Button
+          variant="outline"
+          onClick={addModule}
+          className="flex items-center space-x-2"
+        >
+          <FaPlus className="text-sm" />
+          <span>Add Module</span>
+        </Button>
+      </div>
+
+      {errors.content && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-600">{errors.content}</p>
+        </div>
+      )}
+
+      {modules.map((module, moduleIndex) => (
+        <Card key={module.id} className="border">
+          <div className="p-4">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex-1 space-y-3">
+                <Input
+                  value={module.title}
+                  onChange={(e) => updateModule(module.id, 'title', e.target.value)}
+                  placeholder={`Module ${moduleIndex + 1} title`}
+                  className="font-medium"
+                />
+                <Input
+                  value={module.description}
+                  onChange={(e) => updateModule(module.id, 'description', e.target.value)}
+                  placeholder="Module description"
+                />
+              </div>
+              {modules.length > 1 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => removeModule(module.id)}
+                  className="ml-4 text-red-600 hover:text-red-700"
+                >
+                  <FaTrash />
+                </Button>
+              )}
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="font-medium">Lessons</h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addLesson(module.id)}
+                  className="flex items-center space-x-2"
+                >
+                  <FaPlus className="text-sm" />
+                  <span>Add Lesson</span>
+                </Button>
+              </div>
+
+              {module.lessons.map((lesson, lessonIndex) => (
+                <div key={lesson.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex justify-between items-start mb-3">
+                    <h5 className="font-medium">Lesson {lessonIndex + 1}</h5>
+                    {module.lessons.length > 1 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeLesson(module.id, lesson.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <FaTrash />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      value={lesson.title}
+                      onChange={(e) => updateLesson(module.id, lesson.id, 'title', e.target.value)}
+                      placeholder="Lesson title"
+                    />
+                    <Input
+                      value={lesson.duration}
+                      onChange={(e) => updateLesson(module.id, lesson.id, 'duration', e.target.value)}
+                      placeholder="Duration (e.g., 15 min)"
+                    />
+                  </div>
+                  
+                  <div className="mt-3">
+                    <Input
+                      value={lesson.description}
+                      onChange={(e) => updateLesson(module.id, lesson.id, 'description', e.target.value)}
+                      placeholder="Lesson description"
+                    />
+                  </div>
+                  
+                  <div className="mt-3">
+                    <Input
+                      value={lesson.videoUrl}
+                      onChange={(e) => updateLesson(module.id, lesson.id, 'videoUrl', e.target.value)}
+                      placeholder="Video URL"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+
   const renderPreview = () => (
     <div className="space-y-6">
       <div className="bg-white border rounded-lg overflow-hidden">
@@ -1395,93 +1533,90 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-gray-900">Create New Course</DialogTitle>
+          <DialogTitle className="flex items-center text-xl font-semibold">
+            <BookOpen className="mr-2 h-5 w-5" />
+            Create New Course
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="flex h-[75vh]">
-          {/* Tab Navigation Sidebar */}
-          <div className="w-64 bg-gray-50 rounded-l-lg p-4 border-r">
-            <div className="space-y-2">
-              {[
-                { key: 'basic', label: 'Basic Info' },
-                { key: 'content', label: 'Course Content' },
-                { key: 'pricing', label: 'Pricing' },
-                { key: 'preview', label: 'Preview' }
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setActiveTab(key as 'basic' | 'content' | 'pricing' | 'preview')}
-                  className={`w-full px-4 py-3 text-left rounded-md font-medium transition-colors ${
-                    activeTab === key
-                      ? 'bg-blue-500 text-white'
-                      : 'text-gray-600 hover:bg-gray-200'
+        {/* Progress Steps */}
+        <div className="flex items-center justify-between mb-6">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = step.key === currentStep;
+            const isCompleted = index < currentStepIndex;
+            
+            return (
+              <div key={step.key} className="flex items-center">
+                <div
+                  className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
+                    isActive
+                      ? 'border-blue-600 bg-blue-600 text-white'
+                      : isCompleted
+                      ? 'border-green-600 bg-green-600 text-white'
+                      : 'border-gray-300 bg-white text-gray-400'
                   }`}
                 >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Form Content */}
-          <div className="flex-1 p-6 overflow-y-auto">
-            <form onSubmit={handleSubmit}>
-              <Card className="border-0 shadow-none">
-                <div className="p-0">
-                  {activeTab === 'basic' && renderBasicInfo()}
-                  {activeTab === 'content' && renderContent()}
-                  {activeTab === 'pricing' && renderPricing()}
-                  {activeTab === 'preview' && renderPreview()}
+                  <Icon className="h-4 w-4" />
                 </div>
-              </Card>
-
-              {/* Action Buttons */}
-              <div className="flex justify-between items-center mt-6 pt-6 border-t">
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={courseData.isPublished}
-                      onChange={(e) => handleInputChange('isPublished', e.target.checked)}
-                      className="rounded"
-                    />
-                    <span className="text-sm font-medium">Publish immediately</span>
-                  </label>
-                </div>
-
-                <div className="flex space-x-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleClose}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </Button>
-                  
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex items-center space-x-2"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Creating Course...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Create Course</span>
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <span className={`ml-2 text-sm font-medium ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
+                  {step.title}
+                </span>
+                {index < steps.length - 1 && (
+                  <div className={`w-12 h-0.5 mx-2 ${isCompleted ? 'bg-green-600' : 'bg-gray-300'}`} />
+                )}
               </div>
-            </form>
+            );
+          })}
+        </div>
+
+        {/* Main Content Area */}
+        <div className="px-6">
+          {currentStep === 'basic' && renderBasicInfo()}
+          {currentStep === 'content' && renderCourseContent()}
+          {currentStep === 'pricing' && renderPricing()}
+          {currentStep === 'preview' && renderPreview()}
+        </div>
+
+        {/* Footer Navigation */}
+        <div className="flex justify-between items-center p-6 border-t bg-gray-50 mt-6">
+          <Button 
+            variant="outline" 
+            onClick={handlePrev} 
+            disabled={currentStepIndex === 0}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            {currentStep === 'preview' ? (
+              <Button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting} 
+                className="flex items-center gap-2"
+              >
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FaPlus className="h-4 w-4" />}
+                {isSubmitting ? 'Creating Course...' : 'Create Course'}
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleNext}
+                className="flex items-center gap-2"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
+
       </DialogContent>
     </Dialog>
   );

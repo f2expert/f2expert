@@ -415,50 +415,82 @@ const ViewCourseModal: React.FC<ViewCourseModalProps> = ({
           </div>
 
           {/* Course Modules */}
-          {(() => {
-            const courseWithModules = course as Course & { modules?: Module[] };
-            return courseWithModules.modules && courseWithModules.modules.length > 0 && (
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <BookOpen className="mr-2 h-5 w-5" />
-                  Course Content
-                </h3>
+          <div className="bg-white border rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <BookOpen className="mr-2 h-5 w-5" />
+              Course Content
+              {/* Debug info */}
+              <span className="ml-2 text-xs text-gray-400">
+                ({(() => {
+                  const courseWithModules = course as Course & { modules?: Module[] };
+                  return courseWithModules.modules ? `${courseWithModules.modules.length} modules` : 'No modules';
+                })()})
+              </span>
+            </h3>
+            {(() => {
+              const courseWithModules = course as Course & { modules?: Module[] };
+              
+              if (!courseWithModules.modules || courseWithModules.modules.length === 0) {
+                return (
+                  <div className="text-center py-8 text-gray-500">
+                    <BookOpen className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                    <p className="text-sm">No course modules available</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Course content will be displayed here once modules are added
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
                 <div className="space-y-4">
                   {courseWithModules.modules.map((module, moduleIndex) => (
-                    <div key={module.id} className="border border-gray-200 rounded-lg p-4">
+                    <div key={module.id || moduleIndex} className="border border-gray-200 rounded-lg p-4">
                       <h4 className="font-semibold text-gray-900 mb-2">
-                        Module {moduleIndex + 1}: {module.title}
+                        Module {moduleIndex + 1}: {module.title || 'Untitled Module'}
                       </h4>
                       {module.description && (
                         <p className="text-sm text-gray-600 mb-3">{module.description}</p>
                       )}
                       <div className="space-y-2">
-                        {module.lessons.map((lesson, lessonIndex) => (
-                          <div key={lesson.id} className="flex items-center bg-gray-50 rounded p-3">
-                            <Monitor className="mr-3 h-4 w-4 text-blue-500" />
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900">
-                                Lesson {lessonIndex + 1}: {lesson.title}
-                              </p>
-                              {lesson.description && (
-                                <p className="text-xs text-gray-500 mt-1">{lesson.description}</p>
+                        {module.lessons && module.lessons.length > 0 ? (
+                          module.lessons.map((lesson, lessonIndex) => (
+                            <div key={lesson.id || lessonIndex} className="flex items-center bg-gray-50 rounded p-3">
+                              <Monitor className="mr-3 h-4 w-4 text-blue-500" />
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-900">
+                                  Lesson {lessonIndex + 1}: {lesson.title || 'Untitled Lesson'}
+                                </p>
+                                {lesson.description && (
+                                  <p className="text-xs text-gray-500 mt-1">{lesson.description}</p>
+                                )}
+                                {lesson.videoUrl && (
+                                  <div className="flex items-center mt-1">
+                                    <Globe className="mr-1 h-3 w-3 text-blue-400" />
+                                    <span className="text-xs text-blue-600">Video Available</span>
+                                  </div>
+                                )}
+                              </div>
+                              {lesson.duration && (
+                                <div className="flex items-center text-xs text-gray-400">
+                                  <Clock className="mr-1 h-3 w-3" />
+                                  {lesson.duration}
+                                </div>
                               )}
                             </div>
-                            {lesson.duration && (
-                              <div className="flex items-center text-xs text-gray-400">
-                                <Clock className="mr-1 h-3 w-3" />
-                                {lesson.duration}
-                              </div>
-                            )}
+                          ))
+                        ) : (
+                          <div className="text-center py-4 text-gray-400">
+                            <p className="text-xs">No lessons in this module</p>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
+          </div>
 
           {/* Tags */}
           {course.tags && course.tags.length > 0 && (

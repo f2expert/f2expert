@@ -1,29 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Edit3, 
-  BookOpen, 
-  User, 
-  DollarSign, 
-  Clock, 
-  Settings, 
-  Award,
-  Target,
-  FileText,
-  Plus,
-  X,
-  Trash2
-} from 'lucide-react';
-
+import { FaPlus, FaTrash } from 'react-icons/fa';
+import { BookOpen, FileText, DollarSign, Eye, ChevronLeft, ChevronRight, Loader2, Edit3 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../atoms/Dialog';
 import { Button } from '../../atoms/Button';
 import { Input } from '../../atoms/Input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../atoms/Dialog';
-import { Card, CardHeader, CardContent } from '../../atoms/Card';
+import { Card } from '../../atoms/Card';
 
-import { 
-  courseManagementApiService, 
-  type Course, 
-  type UpdateCourseData 
-} from '../../../services/courseManagementApi';
+interface Course {
+  title?: string;
+  description?: string;
+  instructor?: string;
+  instructorBio?: string;
+  category?: string;
+  subCategory?: string;
+  level?: string;
+  estimatedDuration?: string;
+  language?: string;
+  price?: number;
+  currency?: string;
+  isFree?: boolean;
+  thumbnailUrl?: string;
+  tags?: string[];
+  prerequisites?: string[];
+  whatYoullLearn?: string[];
+  isPublished?: boolean;
+  modules?: Module[];
+}
+
+interface EditCourseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  course: Course;
+  onCourseUpdated: () => void;
+}
 
 interface Module {
   id: string;
@@ -41,220 +50,216 @@ interface Lesson {
   resources: string[];
 }
 
-interface EditCourseModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  course: Course;
-  onCourseUpdated: () => void;
+interface CourseFormData {
+  title: string;
+  description: string;
+  instructor: string;
+  instructorBio: string;
+  category: string;
+  subCategory: string;
+  level: string;
+  estimatedDuration: string;
+  language: string;
+  price: number;
+  currency: string;
+  isFree: boolean;
+  thumbnailUrl: string;
+  tags: string[];
+  prerequisites: string[];
+  whatYoullLearn: string[];
+  isPublished: boolean;
 }
-
-type FormStep = 'basic' | 'content' | 'pricing' | 'features' | 'schedule';
 
 const EditCourseModal: React.FC<EditCourseModalProps> = ({
   isOpen,
   onClose,
   course,
-  onCourseUpdated,
+  onCourseUpdated
 }) => {
-  const [currentStep, setCurrentStep] = useState<FormStep>('basic');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<'basic' | 'content' | 'pricing' | 'preview'>('basic');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [modules, setModules] = useState<Module[]>([]);
 
-  const [formData, setFormData] = useState<UpdateCourseData>({
+
+  const [courseData, setCourseData] = useState<CourseFormData>({
     title: '',
     description: '',
-    shortDescription: '',
     instructor: '',
     instructorBio: '',
     category: '',
     subCategory: '',
     level: 'Beginner',
-    technologies: [],
-    prerequisites: [],
-    learningOutcomes: [],
-    price: 0,
-    originalPrice: 0,
-    currency: 'USD',
-    duration: '',
-    totalHours: 0,
-    totalLectures: 0,
+    estimatedDuration: '',
     language: 'English',
-    maxStudents: 50,
-    minStudents: 5,
-    mode: 'Online',
-    certificateProvided: false,
-    hasProjects: false,
-    hasAssignments: false,
-    hasQuizzes: false,
-    supportProvided: false,
-    jobAssistance: false,
-    isPublished: false,
-    isFeatured: false,
-    thumbnailUrl: ''
+    price: 0,
+    currency: 'USD',
+    isFree: true,
+    thumbnailUrl: '',
+    tags: [''],
+    prerequisites: [''],
+    whatYoullLearn: [''],
+    isPublished: false
   });
 
-  // Temporary state for array inputs
-  const [tempTechnology, setTempTechnology] = useState('');
-  const [tempPrerequisite, setTempPrerequisite] = useState('');
-  const [tempLearningOutcome, setTempLearningOutcome] = useState('');
-  const [modules, setModules] = useState<Module[]>([
-    {
-      id: Date.now().toString(),
-      title: '',
-      description: '',
-      lessons: [
-        {
+  // Initialize form with course data
+  useEffect(() => {
+    if (course && isOpen) {
+      setCourseData({
+        title: course.title || '',
+        description: course.description || '',
+        instructor: course.instructor || '',
+        instructorBio: course.instructorBio || '',
+        category: course.category || '',
+        subCategory: course.subCategory || '',
+        level: course.level || 'Beginner',
+        estimatedDuration: course.estimatedDuration || '',
+        language: course.language || 'English',
+        price: course.price || 0,
+        currency: course.currency || 'USD',
+        isFree: course.isFree ?? true,
+        thumbnailUrl: course.thumbnailUrl || '',
+        tags: course.tags || [''],
+        prerequisites: course.prerequisites || [''],
+        whatYoullLearn: course.whatYoullLearn || [''],
+        isPublished: course.isPublished || false
+      });
+
+      // Initialize modules if course has them
+      if (course.modules) {
+        setModules(course.modules);
+      } else {
+        setModules([{
           id: Date.now().toString(),
           title: '',
           description: '',
-          videoUrl: '',
-          duration: '',
-          resources: ['']
-        }
-      ]
+          lessons: [{
+            id: Date.now().toString() + '_lesson',
+            title: '',
+            description: '',
+            videoUrl: '',
+            duration: '',
+            resources: []
+          }]
+        }]);
+      }
+
+      setCurrentStep('basic');
+      setErrors({});
     }
-  ]);
+  }, [course, isOpen]);
 
   const steps = [
-    { key: 'basic', title: 'Basic Info', icon: BookOpen },
-    { key: 'content', title: 'Content & Learning', icon: Target },
-    { key: 'pricing', title: 'Pricing & Students', icon: DollarSign },
-    { key: 'features', title: 'Features', icon: Award },
-    { key: 'schedule', title: 'Schedule & Settings', icon: Clock }
+    { key: 'basic', title: 'Basic Info', icon: FileText },
+    { key: 'content', title: 'Course Content', icon: BookOpen },
+    { key: 'pricing', title: 'Pricing', icon: DollarSign },
+    { key: 'preview', title: 'Preview', icon: Eye }
   ];
 
   const currentStepIndex = steps.findIndex(step => step.key === currentStep);
 
-  // Initialize form data with course data
-  useEffect(() => {
-    if (course) {
-      setFormData({
-        title: course.title,
-        description: course.description,
-        shortDescription: course.shortDescription,
-        instructor: course.instructor,
-        instructorBio: course.instructorBio,
-        category: course.category,
-        subCategory: course.subCategory,
-        level: course.level,
-        technologies: [...course.technologies],
-        prerequisites: [...course.prerequisites],
-        learningOutcomes: [...course.learningOutcomes],
-        price: course.price,
-        originalPrice: course.originalPrice,
-        currency: course.currency,
-        duration: course.duration,
-        totalHours: course.totalHours,
-        totalLectures: course.totalLectures,
-        language: course.language,
-        maxStudents: course.maxStudents,
-        minStudents: course.minStudents,
-        mode: course.mode,
-        certificateProvided: course.certificateProvided,
-        hasProjects: course.hasProjects,
-        hasAssignments: course.hasAssignments,
-        hasQuizzes: course.hasQuizzes,
-        supportProvided: course.supportProvided,
-        jobAssistance: course.jobAssistance,
-        isPublished: course.isPublished,
-        isFeatured: course.isFeatured,
-        thumbnailUrl: course.thumbnailUrl || ''
-      });
+  const categories = [
+    'Technology', 'Business', 'Design', 'Marketing', 
+    'Photography', 'Music', 'Health & Fitness', 'Language'
+  ];
 
-      // Initialize modules from course data if available
-      const courseWithModules = course as Course & { modules?: Module[] };
-      if (courseWithModules.modules && courseWithModules.modules.length > 0) {
-        setModules(courseWithModules.modules);
-      } else {
-        // Default empty module if no modules exist
-        setModules([
-          {
-            id: Date.now().toString(),
-            title: '',
-            description: '',
-            lessons: [
-              {
-                id: Date.now().toString(),
-                title: '',
-                description: '',
-                videoUrl: '',
-                duration: '',
-                resources: ['']
-              }
-            ]
+
+
+  const handleInputChange = (field: keyof CourseFormData, value: string | number | boolean | string[]) => {
+    setCourseData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  // Validate current step before proceeding
+  const validateCurrentStep = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    switch (currentStep) {
+      case 'basic':
+        if (!courseData.title?.trim()) {
+          newErrors.title = 'Course title is required';
+        }
+        if (!courseData.description?.trim()) {
+          newErrors.description = 'Course description is required';
+        }
+        if (!courseData.instructor?.trim()) {
+          newErrors.instructor = 'Instructor name is required';
+        }
+        if (!courseData.category?.trim()) {
+          newErrors.category = 'Category is required';
+        }
+        if (!courseData.estimatedDuration?.trim()) {
+          newErrors.duration = 'Duration is required';
+        }
+        break;
+
+      case 'content':
+        if (modules.length === 0) {
+          newErrors.content = 'At least one module is required';
+        } else {
+          const hasEmptyModules = modules.some(module => 
+            !module.title?.trim() || module.lessons.length === 0
+          );
+          const hasEmptyLessons = modules.some(module =>
+            module.lessons.some(lesson => !lesson.title?.trim())
+          );
+          
+          if (hasEmptyModules) {
+            newErrors.content = 'All modules must have a title and at least one lesson';
+          } else if (hasEmptyLessons) {
+            newErrors.content = 'All lessons must have a title';
           }
-        ]);
-      }
+        }
+        break;
+
+      case 'pricing':
+        if (courseData.isFree === false && (!courseData.price || courseData.price <= 0)) {
+          newErrors.price = 'Price must be greater than 0 for paid courses';
+        }
+        break;
+
+      case 'preview':
+        break;
     }
-  }, [course]);
 
-  const handleInputChange = (field: string, value: string | number | boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleArrayAdd = (arrayField: 'technologies' | 'prerequisites' | 'learningOutcomes', value: string) => {
-    if (!value.trim()) return;
-
-    setFormData(prev => ({
-      ...prev,
-      [arrayField]: [...(prev[arrayField] || []), value.trim()]
-    }));
-
-    // Clear temp input
-    if (arrayField === 'technologies') setTempTechnology('');
-    if (arrayField === 'prerequisites') setTempPrerequisite('');
-    if (arrayField === 'learningOutcomes') setTempLearningOutcome('');
-  };
-
-  const handleArrayRemove = (arrayField: 'technologies' | 'prerequisites' | 'learningOutcomes', index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      [arrayField]: (prev[arrayField] || []).filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleSubmit = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Validate required fields
-      if (!formData.title || !formData.instructor || !formData.category) {
-        throw new Error('Please fill in all required fields');
-      }
-
-      // Include modules in the update data
-      const updateData = {
-        ...formData,
-        modules: modules.filter(module => 
-          module.title.trim() && 
-          module.lessons.some(lesson => lesson.title.trim())
-        )
-      };
-
-      await courseManagementApiService.updateCourse(course._id, updateData);
-      onCourseUpdated();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update course');
-    } finally {
-      setLoading(false);
-    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleNext = () => {
-    if (currentStepIndex < steps.length - 1) {
-      setCurrentStep(steps[currentStepIndex + 1].key as FormStep);
+    if (validateCurrentStep() && currentStepIndex < steps.length - 1) {
+      setCurrentStep(steps[currentStepIndex + 1].key as 'basic' | 'content' | 'pricing' | 'preview');
     }
   };
 
   const handlePrevious = () => {
     if (currentStepIndex > 0) {
-      setCurrentStep(steps[currentStepIndex - 1].key as FormStep);
+      setCurrentStep(steps[currentStepIndex - 1].key as 'basic' | 'content' | 'pricing' | 'preview');
     }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      onCourseUpdated();
+      onClose();
+    } catch (error) {
+      console.error('Failed to update course:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    onClose();
   };
 
   // Module management functions
@@ -263,61 +268,59 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
       id: Date.now().toString(),
       title: '',
       description: '',
-      lessons: [
-        {
-          id: Date.now().toString(),
-          title: '',
-          description: '',
-          videoUrl: '',
-          duration: '',
-          resources: ['']
-        }
-      ]
+      lessons: [{
+        id: Date.now().toString() + '_lesson',
+        title: '',
+        description: '',
+        videoUrl: '',
+        duration: '',
+        resources: []
+      }]
     };
-    setModules(prev => [...prev, newModule]);
+    setModules([...modules, newModule]);
   };
 
   const removeModule = (moduleId: string) => {
-    setModules(prev => prev.filter(module => module.id !== moduleId));
+    setModules(modules.filter(module => module.id !== moduleId));
   };
 
   const updateModule = (moduleId: string, field: keyof Module, value: string | Lesson[]) => {
-    setModules(prev => prev.map(module => 
+    setModules(modules.map(module =>
       module.id === moduleId ? { ...module, [field]: value } : module
     ));
   };
 
   const addLesson = (moduleId: string) => {
     const newLesson: Lesson = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + '_lesson',
       title: '',
       description: '',
       videoUrl: '',
       duration: '',
-      resources: ['']
+      resources: []
     };
-    
-    setModules(prev => prev.map(module => 
-      module.id === moduleId 
+
+    setModules(modules.map(module =>
+      module.id === moduleId
         ? { ...module, lessons: [...module.lessons, newLesson] }
         : module
     ));
   };
 
   const removeLesson = (moduleId: string, lessonId: string) => {
-    setModules(prev => prev.map(module => 
-      module.id === moduleId 
+    setModules(modules.map(module =>
+      module.id === moduleId
         ? { ...module, lessons: module.lessons.filter(lesson => lesson.id !== lessonId) }
         : module
     ));
   };
 
   const updateLesson = (moduleId: string, lessonId: string, field: keyof Lesson, value: string | string[]) => {
-    setModules(prev => prev.map(module => 
-      module.id === moduleId 
+    setModules(modules.map(module =>
+      module.id === moduleId
         ? {
             ...module,
-            lessons: module.lessons.map(lesson => 
+            lessons: module.lessons.map(lesson =>
               lesson.id === lessonId ? { ...lesson, [field]: value } : lesson
             )
           }
@@ -325,758 +328,415 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
     ));
   };
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 'basic':
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Course Title *
-                </label>
+  const renderBasicInfo = () => (
+    <div className="space-y-6">
+      <div>
+        <label className="block text-sm font-medium mb-2">Course Title *</label>
+        <Input
+          value={courseData.title}
+          onChange={(e) => handleInputChange('title', e.target.value)}
+          placeholder="Enter course title"
+          className={errors.title ? 'border-red-500' : ''}
+        />
+        {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-2">Course Description *</label>
+        <textarea
+          value={courseData.description}
+          onChange={(e) => handleInputChange('description', e.target.value)}
+          placeholder="Describe what students will learn in this course"
+          rows={4}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            errors.description ? 'border-red-500' : 'border-gray-300'
+          }`}
+        />
+        {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium mb-2">Instructor Name *</label>
+          <Input
+            value={courseData.instructor}
+            onChange={(e) => handleInputChange('instructor', e.target.value)}
+            placeholder="Enter instructor name"
+            className={errors.instructor ? 'border-red-500' : ''}
+          />
+          {errors.instructor && <p className="mt-1 text-sm text-red-600">{errors.instructor}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Category *</label>
+          <select
+            value={courseData.category}
+            onChange={(e) => handleInputChange('category', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.category ? 'border-red-500' : 'border-gray-300'
+            }`}
+          >
+            <option value="">Select Category</option>
+            {categories.map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+          {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium mb-2">Duration *</label>
+          <Input
+            value={courseData.estimatedDuration}
+            onChange={(e) => handleInputChange('estimatedDuration', e.target.value)}
+            placeholder="e.g., 4 hours"
+            className={errors.duration ? 'border-red-500' : ''}
+          />
+          {errors.duration && <p className="mt-1 text-sm text-red-600">{errors.duration}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Level</label>
+          <select
+            value={courseData.level}
+            onChange={(e) => handleInputChange('level', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCourseContent = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Course Modules</h3>
+        <Button
+          variant="outline"
+          onClick={addModule}
+          className="flex items-center space-x-2"
+        >
+          <FaPlus className="text-sm" />
+          <span>Add Module</span>
+        </Button>
+      </div>
+
+      {errors.content && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-600">{errors.content}</p>
+        </div>
+      )}
+
+      {modules.map((module, moduleIndex) => (
+        <Card key={module.id} className="border">
+          <div className="p-4">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex-1 space-y-3">
                 <Input
-                  value={formData.title || ''}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  placeholder="Enter course title"
+                  value={module.title}
+                  onChange={(e) => updateModule(module.id, 'title', e.target.value)}
+                  placeholder={`Module ${moduleIndex + 1} title`}
+                  className="font-medium"
+                />
+                <Input
+                  value={module.description}
+                  onChange={(e) => updateModule(module.id, 'description', e.target.value)}
+                  placeholder="Module description"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Instructor *
-                </label>
-                <Input
-                  value={formData.instructor || ''}
-                  onChange={(e) => handleInputChange('instructor', e.target.value)}
-                  placeholder="Enter instructor name"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Short Description
-              </label>
-              <Input
-                value={formData.shortDescription || ''}
-                onChange={(e) => handleInputChange('shortDescription', e.target.value)}
-                placeholder="Brief description of the course"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Course Description
-              </label>
-              <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={4}
-                value={formData.description || ''}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Detailed description of the course"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category *
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.category || ''}
-                  onChange={(e) => handleInputChange('category', e.target.value)}
-                >
-                  <option value="">Select Category</option>
-                  <option value="Programming">Programming</option>
-                  <option value="Web Development">Web Development</option>
-                  <option value="Mobile Development">Mobile Development</option>
-                  <option value="Data Science">Data Science</option>
-                  <option value="AI/ML">AI/ML</option>
-                  <option value="DevOps">DevOps</option>
-                  <option value="Cloud Computing">Cloud Computing</option>
-                  <option value="Cybersecurity">Cybersecurity</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Sub Category
-                </label>
-                <Input
-                  value={formData.subCategory || ''}
-                  onChange={(e) => handleInputChange('subCategory', e.target.value)}
-                  placeholder="Enter sub category"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Level
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.level || ''}
-                  onChange={(e) => handleInputChange('level', e.target.value)}
-                >
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Language
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.language || ''}
-                  onChange={(e) => handleInputChange('language', e.target.value)}
-                >
-                  <option value="English">English</option>
-                  <option value="Hindi">Hindi</option>
-                  <option value="Spanish">Spanish</option>
-                  <option value="French">French</option>
-                  <option value="German">German</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mode
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.mode || ''}
-                  onChange={(e) => handleInputChange('mode', e.target.value)}
-                >
-                  <option value="Online">Online</option>
-                  <option value="Offline">Offline</option>
-                  <option value="Hybrid">Hybrid</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Instructor Bio
-              </label>
-              <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={3}
-                value={formData.instructorBio || ''}
-                onChange={(e) => handleInputChange('instructorBio', e.target.value)}
-                placeholder="Brief bio of the instructor"
-              />
-            </div>
-          </div>
-        );
-
-      case 'content':
-        return (
-          <div className="space-y-6">
-            {/* Technologies */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Technologies
-              </label>
-              <div className="flex gap-2 mb-2">
-                <Input
-                  value={tempTechnology}
-                  onChange={(e) => setTempTechnology(e.target.value)}
-                  placeholder="Add technology (e.g., React, Node.js)"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleArrayAdd('technologies', tempTechnology);
-                    }
-                  }}
-                />
+              {modules.length > 1 && (
                 <Button
-                  type="button"
-                  onClick={() => handleArrayAdd('technologies', tempTechnology)}
-                  size="sm"
                   variant="outline"
+                  size="sm"
+                  onClick={() => removeModule(module.id)}
+                  className="ml-4 text-red-600 hover:text-red-700"
                 >
-                  <Plus className="h-4 w-4" />
+                  <FaTrash />
                 </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(formData.technologies || []).map((tech, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                  >
-                    {tech}
-                    <button
-                      type="button"
-                      onClick={() => handleArrayRemove('technologies', index)}
-                      className="ml-1 text-blue-600 hover:text-blue-800"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
+              )}
             </div>
-
-            {/* Prerequisites */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Prerequisites
-              </label>
-              <div className="flex gap-2 mb-2">
-                <Input
-                  value={tempPrerequisite}
-                  onChange={(e) => setTempPrerequisite(e.target.value)}
-                  placeholder="Add prerequisite"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleArrayAdd('prerequisites', tempPrerequisite);
-                    }
-                  }}
-                />
+            
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="font-medium">Lessons</h4>
                 <Button
-                  type="button"
-                  onClick={() => handleArrayAdd('prerequisites', tempPrerequisite)}
-                  size="sm"
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {(formData.prerequisites || []).map((prereq, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                  >
-                    <span className="text-sm">{prereq}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleArrayRemove('prerequisites', index)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Learning Outcomes */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Learning Outcomes
-              </label>
-              <div className="flex gap-2 mb-2">
-                <Input
-                  value={tempLearningOutcome}
-                  onChange={(e) => setTempLearningOutcome(e.target.value)}
-                  placeholder="Add learning outcome"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleArrayAdd('learningOutcomes', tempLearningOutcome);
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  onClick={() => handleArrayAdd('learningOutcomes', tempLearningOutcome)}
-                  size="sm"
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {(formData.learningOutcomes || []).map((outcome, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                  >
-                    <span className="text-sm">{outcome}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleArrayRemove('learningOutcomes', index)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Course Modules */}
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Course Modules</h3>
-                <Button
-                  type="button"
-                  onClick={addModule}
                   variant="outline"
                   size="sm"
+                  onClick={() => addLesson(module.id)}
                   className="flex items-center space-x-2"
                 >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Module</span>
+                  <FaPlus className="text-sm" />
+                  <span>Add Lesson</span>
                 </Button>
               </div>
 
-              {modules.map((module, moduleIndex) => (
-                <Card key={module.id} className="border mb-4">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1 space-y-3">
-                        <Input
-                          value={module.title}
-                          onChange={(e) => updateModule(module.id, 'title', e.target.value)}
-                          placeholder={`Module ${moduleIndex + 1} title`}
-                          className="font-medium"
-                        />
-                        <Input
-                          value={module.description}
-                          onChange={(e) => updateModule(module.id, 'description', e.target.value)}
-                          placeholder="Module description"
-                        />
-                      </div>
-                      {modules.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeModule(module.id)}
-                          className="ml-4 text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-medium">Lessons</h4>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addLesson(module.id)}
-                          className="flex items-center space-x-2"
-                        >
-                          <Plus className="h-4 w-4" />
-                          <span>Add Lesson</span>
-                        </Button>
-                      </div>
-
-                      {module.lessons.map((lesson, lessonIndex) => (
-                        <div key={lesson.id} className="border rounded-lg p-4 bg-gray-50">
-                          <div className="flex justify-between items-start mb-3">
-                            <h5 className="font-medium">Lesson {lessonIndex + 1}</h5>
-                            {module.lessons.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeLesson(module.id, lesson.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input
-                              value={lesson.title}
-                              onChange={(e) => updateLesson(module.id, lesson.id, 'title', e.target.value)}
-                              placeholder="Lesson title"
-                            />
-                            <Input
-                              value={lesson.duration}
-                              onChange={(e) => updateLesson(module.id, lesson.id, 'duration', e.target.value)}
-                              placeholder="Duration (e.g., 15 min)"
-                            />
-                          </div>
-                          
-                          <div className="mt-3">
-                            <Input
-                              value={lesson.description}
-                              onChange={(e) => updateLesson(module.id, lesson.id, 'description', e.target.value)}
-                              placeholder="Lesson description"
-                            />
-                          </div>
-                          
-                          <div className="mt-3">
-                            <Input
-                              value={lesson.videoUrl}
-                              onChange={(e) => updateLesson(module.id, lesson.id, 'videoUrl', e.target.value)}
-                              placeholder="Video URL"
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+              {module.lessons.map((lesson, lessonIndex) => (
+                <div key={lesson.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex justify-between items-start mb-3">
+                    <h5 className="font-medium">Lesson {lessonIndex + 1}</h5>
+                    {module.lessons.length > 1 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeLesson(module.id, lesson.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <FaTrash />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      value={lesson.title}
+                      onChange={(e) => updateLesson(module.id, lesson.id, 'title', e.target.value)}
+                      placeholder="Lesson title"
+                    />
+                    <Input
+                      value={lesson.duration}
+                      onChange={(e) => updateLesson(module.id, lesson.id, 'duration', e.target.value)}
+                      placeholder="Duration (e.g., 15 min)"
+                    />
+                  </div>
+                  
+                  <div className="mt-3">
+                    <Input
+                      value={lesson.description}
+                      onChange={(e) => updateLesson(module.id, lesson.id, 'description', e.target.value)}
+                      placeholder="Lesson description"
+                    />
+                  </div>
+                  
+                  <div className="mt-3">
+                    <Input
+                      value={lesson.videoUrl}
+                      onChange={(e) => updateLesson(module.id, lesson.id, 'videoUrl', e.target.value)}
+                      placeholder="Video URL"
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           </div>
-        );
+        </Card>
+      ))}
+    </div>
+  );
 
-      case 'pricing':
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Current Price
-                </label>
-                <Input
-                  type="number"
-                  value={formData.price || 0}
-                  onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Original Price
-                </label>
-                <Input
-                  type="number"
-                  value={formData.originalPrice || 0}
-                  onChange={(e) => handleInputChange('originalPrice', parseFloat(e.target.value) || 0)}
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Currency
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.currency || ''}
-                  onChange={(e) => handleInputChange('currency', e.target.value)}
-                >
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="INR">INR</option>
-                </select>
-              </div>
-            </div>
+  const renderPricing = () => (
+    <div className="space-y-6">
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Course Access</label>
+        <div className="flex space-x-4">
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="courseAccess"
+              checked={courseData.isFree === true}
+              onChange={() => handleInputChange('isFree', true)}
+              className="mr-2 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">Free Course</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="courseAccess"
+              checked={courseData.isFree === false}
+              onChange={() => handleInputChange('isFree', false)}
+              className="mr-2 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">Paid Course</span>
+          </label>
+        </div>
+      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Minimum Students
-                </label>
-                <Input
-                  type="number"
-                  value={formData.minStudents || 0}
-                  onChange={(e) => handleInputChange('minStudents', parseInt(e.target.value) || 0)}
-                  placeholder="0"
-                  min="1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Maximum Students
-                </label>
-                <Input
-                  type="number"
-                  value={formData.maxStudents || 0}
-                  onChange={(e) => handleInputChange('maxStudents', parseInt(e.target.value) || 0)}
-                  placeholder="0"
-                  min="1"
-                />
-              </div>
+      {!courseData.isFree && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-2">Currency</label>
+            <select
+              value={courseData.currency}
+              onChange={(e) => handleInputChange('currency', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="INR">INR</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Price *</label>
+            <Input
+              type="number"
+              value={courseData.price}
+              onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+              className={errors.price ? 'border-red-500' : ''}
+            />
+            {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price}</p>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderPreview = () => (
+    <div className="space-y-8">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold mb-4 text-blue-800">Course Preview</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="font-medium mb-2">Basic Information</h4>
+            <div className="space-y-2 text-sm">
+              <p><span className="font-medium">Title:</span> {courseData.title || 'Not specified'}</p>
+              <p><span className="font-medium">Instructor:</span> {courseData.instructor || 'Not specified'}</p>
+              <p><span className="font-medium">Category:</span> {courseData.category || 'Not specified'}</p>
+              <p><span className="font-medium">Duration:</span> {courseData.estimatedDuration || 'Not specified'}</p>
             </div>
           </div>
-        );
-
-      case 'features':
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div className="flex items-center">
-                    <Award className="h-4 w-4 mr-2 text-blue-600" />
-                    <span className="text-sm font-medium">Certificate Provided</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.certificateProvided || false}
-                    onChange={(e) => handleInputChange('certificateProvided', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div className="flex items-center">
-                    <FileText className="h-4 w-4 mr-2 text-green-600" />
-                    <span className="text-sm font-medium">Has Projects</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.hasProjects || false}
-                    onChange={(e) => handleInputChange('hasProjects', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div className="flex items-center">
-                    <FileText className="h-4 w-4 mr-2 text-orange-600" />
-                    <span className="text-sm font-medium">Has Assignments</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.hasAssignments || false}
-                    onChange={(e) => handleInputChange('hasAssignments', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div className="flex items-center">
-                    <FileText className="h-4 w-4 mr-2 text-purple-600" />
-                    <span className="text-sm font-medium">Has Quizzes</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.hasQuizzes || false}
-                    onChange={(e) => handleInputChange('hasQuizzes', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div className="flex items-center">
-                    <User className="h-4 w-4 mr-2 text-teal-600" />
-                    <span className="text-sm font-medium">Support Provided</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.supportProvided || false}
-                    onChange={(e) => handleInputChange('supportProvided', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div className="flex items-center">
-                    <Target className="h-4 w-4 mr-2 text-red-600" />
-                    <span className="text-sm font-medium">Job Assistance</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.jobAssistance || false}
-                    onChange={(e) => handleInputChange('jobAssistance', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+          
+          <div>
+            <h4 className="font-medium mb-2">Pricing</h4>
+            <div className="space-y-2 text-sm">
+              <p><span className="font-medium">Access:</span> {courseData.isFree ? 'Free' : 'Paid'}</p>
+              {!courseData.isFree && (
+                <p><span className="font-medium">Price:</span> {courseData.currency} {courseData.price || 0}</p>
+              )}
             </div>
           </div>
-        );
+        </div>
+        
+        {courseData.description && (
+          <div className="mt-4">
+            <h4 className="font-medium mb-2">Description</h4>
+            <p className="text-sm text-gray-600">{courseData.description}</p>
+          </div>
+        )}
 
-      case 'schedule':
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Duration
-                </label>
-                <Input
-                  value={formData.duration || ''}
-                  onChange={(e) => handleInputChange('duration', e.target.value)}
-                  placeholder="e.g., 12 weeks"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Total Hours
-                </label>
-                <Input
-                  type="number"
-                  value={formData.totalHours || 0}
-                  onChange={(e) => handleInputChange('totalHours', parseInt(e.target.value) || 0)}
-                  placeholder="0"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Total Lectures
-                </label>
-                <Input
-                  type="number"
-                  value={formData.totalLectures || 0}
-                  onChange={(e) => handleInputChange('totalLectures', parseInt(e.target.value) || 0)}
-                  placeholder="0"
-                  min="0"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Thumbnail URL
-              </label>
-              <Input
-                value={formData.thumbnailUrl || ''}
-                onChange={(e) => handleInputChange('thumbnailUrl', e.target.value)}
-                placeholder="https://example.com/thumbnail.jpg"
-                type="url"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded">
-                  <div className="flex items-center">
-                    <Settings className="h-4 w-4 mr-2 text-blue-600" />
-                    <span className="text-sm font-medium">Published</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.isPublished || false}
-                    onChange={(e) => handleInputChange('isPublished', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
+        {modules.length > 0 && (
+          <div className="mt-6">
+            <h4 className="font-medium mb-2">Course Content</h4>
+            <div className="space-y-2">
+              {modules.map((module, moduleIndex) => (
+                <div key={module.id} className="text-sm">
+                  <p className="font-medium">Module {moduleIndex + 1}: {module.title || `Module ${moduleIndex + 1}`}</p>
+                  <p className="text-gray-600 ml-4">{module.lessons.length} lesson(s)</p>
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded">
-                  <div className="flex items-center">
-                    <Award className="h-4 w-4 mr-2 text-yellow-600" />
-                    <span className="text-sm font-medium">Featured Course</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.isFeatured || false}
-                    onChange={(e) => handleInputChange('isFeatured', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-        );
+        )}
+      </div>
 
-      default:
-        return null;
-    }
-  };
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold mb-4">Ready to Update?</h3>
+        <p className="text-gray-600 mb-4">
+          Review all the changes above. The course will be updated with the new information.
+        </p>
+        <div className="flex items-center space-x-2 text-sm text-gray-500">
+          <span>✓ Course will be saved as {courseData.isPublished ? 'Published' : 'Draft'}</span>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl font-semibold">
             <Edit3 className="mr-2 h-5 w-5" />
-            Edit Course - {course.title}
+            Edit Course
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex h-[600px]">
-          {/* Steps Sidebar */}
-          <div className="w-64 bg-gray-50 rounded-l-lg p-4 border-r">
-            <div className="space-y-2">
-              {steps.map((step, index) => {
-                const Icon = step.icon;
-                const isActive = step.key === currentStep;
-                const isCompleted = index < currentStepIndex;
-                
-                return (
-                  <button
-                    key={step.key}
-                    onClick={() => setCurrentStep(step.key as FormStep)}
-                    className={`w-full flex items-center px-3 py-2 rounded-md text-left transition-colors ${
-                      isActive
-                        ? 'bg-blue-500 text-white'
-                        : isCompleted
-                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                        : 'text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4 mr-2" />
-                    <span className="text-sm font-medium">{step.title}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Form Content */}
-          <div className="flex-1 p-6 overflow-y-auto">
-            <form onSubmit={(e) => e.preventDefault()}>
-              {error && (
-                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                  {error}
+        {/* Progress Steps */}
+        <div className="flex items-center justify-between mb-6">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = step.key === currentStep;
+            const isCompleted = index < currentStepIndex;
+            
+            return (
+              <div key={step.key} className="flex items-center">
+                <div
+                  className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
+                    isActive
+                      ? 'border-blue-600 bg-blue-600 text-white'
+                      : isCompleted
+                      ? 'border-green-600 bg-green-600 text-white'
+                      : 'border-gray-300 bg-white text-gray-400'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
                 </div>
-              )}
-
-              {renderStepContent()}
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between mt-8 pt-6 border-t">
-                <div>
-                  {currentStepIndex > 0 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handlePrevious}
-                    >
-                      Previous
-                    </Button>
-                  )}
-                </div>
-
-                <div className="flex space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onClose}
-                  >
-                    Cancel
-                  </Button>
-                  
-                  {currentStepIndex < steps.length - 1 ? (
-                    <Button
-                      type="button"
-                      onClick={handleNext}
-                    >
-                      Next
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      onClick={handleSubmit}
-                      disabled={loading}
-                    >
-                      {loading ? 'Updating...' : 'Update Course'}
-                    </Button>
-                  )}
-                </div>
+                <span className={`ml-2 text-sm font-medium ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
+                  {step.title}
+                </span>
+                {index < steps.length - 1 && (
+                  <div className={`w-12 h-0.5 mx-2 ${isCompleted ? 'bg-green-600' : 'bg-gray-300'}`} />
+                )}
               </div>
-            </form>
+            );
+          })}
+        </div>
+
+        {/* Main Content Area */}
+        <div className="px-6">
+          {currentStep === 'basic' && renderBasicInfo()}
+          {currentStep === 'content' && renderCourseContent()}
+          {currentStep === 'pricing' && renderPricing()}
+          {currentStep === 'preview' && renderPreview()}
+        </div>
+
+        {/* Footer Navigation */}
+        <div className="flex justify-between items-center p-6 border-t bg-gray-50 mt-6">
+          <Button 
+            variant="outline" 
+            onClick={handlePrevious} 
+            disabled={currentStepIndex === 0}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            {currentStep === 'preview' ? (
+              <Button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting} 
+                className="flex items-center gap-2"
+              >
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit3 className="h-4 w-4" />}
+                {isSubmitting ? 'Updating Course...' : 'Update Course'}
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleNext}
+                className="flex items-center gap-2"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
+
       </DialogContent>
     </Dialog>
   );

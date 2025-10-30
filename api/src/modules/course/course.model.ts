@@ -18,6 +18,19 @@ export interface CourseDocument extends Document {
     topics: string[]
     duration: string
   }[]
+  modules?: {
+    id: string
+    title: string
+    description: string
+    lessons: {
+      id: string
+      title: string
+      description: string
+      videoUrl?: string
+      duration: string
+      resources: string[]
+    }[]
+  }[]
   price: number
   originalPrice?: number
   currency: string
@@ -81,6 +94,22 @@ const courseSchema = new Schema<CourseDocument>(
       topics: [{ type: String, required: true }],
       duration: { type: String, required: true }
     }],
+    modules: {
+      type: [{
+        id: { type: String, required: true },
+        title: { type: String, required: true },
+        description: { type: String, required: true },
+        lessons: [{
+          id: { type: String, required: true },
+          title: { type: String, required: true },
+          description: { type: String, required: true },
+          videoUrl: { type: String },
+          duration: { type: String, required: true },
+          resources: [{ type: String }]
+        }]
+      }],
+      default: []
+    },
     price: { type: Number, required: true, min: 0 },
     originalPrice: { type: Number, min: 0 },
     currency: { type: String, enum: CURRENCIES, default: 'INR' },
