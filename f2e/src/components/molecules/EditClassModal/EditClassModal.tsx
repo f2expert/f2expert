@@ -174,7 +174,7 @@ const EditClassModal: React.FC<EditClassModalProps> = ({
           formData.maxEnrollments > 0
         );
       case 3:
-        return (
+        return !!(
           formData.objectives && formData.objectives.some(obj => obj.trim() !== '') &&
           formData.prerequisites && formData.prerequisites.some(pre => pre.trim() !== '') &&
           formData.requiredMaterials && formData.requiredMaterials.some(mat => mat.trim() !== '') &&

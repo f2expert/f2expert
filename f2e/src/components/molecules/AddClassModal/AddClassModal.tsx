@@ -224,7 +224,7 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
       recurringPattern: {
         ...prev.recurringPattern,
         [field]: value
-      }
+      } as RecurringPattern
     }));
   };
 
