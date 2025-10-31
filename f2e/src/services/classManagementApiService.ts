@@ -1,0 +1,1395 @@
+// Class Management API Service
+// This service handles all API operations for class scheduling and management
+
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  zipCode: string;
+}
+
+export interface RecurringPattern {
+  type: 'daily' | 'weekly' | 'monthly';
+  interval: number;
+  endDate?: string;
+  daysOfWeek?: number[]; // 0 = Sunday, 1 = Monday, etc.
+}
+
+export interface ClassManagement {
+  _id: string;
+  courseId: string;
+  courseName?: string; // Populated field
+  instructorId: string;
+  instructorName?: string; // Populated field
+  className: string;
+  description: string;
+  scheduledDate: string;
+  startTime: string;
+  endTime: string;
+  venue: string;
+  address: Address;
+  capacity: number;
+  maxEnrollments: number;
+  currentEnrollments?: number; // For display purposes
+  isRecurring: boolean;
+  recurringPattern?: RecurringPattern;
+  objectives: string[];
+  prerequisites: string[];
+  requiredMaterials: string[];
+  classPrice: number;
+  currency: string;
+  tags: string[];
+  status?: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClassFilters {
+  search?: string;
+  courseId?: string;
+  instructorId?: string;
+  status?: string;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  venue?: string;
+  priceRange?: string;
+}
+
+export interface CreateClassRequest {
+  courseId: string;
+  instructorId: string;
+  className: string;
+  description: string;
+  scheduledDate: string;
+  startTime: string;
+  endTime: string;
+  venue: string;
+  address: Address;
+  capacity: number;
+  maxEnrollments: number;
+  isRecurring: boolean;
+  recurringPattern?: RecurringPattern;
+  objectives: string[];
+  prerequisites: string[];
+  requiredMaterials: string[];
+  classPrice: number;
+  currency: string;
+  tags: string[];
+  createdBy: string;
+}
+
+export interface UpdateClassRequest extends Partial<CreateClassRequest> {
+  _id: string;
+}
+
+export interface ClassesResponse {
+  classes: ClassManagement[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message: string;
+}
+
+// Mock data for development - replace with actual API calls
+const mockClasses: ClassManagement[] = [
+  {
+    _id: '507f1f77bcf86cd799439020',
+    courseId: '507f1f77bcf86cd799439011',
+    courseName: 'JavaScript Fundamentals',
+    instructorId: '507f1f77bcf86cd799439012',
+    instructorName: 'Priya Sharma',
+    className: 'JavaScript Fundamentals - Session 1',
+    description: 'Introduction to JavaScript basics and syntax',
+    scheduledDate: '2025-11-15',
+    startTime: '09:00',
+    endTime: '12:00',
+    venue: 'Classroom A',
+    address: {
+      street: '123 Tech Street',
+      city: 'Bangalore',
+      state: 'Karnataka',
+      country: 'India',
+      zipCode: '560001'
+    },
+    capacity: 30,
+    maxEnrollments: 25,
+    currentEnrollments: 18,
+    isRecurring: false,
+    objectives: [
+      'Understand JavaScript syntax',
+      'Learn variables and data types',
+      'Master basic programming concepts'
+    ],
+    prerequisites: [
+      'Basic HTML knowledge',
+      'Computer literacy'
+    ],
+    requiredMaterials: [
+      'Laptop',
+      'Notebook',
+      'Pen'
+    ],
+    classPrice: 500,
+    currency: 'INR',
+    tags: ['javascript', 'programming', 'beginner'],
+    status: 'scheduled',
+    createdBy: '507f1f77bcf86cd799439013',
+    createdAt: '2024-10-15T10:30:00Z',
+    updatedAt: '2024-10-15T10:30:00Z'
+  },
+  {
+    _id: '507f1f77bcf86cd799439021',
+    courseId: '507f1f77bcf86cd799439011',
+    courseName: 'JavaScript Fundamentals',
+    instructorId: '507f1f77bcf86cd799439012',
+    instructorName: 'Priya Sharma',
+    className: 'JavaScript Fundamentals - Session 2',
+    description: 'Advanced JavaScript concepts and DOM manipulation',
+    scheduledDate: '2025-11-22',
+    startTime: '09:00',
+    endTime: '12:00',
+    venue: 'Classroom A',
+    address: {
+      street: '123 Tech Street',
+      city: 'Bangalore',
+      state: 'Karnataka',
+      country: 'India',
+      zipCode: '560001'
+    },
+    capacity: 30,
+    maxEnrollments: 25,
+    currentEnrollments: 22,
+    isRecurring: true,
+    recurringPattern: {
+      type: 'weekly',
+      interval: 1,
+      endDate: '2025-12-31T23:59:59Z',
+      daysOfWeek: [5] // Friday
+    },
+    objectives: [
+      'Master DOM manipulation',
+      'Understand event handling',
+      'Learn asynchronous programming'
+    ],
+    prerequisites: [
+      'JavaScript Fundamentals - Session 1',
+      'Basic programming knowledge'
+    ],
+    requiredMaterials: [
+      'Laptop',
+      'Code editor installed',
+      'Browser developer tools'
+    ],
+    classPrice: 750,
+    currency: 'INR',
+    tags: ['javascript', 'dom', 'intermediate'],
+    status: 'scheduled',
+    createdBy: '507f1f77bcf86cd799439013',
+    createdAt: '2024-10-15T11:00:00Z',
+    updatedAt: '2024-10-15T11:00:00Z'
+  },
+  {
+    _id: '507f1f77bcf86cd799439022',
+    courseId: '507f1f77bcf86cd799439014',
+    courseName: 'React Development Bootcamp',
+    instructorId: '507f1f77bcf86cd799439015',
+    instructorName: 'Dr. Rajesh Kumar',
+    className: 'React Hooks and State Management',
+    description: 'Deep dive into React hooks and modern state management patterns',
+    scheduledDate: '2025-11-20',
+    startTime: '14:00',
+    endTime: '17:00',
+    venue: 'Lab B',
+    address: {
+      street: '456 Innovation Hub',
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      country: 'India',
+      zipCode: '400001'
+    },
+    capacity: 20,
+    maxEnrollments: 18,
+    currentEnrollments: 15,
+    isRecurring: false,
+    objectives: [
+      'Master React hooks usage',
+      'Understand state management patterns',
+      'Build complex React applications'
+    ],
+    prerequisites: [
+      'JavaScript ES6+ knowledge',
+      'Basic React understanding'
+    ],
+    requiredMaterials: [
+      'Laptop with Node.js',
+      'VS Code editor',
+      'Git installed'
+    ],
+    classPrice: 1200,
+    currency: 'INR',
+    tags: ['react', 'hooks', 'advanced'],
+    status: 'scheduled',
+    createdBy: '507f1f77bcf86cd799439013',
+    createdAt: '2024-10-15T12:00:00Z',
+    updatedAt: '2024-10-15T12:00:00Z'
+  }
+];
+
+// Mock enrollment data
+const mockEnrollments: ClassEnrollment[] = [
+  {
+    _id: '507f1f77bcf86cd799430001',
+    classId: '507f1f77bcf86cd799439020',
+    studentId: '507f1f77bcf86cd799440001',
+    studentName: 'Arjun Patel',
+    studentEmail: 'arjun.patel@email.com',
+    enrollmentDate: '2024-10-01',
+    status: 'enrolled',
+    paymentStatus: 'paid',
+    paymentAmount: 500,
+    paymentDate: '2024-10-01',
+    attendanceCount: 4,
+    totalSessions: 6,
+    enrolledBy: '507f1f77bcf86cd799439013',
+    createdAt: '2024-10-01T10:30:00Z',
+    updatedAt: '2024-10-01T10:30:00Z'
+  },
+  {
+    _id: '507f1f77bcf86cd799430002',
+    classId: '507f1f77bcf86cd799439020',
+    studentId: '507f1f77bcf86cd799440002',
+    studentName: 'Priya Sharma',
+    studentEmail: 'priya.sharma@email.com',
+    enrollmentDate: '2024-10-02',
+    status: 'enrolled',
+    paymentStatus: 'paid',
+    paymentAmount: 500,
+    paymentDate: '2024-10-02',
+    attendanceCount: 5,
+    totalSessions: 6,
+    grade: 'A',
+    enrolledBy: '507f1f77bcf86cd799439013',
+    createdAt: '2024-10-02T11:00:00Z',
+    updatedAt: '2024-10-15T14:30:00Z'
+  }
+];
+
+// Mock material data
+const mockMaterials: ClassMaterial[] = [
+  {
+    _id: '507f1f77bcf86cd799431001',
+    classId: '507f1f77bcf86cd799439020',
+    title: 'JavaScript Fundamentals - Session 1 Slides',
+    description: 'Introduction to JavaScript syntax and basic concepts',
+    type: 'document',
+    fileUrl: '/materials/js-fundamentals-session1.pdf',
+    fileName: 'js-fundamentals-session1.pdf',
+    fileSize: 2048576, // 2MB
+    downloadCount: 25,
+    isRequired: true,
+    availableFrom: '2024-11-10',
+    uploadedBy: '507f1f77bcf86cd799439012',
+    createdAt: '2024-10-10T09:00:00Z',
+    updatedAt: '2024-10-10T09:00:00Z'
+  },
+  {
+    _id: '507f1f77bcf86cd799431002',
+    classId: '507f1f77bcf86cd799439020',
+    title: 'Practice Exercises',
+    description: 'Hands-on coding exercises for JavaScript basics',
+    type: 'document',
+    fileUrl: '/materials/js-exercises.zip',
+    fileName: 'js-exercises.zip',
+    fileSize: 1024000, // 1MB
+    downloadCount: 18,
+    isRequired: false,
+    uploadedBy: '507f1f77bcf86cd799439012',
+    createdAt: '2024-10-10T10:00:00Z',
+    updatedAt: '2024-10-10T10:00:00Z'
+  }
+];
+
+// Mock attendance data
+const mockAttendance: AttendanceRecord[] = [
+  {
+    _id: '507f1f77bcf86cd799432001',
+    classId: '507f1f77bcf86cd799439020',
+    sessionDate: '2024-11-15',
+    sessionNumber: 1,
+    studentAttendance: [
+      {
+        studentId: '507f1f77bcf86cd799440001',
+        studentName: 'Arjun Patel',
+        status: 'present',
+        checkInTime: '09:05'
+      },
+      {
+        studentId: '507f1f77bcf86cd799440002',
+        studentName: 'Priya Sharma',
+        status: 'present',
+        checkInTime: '09:00'
+      },
+      {
+        studentId: '507f1f77bcf86cd799440003',
+        studentName: 'Rahul Kumar',
+        status: 'late',
+        checkInTime: '09:20'
+      }
+    ],
+    totalStudents: 18,
+    presentCount: 16,
+    absentCount: 1,
+    lateCount: 1,
+    notes: 'Good attendance for first session',
+    markedBy: '507f1f77bcf86cd799439012',
+    createdAt: '2024-11-15T12:00:00Z',
+    updatedAt: '2024-11-15T12:00:00Z'
+  }
+];
+
+// Mock assignment data
+const mockAssignments: ClassAssignment[] = [
+  {
+    _id: '507f1f77bcf86cd799433001',
+    classId: '507f1f77bcf86cd799439020',
+    title: 'JavaScript Variables and Data Types',
+    description: 'Create a simple program demonstrating JavaScript variables',
+    instructions: 'Write a JavaScript program that demonstrates the use of different data types including strings, numbers, booleans, arrays, and objects. Include console.log statements to show the values.',
+    type: 'individual',
+    maxScore: 100,
+    dueDate: '2024-11-25T23:59:59Z',
+    submissionFormat: 'file',
+    isRequired: true,
+    allowLateSubmissions: true,
+    latePenalty: 10,
+    resources: ['JavaScript MDN Documentation', 'Course Slides'],
+    submissions: [
+      {
+        _id: '507f1f77bcf86cd799434001',
+        assignmentId: '507f1f77bcf86cd799433001',
+        studentId: '507f1f77bcf86cd799440001',
+        studentName: 'Arjun Patel',
+        fileUrl: '/submissions/arjun-assignment1.js',
+        fileName: 'variables-assignment.js',
+        submittedAt: '2024-11-23T18:30:00Z',
+        isLate: false,
+        status: 'graded',
+        score: 95,
+        feedback: 'Excellent work! Good use of different data types and clear variable names.',
+        gradedBy: '507f1f77bcf86cd799439012',
+        gradedAt: '2024-11-24T10:00:00Z'
+      }
+    ],
+    createdBy: '507f1f77bcf86cd799439012',
+    createdAt: '2024-11-10T14:00:00Z',
+    updatedAt: '2024-11-10T14:00:00Z'
+  }
+];
+
+// Mock announcement data
+const mockAnnouncements: ClassAnnouncement[] = [
+  {
+    _id: '507f1f77bcf86cd799435001',
+    classId: '507f1f77bcf86cd799439020',
+    title: 'Welcome to JavaScript Fundamentals',
+    content: 'Welcome to our JavaScript Fundamentals course! Please make sure to bring your laptops and have a code editor installed. We recommend VS Code.',
+    type: 'general',
+    priority: 'high',
+    targetAudience: 'all',
+    isVisible: true,
+    isPinned: true,
+    attachments: [
+      {
+        fileName: 'course-syllabus.pdf',
+        fileUrl: '/announcements/syllabus.pdf',
+        fileSize: 512000,
+        fileType: 'application/pdf'
+      }
+    ],
+    readBy: ['507f1f77bcf86cd799440001', '507f1f77bcf86cd799440002'],
+    createdBy: '507f1f77bcf86cd799439012',
+    createdAt: '2024-11-01T08:00:00Z',
+    updatedAt: '2024-11-01T08:00:00Z'
+  },
+  {
+    _id: '507f1f77bcf86cd799435002',
+    classId: '507f1f77bcf86cd799439020',
+    title: 'Assignment 1 Due Reminder',
+    content: 'Just a friendly reminder that Assignment 1 (JavaScript Variables and Data Types) is due on November 25th at 11:59 PM. Please submit your work through the class portal.',
+    type: 'assignment',
+    priority: 'medium',
+    targetAudience: 'students',
+    isVisible: true,
+    isPinned: false,
+    expiresAt: '2024-11-25T23:59:59Z',
+    readBy: [],
+    createdBy: '507f1f77bcf86cd799439012',
+    createdAt: '2024-11-20T10:00:00Z',
+    updatedAt: '2024-11-20T10:00:00Z'
+  }
+];
+
+class ClassManagementApiService {
+  private delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // Get all classes with optional filters
+  async getClasses(filters?: ClassFilters, page = 1, limit = 10): Promise<ClassesResponse> {
+    // Simulate API delay
+    await this.delay(500);
+
+    let filteredClasses = [...mockClasses];
+
+    // Apply filters
+    if (filters) {
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        filteredClasses = filteredClasses.filter(cls =>
+          cls.className.toLowerCase().includes(searchTerm) ||
+          cls.courseName?.toLowerCase().includes(searchTerm) ||
+          cls.instructorName?.toLowerCase().includes(searchTerm) ||
+          cls.venue.toLowerCase().includes(searchTerm) ||
+          cls.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      if (filters.courseId) {
+        filteredClasses = filteredClasses.filter(cls => cls.courseId === filters.courseId);
+      }
+
+      if (filters.instructorId) {
+        filteredClasses = filteredClasses.filter(cls => cls.instructorId === filters.instructorId);
+      }
+
+      if (filters.status) {
+        filteredClasses = filteredClasses.filter(cls => cls.status === filters.status);
+      }
+
+      if (filters.venue) {
+        filteredClasses = filteredClasses.filter(cls => 
+          cls.venue.toLowerCase().includes(filters.venue!.toLowerCase())
+        );
+      }
+
+      if (filters.dateRange) {
+        filteredClasses = filteredClasses.filter(cls => {
+          const classDate = new Date(cls.scheduledDate);
+          const startDate = new Date(filters.dateRange!.start);
+          const endDate = new Date(filters.dateRange!.end);
+          return classDate >= startDate && classDate <= endDate;
+        });
+      }
+
+      if (filters.priceRange) {
+        filteredClasses = filteredClasses.filter(cls => {
+          const price = cls.classPrice;
+          switch (filters.priceRange) {
+            case 'free': return price === 0;
+            case 'under-500': return price > 0 && price < 500;
+            case '500-1000': return price >= 500 && price < 1000;
+            case 'over-1000': return price >= 1000;
+            default: return true;
+          }
+        });
+      }
+    }
+
+    // Calculate pagination
+    const total = filteredClasses.length;
+    const totalPages = Math.ceil(total / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedClasses = filteredClasses.slice(startIndex, endIndex);
+
+    return {
+      classes: paginatedClasses,
+      total,
+      page,
+      limit,
+      totalPages
+    };
+  }
+
+  // Get class by ID
+  async getClassById(id: string): Promise<ClassManagement | null> {
+    await this.delay(300);
+    return mockClasses.find(cls => cls._id === id) || null;
+  }
+
+  // Create new class
+  async createClass(classData: CreateClassRequest): Promise<ClassManagement> {
+    await this.delay(800);
+
+    const newClass: ClassManagement = {
+      _id: `507f1f77bcf86cd79943${Date.now().toString().slice(-4)}`,
+      ...classData,
+      currentEnrollments: 0,
+      status: 'scheduled',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Add course and instructor names (in real app, these would be populated by backend)
+    if (classData.courseId === '507f1f77bcf86cd799439011') {
+      newClass.courseName = 'JavaScript Fundamentals';
+    }
+    if (classData.instructorId === '507f1f77bcf86cd799439012') {
+      newClass.instructorName = 'Priya Sharma';
+    }
+
+    mockClasses.unshift(newClass);
+    return newClass;
+  }
+
+  // Update existing class
+  async updateClass(classData: UpdateClassRequest): Promise<ClassManagement> {
+    await this.delay(600);
+
+    const index = mockClasses.findIndex(cls => cls._id === classData._id);
+    if (index === -1) {
+      throw new Error('Class not found');
+    }
+
+    const updatedClass: ClassManagement = {
+      ...mockClasses[index],
+      ...classData,
+      updatedAt: new Date().toISOString()
+    };
+
+    mockClasses[index] = updatedClass;
+    return updatedClass;
+  }
+
+  // Delete class
+  async deleteClass(id: string): Promise<void> {
+    await this.delay(400);
+
+    const index = mockClasses.findIndex(cls => cls._id === id);
+    if (index === -1) {
+      throw new Error('Class not found');
+    }
+
+    mockClasses.splice(index, 1);
+  }
+
+  // Get available courses for dropdown
+  async getCourses(): Promise<Array<{ _id: string; title: string }>> {
+    await this.delay(200);
+    return [
+      { _id: '507f1f77bcf86cd799439011', title: 'JavaScript Fundamentals' },
+      { _id: '507f1f77bcf86cd799439014', title: 'React Development Bootcamp' },
+      { _id: '507f1f77bcf86cd799439016', title: 'Node.js Backend Development' },
+      { _id: '507f1f77bcf86cd799439017', title: 'Python Data Science' },
+      { _id: '507f1f77bcf86cd799439018', title: 'Machine Learning Basics' }
+    ];
+  }
+
+  // Get available instructors for dropdown
+  async getInstructors(): Promise<Array<{ _id: string; name: string }>> {
+    await this.delay(200);
+    return [
+      { _id: '507f1f77bcf86cd799439012', name: 'Priya Sharma' },
+      { _id: '507f1f77bcf86cd799439015', name: 'Dr. Rajesh Kumar' },
+      { _id: '507f1f77bcf86cd799439019', name: 'Sarah Johnson' },
+      { _id: '507f1f77bcf86cd799439020', name: 'Alex Chen' },
+      { _id: '507f1f77bcf86cd799439021', name: 'Michael Brown' }
+    ];
+  }
+
+  // ===============================
+  // ENROLLMENT MANAGEMENT METHODS
+  // ===============================
+
+  async getClassEnrollments(classId: string): Promise<ClassEnrollment[]> {
+    await this.delay(300);
+    return mockEnrollments.filter(enrollment => enrollment.classId === classId);
+  }
+
+  async enrollStudent(enrollmentData: CreateEnrollmentRequest): Promise<ClassEnrollment> {
+    try {
+      const apiUrl = `http://localhost:5000/api/schedule-classes/${enrollmentData.classId}/enroll`;
+      const requestBody = {
+        studentId: enrollmentData.studentId,
+        status: 'enrolled'
+      };
+
+      console.log('Making enrollment API call:', {
+        url: apiUrl,
+        method: 'POST',
+        body: requestBody
+      });
+
+      // Call the real API endpoint
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use the text
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to enroll student: ${errorMessage}`);
+      }
+
+      const enrollmentResult = await response.json();
+      console.log('Enrollment API response:', enrollmentResult);
+      
+      // Transform the API response to match our ClassEnrollment interface
+      const newEnrollment: ClassEnrollment = {
+        _id: enrollmentResult._id || enrollmentResult.id || `enrollment_${Date.now()}`,
+        classId: enrollmentData.classId,
+        studentId: enrollmentData.studentId,
+        studentName: enrollmentResult.studentName || 'New Student',
+        studentEmail: enrollmentResult.studentEmail || 'student@email.com',
+        enrollmentDate: enrollmentResult.enrollmentDate || new Date().toISOString().split('T')[0],
+        status: enrollmentResult.status || 'enrolled',
+        paymentStatus: enrollmentResult.paymentStatus || 'pending',
+        paymentDate: enrollmentResult.paymentDate,
+        attendanceCount: enrollmentResult.attendanceCount || 0,
+        totalSessions: enrollmentResult.totalSessions || 0,
+        paymentAmount: enrollmentData.paymentAmount || 0,
+        enrolledBy: enrollmentData.enrolledBy || 'system',
+        createdAt: enrollmentResult.createdAt || new Date().toISOString(),
+        updatedAt: enrollmentResult.updatedAt || new Date().toISOString()
+      };
+
+      // Also update local mock data for consistency
+      mockEnrollments.push(newEnrollment);
+      
+      return newEnrollment;
+    } catch (error) {
+      console.error('Error enrolling student:', error);
+      
+      // Handle network errors specifically
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Unable to connect to the enrollment service. Please ensure the server is running on localhost:5000');
+      }
+      
+      throw error;
+    }
+  }
+
+  async updateEnrollmentStatus(enrollmentId: string, status: ClassEnrollment['status']): Promise<ClassEnrollment> {
+    await this.delay(400);
+    
+    const enrollment = mockEnrollments.find(e => e._id === enrollmentId);
+    if (!enrollment) throw new Error('Enrollment not found');
+    
+    enrollment.status = status;
+    enrollment.updatedAt = new Date().toISOString();
+    return enrollment;
+  }
+
+  async removeEnrollment(enrollmentId: string): Promise<void> {
+    await this.delay(400);
+    const index = mockEnrollments.findIndex(e => e._id === enrollmentId);
+    if (index === -1) throw new Error('Enrollment not found');
+    mockEnrollments.splice(index, 1);
+  }
+
+  // ===============================
+  // MATERIAL MANAGEMENT METHODS
+  // ===============================
+
+  async getClassMaterials(classId: string): Promise<ClassMaterial[]> {
+    await this.delay(300);
+    return mockMaterials.filter(material => material.classId === classId);
+  }
+
+  async uploadMaterial(materialData: CreateMaterialRequest): Promise<ClassMaterial> {
+    try {
+      const apiUrl = `http://localhost:5000/api/schedule-classes/${materialData.classId}/materials`;
+      const requestBody = {
+        title: materialData.title,
+        description: materialData.description,
+        fileUrl: materialData.fileUrl || '',
+        fileType: materialData.type || 'document',
+        isRequired: materialData.isRequired || false
+      };
+
+      console.log('Making materials API call:', {
+        url: apiUrl,
+        method: 'POST',
+        body: requestBody
+      });
+
+      // Call the real API endpoint
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use the text
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to upload material: ${errorMessage}`);
+      }
+
+      const materialResult = await response.json();
+      console.log('Material API response:', materialResult);
+      
+      // Transform the API response to match our ClassMaterial interface
+      const newMaterial: ClassMaterial = {
+        _id: materialResult._id || materialResult.id || `material_${Date.now()}`,
+        classId: materialData.classId,
+        title: materialResult.title || materialData.title,
+        description: materialResult.description || materialData.description,
+        type: materialResult.fileType || materialData.type || 'document',
+        fileUrl: materialResult.fileUrl || materialData.fileUrl,
+        fileName: materialResult.fileName || materialData.fileName,
+        fileSize: materialResult.fileSize || materialData.fileSize,
+        downloadCount: materialResult.downloadCount || 0,
+        isRequired: materialResult.isRequired || materialData.isRequired || false,
+        availableFrom: materialResult.availableFrom || materialData.availableFrom,
+        availableUntil: materialResult.availableUntil || materialData.availableUntil,
+        uploadedBy: materialResult.uploadedBy || materialData.uploadedBy || 'admin',
+        createdAt: materialResult.createdAt || new Date().toISOString(),
+        updatedAt: materialResult.updatedAt || new Date().toISOString()
+      };
+
+      // Also update local mock data for consistency
+      mockMaterials.push(newMaterial);
+      
+      return newMaterial;
+    } catch (error) {
+      console.error('Error uploading material:', error);
+      
+      // Handle network errors specifically
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Unable to connect to the materials service. Please ensure the server is running on localhost:5000');
+      }
+      
+      throw error;
+    }
+  }
+
+  async deleteMaterial(materialId: string): Promise<void> {
+    await this.delay(400);
+    const index = mockMaterials.findIndex(m => m._id === materialId);
+    if (index === -1) throw new Error('Material not found');
+    mockMaterials.splice(index, 1);
+  }
+
+  async downloadMaterial(materialId: string): Promise<void> {
+    await this.delay(200);
+    const material = mockMaterials.find(m => m._id === materialId);
+    if (material) {
+      material.downloadCount += 1;
+    }
+  }
+
+  // ===============================
+  // ATTENDANCE MANAGEMENT METHODS
+  // ===============================
+
+  async getClassAttendance(classId: string): Promise<AttendanceRecord[]> {
+    await this.delay(300);
+    return mockAttendance.filter(record => record.classId === classId);
+  }
+
+  async markAttendance(attendanceData: MarkAttendanceRequest): Promise<AttendanceRecord> {
+    try {
+      // Create the attendance record locally first
+      const newRecord: AttendanceRecord = {
+        _id: `507f1f77bcf86cd79943${Date.now().toString().slice(-4)}`,
+        ...attendanceData,
+        totalStudents: attendanceData.studentAttendance.length,
+        presentCount: attendanceData.studentAttendance.filter(s => s.status === 'present').length,
+        absentCount: attendanceData.studentAttendance.filter(s => s.status === 'absent').length,
+        lateCount: attendanceData.studentAttendance.filter(s => s.status === 'late').length,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      // Update local mock data
+      const existingIndex = mockAttendance.findIndex(
+        record => record.classId === attendanceData.classId && 
+                 record.sessionDate === attendanceData.sessionDate
+      );
+
+      if (existingIndex >= 0) {
+        mockAttendance[existingIndex] = newRecord;
+      } else {
+        mockAttendance.push(newRecord);
+      }
+
+      // For each student, we could call the individual attendance API
+      // Here's an example with the first student:
+      if (attendanceData.studentAttendance.length > 0) {
+        const firstStudent = attendanceData.studentAttendance[0];
+        await this.markIndividualAttendance(attendanceData.classId, firstStudent);
+      }
+
+      return newRecord;
+    } catch (error) {
+      console.error('Error marking attendance:', error);
+      throw error;
+    }
+  }
+
+  async markIndividualAttendance(classId: string, studentAttendance: StudentAttendance): Promise<{_id: string; status: string; message: string}> {
+    try {
+      const apiUrl = `http://localhost:5000/api/schedule-classes/${classId}/attendance`;
+      const requestBody = {
+        studentId: studentAttendance.studentId,
+        status: studentAttendance.status,
+        checkInTime: studentAttendance.checkInTime || new Date().toISOString(),
+        checkOutTime: "2025-11-15T12:00:00Z",
+        notes: studentAttendance.notes || `Attendance marked for ${studentAttendance.studentName}`
+      };
+
+      console.log('Making individual attendance API call:', {
+        url: apiUrl,
+        method: 'POST',
+        body: requestBody
+      });
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to mark attendance: ${errorMessage}`);
+      }
+
+      const attendanceResult = await response.json();
+      console.log('Individual attendance API response:', attendanceResult);
+      
+      return attendanceResult;
+    } catch (error) {
+      console.error('Error calling individual attendance API:', error);
+      
+      // Handle network errors specifically
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Unable to connect to the attendance service. Please ensure the server is running on localhost:5000');
+      }
+      
+      throw error;
+    }
+  }
+
+  async getStudentAttendanceReport(classId: string, studentId: string): Promise<StudentAttendance[]> {
+    await this.delay(400);
+    const classRecords = mockAttendance.filter(record => record.classId === classId);
+    return classRecords.flatMap(record => 
+      record.studentAttendance.filter(attendance => attendance.studentId === studentId)
+    );
+  }
+
+  // ===============================
+  // ASSIGNMENT MANAGEMENT METHODS
+  // ===============================
+
+  async getClassAssignments(classId: string): Promise<ClassAssignment[]> {
+    await this.delay(300);
+    return mockAssignments.filter(assignment => assignment.classId === classId);
+  }
+
+  async createAssignment(assignmentData: CreateAssignmentRequest): Promise<ClassAssignment> {
+    try {
+      const apiUrl = `http://localhost:5000/api/schedule-classes/${assignmentData.classId}/assignments`;
+      const requestBody = {
+        title: assignmentData.title,
+        description: assignmentData.description,
+        dueDate: assignmentData.dueDate
+      };
+
+      console.log('Making assignments API call:', {
+        url: apiUrl,
+        method: 'POST',
+        body: requestBody
+      });
+
+      // Call the real API endpoint
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use the text
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to create assignment: ${errorMessage}`);
+      }
+
+      const assignmentResult = await response.json();
+      console.log('Assignment API response:', assignmentResult);
+      
+      // Transform the API response to match our ClassAssignment interface
+      const newAssignment: ClassAssignment = {
+        _id: assignmentResult._id || assignmentResult.id || `assignment_${Date.now()}`,
+        classId: assignmentData.classId,
+        title: assignmentResult.title || assignmentData.title,
+        description: assignmentResult.description || assignmentData.description,
+        instructions: assignmentResult.instructions || assignmentData.instructions,
+        type: assignmentResult.type || assignmentData.type,
+        maxScore: assignmentResult.maxScore || assignmentData.maxScore,
+        dueDate: assignmentResult.dueDate || assignmentData.dueDate,
+        submissionFormat: assignmentResult.submissionFormat || assignmentData.submissionFormat,
+        isRequired: assignmentResult.isRequired !== undefined ? assignmentResult.isRequired : assignmentData.isRequired,
+        allowLateSubmissions: assignmentResult.allowLateSubmissions !== undefined ? assignmentResult.allowLateSubmissions : assignmentData.allowLateSubmissions,
+        latePenalty: assignmentResult.latePenalty || assignmentData.latePenalty,
+        resources: assignmentResult.resources || assignmentData.resources,
+        submissions: assignmentResult.submissions || [],
+        createdBy: assignmentResult.createdBy || assignmentData.createdBy,
+        createdAt: assignmentResult.createdAt || new Date().toISOString(),
+        updatedAt: assignmentResult.updatedAt || new Date().toISOString()
+      };
+
+      // Also update local mock data for consistency
+      mockAssignments.push(newAssignment);
+      
+      return newAssignment;
+    } catch (error) {
+      console.error('Error creating assignment:', error);
+      
+      // Handle network errors specifically
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Unable to connect to the assignments service. Please ensure the server is running on localhost:5000');
+      }
+      
+      throw error;
+    }
+  }
+
+  async submitAssignment(submissionData: SubmitAssignmentRequest): Promise<AssignmentSubmission> {
+    await this.delay(600);
+    
+    const assignment = mockAssignments.find(a => a._id === submissionData.assignmentId);
+    if (!assignment) throw new Error('Assignment not found');
+
+    const newSubmission: AssignmentSubmission = {
+      _id: `507f1f77bcf86cd79943${Date.now().toString().slice(-4)}`,
+      ...submissionData,
+      studentName: 'Student Name', // Would be populated from student API
+      submittedAt: new Date().toISOString(),
+      isLate: new Date() > new Date(assignment.dueDate),
+      status: 'submitted'
+    };
+
+    if (!assignment.submissions) assignment.submissions = [];
+    assignment.submissions.push(newSubmission);
+    
+    return newSubmission;
+  }
+
+  async gradeAssignment(gradingData: GradeAssignmentRequest): Promise<AssignmentSubmission> {
+    await this.delay(400);
+    
+    // Find the submission across all assignments
+    let submission: AssignmentSubmission | undefined;
+
+    for (const assign of mockAssignments) {
+      if (assign.submissions) {
+        submission = assign.submissions.find(s => s._id === gradingData.submissionId);
+        if (submission) {
+          break;
+        }
+      }
+    }
+
+    if (!submission) throw new Error('Submission not found');
+
+    submission.score = gradingData.score;
+    submission.feedback = gradingData.feedback;
+    submission.gradedBy = gradingData.gradedBy;
+    submission.gradedAt = new Date().toISOString();
+    submission.status = 'graded';
+
+    return submission;
+  }
+
+  // ===============================
+  // ANNOUNCEMENT MANAGEMENT METHODS
+  // ===============================
+
+  async getClassAnnouncements(classId: string): Promise<ClassAnnouncement[]> {
+    await this.delay(300);
+    return mockAnnouncements
+      .filter(announcement => announcement.classId === classId)
+      .sort((a, b) => {
+        // Sort by pinned first, then by creation date
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+
+  async createAnnouncement(announcementData: CreateAnnouncementRequest): Promise<ClassAnnouncement> {
+    try {
+      const apiUrl = `http://localhost:5000/api/schedule-classes/${announcementData.classId}/announcements`;
+      const requestBody = {
+        message: announcementData.content,
+        isUrgent: announcementData.priority === 'high'
+      };
+
+      console.log('Making announcements API call:', {
+        url: apiUrl,
+        method: 'POST',
+        body: requestBody
+      });
+
+      // Call the real API endpoint
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use the text
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to create announcement: ${errorMessage}`);
+      }
+
+      const announcementResult = await response.json();
+      console.log('Announcement API response:', announcementResult);
+      
+      // Transform the API response to match our ClassAnnouncement interface
+      const newAnnouncement: ClassAnnouncement = {
+        _id: announcementResult._id || announcementResult.id || `announcement_${Date.now()}`,
+        classId: announcementData.classId,
+        title: announcementResult.title || announcementData.title,
+        content: announcementResult.message || announcementData.content,
+        type: announcementResult.type || announcementData.type,
+        priority: announcementResult.isUrgent ? 'high' : announcementData.priority,
+        targetAudience: announcementResult.targetAudience || announcementData.targetAudience,
+        isVisible: announcementResult.isVisible !== undefined ? announcementResult.isVisible : announcementData.isVisible,
+        isPinned: announcementResult.isPinned !== undefined ? announcementResult.isPinned : announcementData.isPinned,
+        scheduledFor: announcementResult.scheduledFor || announcementData.scheduledFor,
+        expiresAt: announcementResult.expiresAt || announcementData.expiresAt,
+        attachments: announcementResult.attachments || announcementData.attachments,
+        readBy: announcementResult.readBy || [],
+        createdBy: announcementResult.createdBy || announcementData.createdBy,
+        createdAt: announcementResult.createdAt || new Date().toISOString(),
+        updatedAt: announcementResult.updatedAt || new Date().toISOString()
+      };
+
+      // Also update local mock data for consistency
+      mockAnnouncements.push(newAnnouncement);
+      
+      return newAnnouncement;
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      
+      // Handle network errors specifically
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Unable to connect to the announcements service. Please ensure the server is running on localhost:5000');
+      }
+      
+      throw error;
+    }
+  }
+
+  async markAnnouncementAsRead(announcementId: string, userId: string): Promise<void> {
+    await this.delay(200);
+    
+    const announcement = mockAnnouncements.find(a => a._id === announcementId);
+    if (announcement && !announcement.readBy.includes(userId)) {
+      announcement.readBy.push(userId);
+    }
+  }
+
+  async deleteAnnouncement(announcementId: string): Promise<void> {
+    await this.delay(400);
+    const index = mockAnnouncements.findIndex(a => a._id === announcementId);
+    if (index === -1) throw new Error('Announcement not found');
+    mockAnnouncements.splice(index, 1);
+  }
+
+  async pinAnnouncement(announcementId: string, isPinned: boolean): Promise<ClassAnnouncement> {
+    await this.delay(300);
+    
+    const announcement = mockAnnouncements.find(a => a._id === announcementId);
+    if (!announcement) throw new Error('Announcement not found');
+    
+    announcement.isPinned = isPinned;
+    announcement.updatedAt = new Date().toISOString();
+    
+    return announcement;
+  }
+}
+
+// ===============================
+// ENROLLMENT MANAGEMENT INTERFACES
+// ===============================
+
+export interface ClassEnrollment {
+  _id: string;
+  classId: string;
+  studentId: string;
+  studentName?: string;
+  studentEmail?: string;
+  enrollmentDate: string;
+  status: 'enrolled' | 'waitlist' | 'cancelled' | 'completed';
+  paymentStatus: 'pending' | 'paid' | 'refunded';
+  paymentAmount: number;
+  paymentDate?: string;
+  attendanceCount: number;
+  totalSessions: number;
+  grade?: string;
+  feedback?: string;
+  enrolledBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEnrollmentRequest {
+  classId: string;
+  studentId: string;
+  paymentAmount?: number;
+  enrolledBy?: string;
+}
+
+// ===============================
+// MATERIAL MANAGEMENT INTERFACES  
+// ===============================
+
+export interface ClassMaterial {
+  _id: string;
+  classId: string;
+  title: string;
+  description: string;
+  type: 'document' | 'video' | 'audio' | 'image' | 'link' | 'other';
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  downloadCount: number;
+  isRequired: boolean;
+  availableFrom?: string;
+  availableUntil?: string;
+  uploadedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateMaterialRequest {
+  classId: string;
+  title: string;
+  description: string;
+  type: 'document' | 'video' | 'audio' | 'image' | 'link' | 'other';
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  isRequired: boolean;
+  availableFrom?: string;
+  availableUntil?: string;
+  uploadedBy: string;
+}
+
+// ===============================
+// ATTENDANCE MANAGEMENT INTERFACES
+// ===============================
+
+export interface AttendanceRecord {
+  _id: string;
+  classId: string;
+  sessionDate: string;
+  sessionNumber: number;
+  studentAttendance: StudentAttendance[];
+  totalStudents: number;
+  presentCount: number;
+  absentCount: number;
+  lateCount: number;
+  notes?: string;
+  markedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentAttendance {
+  studentId: string;
+  studentName?: string;
+  status: 'present' | 'absent' | 'late' | 'excused';
+  checkInTime?: string;
+  notes?: string;
+}
+
+export interface MarkAttendanceRequest {
+  classId: string;
+  sessionDate: string;
+  sessionNumber: number;
+  studentAttendance: StudentAttendance[];
+  notes?: string;
+  markedBy: string;
+}
+
+// ===============================
+// ASSIGNMENT MANAGEMENT INTERFACES
+// ===============================
+
+export interface ClassAssignment {
+  _id: string;
+  classId: string;
+  title: string;
+  description: string;
+  instructions: string;
+  type: 'individual' | 'group' | 'project' | 'quiz' | 'exam';
+  maxScore: number;
+  dueDate: string;
+  submissionFormat: 'text' | 'file' | 'link' | 'multiple';
+  isRequired: boolean;
+  allowLateSubmissions: boolean;
+  latePenalty?: number;
+  resources?: string[];
+  submissions?: AssignmentSubmission[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AssignmentSubmission {
+  _id: string;
+  assignmentId: string;
+  studentId: string;
+  studentName?: string;
+  submissionText?: string;
+  fileUrl?: string;
+  fileName?: string;
+  submittedAt: string;
+  isLate: boolean;
+  status: 'submitted' | 'graded' | 'returned';
+  score?: number;
+  feedback?: string;
+  gradedBy?: string;
+  gradedAt?: string;
+}
+
+export interface CreateAssignmentRequest {
+  classId: string;
+  title: string;
+  description: string;
+  instructions: string;
+  type: 'individual' | 'group' | 'project' | 'quiz' | 'exam';
+  maxScore: number;
+  dueDate: string;
+  submissionFormat: 'text' | 'file' | 'link' | 'multiple';
+  isRequired: boolean;
+  allowLateSubmissions: boolean;
+  latePenalty?: number;
+  resources?: string[];
+  createdBy: string;
+}
+
+export interface SubmitAssignmentRequest {
+  assignmentId: string;
+  studentId: string;
+  submissionText?: string;
+  fileUrl?: string;
+  fileName?: string;
+}
+
+export interface GradeAssignmentRequest {
+  submissionId: string;
+  score: number;
+  feedback?: string;
+  gradedBy: string;
+}
+
+// ===============================
+// ANNOUNCEMENT MANAGEMENT INTERFACES
+// ===============================
+
+export interface ClassAnnouncement {
+  _id: string;
+  classId: string;
+  title: string;
+  content: string;
+  type: 'general' | 'urgent' | 'reminder' | 'cancellation' | 'assignment' | 'material';
+  priority: 'low' | 'medium' | 'high';
+  targetAudience: 'all' | 'students' | 'instructors';
+  isVisible: boolean;
+  isPinned: boolean;
+  scheduledFor?: string;
+  expiresAt?: string;
+  attachments?: AnnouncementAttachment[];
+  readBy: string[]; // Array of user IDs who have read this
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AnnouncementAttachment {
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  fileType: string;
+}
+
+export interface CreateAnnouncementRequest {
+  classId: string;
+  title: string;
+  content: string;
+  type: 'general' | 'urgent' | 'reminder' | 'cancellation' | 'assignment' | 'material';
+  priority: 'low' | 'medium' | 'high';
+  targetAudience: 'all' | 'students' | 'instructors';
+  isVisible: boolean;
+  isPinned: boolean;
+  scheduledFor?: string;
+  expiresAt?: string;
+  attachments?: AnnouncementAttachment[];
+  createdBy: string;
+}
+
+// Export singleton instance
+export const classManagementApiService = new ClassManagementApiService();

@@ -50,3 +50,28 @@ export {
   type CreateCourseData,
   type UpdateCourseData
 } from './courseManagementApi';
+export {
+  classManagementApiService,
+  type ClassManagement,
+  type ClassFilters,
+  type CreateClassRequest,
+  type UpdateClassRequest,
+  type ClassesResponse,
+  type Address,
+  type RecurringPattern,
+  type ClassEnrollment,
+  type CreateEnrollmentRequest,
+  type ClassMaterial,
+  type CreateMaterialRequest,
+  type AttendanceRecord as ClassAttendanceRecord,
+  type StudentAttendance,
+  type MarkAttendanceRequest,
+  type ClassAssignment,
+  type AssignmentSubmission,
+  type CreateAssignmentRequest,
+  type SubmitAssignmentRequest,
+  type GradeAssignmentRequest,
+  type ClassAnnouncement,
+  type AnnouncementAttachment,
+  type CreateAnnouncementRequest
+} from './classManagementApiService';

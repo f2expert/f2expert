@@ -28,6 +28,17 @@ export { EditCourseModal } from './EditCourseModal';
 export { DeleteCourseModal } from './DeleteCourseModal';
 export { AddCourseModal } from './AddCourseModal';
 
+// Class Management Modals
+export { default as ViewClassModal } from './ViewClassModal';
+export { default as EditClassModal } from './EditClassModal';
+export { default as DeleteClassModal } from './DeleteClassModal';
+export { default as AddClassModal } from './AddClassModal';
+export { EnrollStudentModal } from './EnrollStudentModal';
+export { UploadMaterialModal } from './UploadMaterialModal';
+export { MarkAttendanceModal } from './MarkAttendanceModal';
+export { CreateAssignmentModal } from './CreateAssignmentModal';
+export { PostAnnouncementModal } from './PostAnnouncementModal';
+
 // Payment components
 export { PaymentGateway } from './PaymentGateway';
 export { PaymentMethodManager } from './PaymentMethodManager';

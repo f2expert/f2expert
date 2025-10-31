@@ -12,7 +12,6 @@ import {
   MoreVertical,
   DollarSign,
   Clock,
-  Play,
   Trash2,
   Mail,
   Settings
@@ -566,12 +565,6 @@ const CourseManagement: React.FC = () => {
                           <Edit3 className="mr-2 h-4 w-4" />
                           Edit Course
                         </DropdownMenuItem>
-                        {course.videoPreviewUrl && (
-                          <DropdownMenuItem>
-                            <Play className="mr-2 h-4 w-4" />
-                            Preview Course
-                          </DropdownMenuItem>
-                        )}
                         <DropdownMenuItem 
                           onClick={() => handleDeleteCourse(course)}
                           className="text-red-600 focus:text-red-600"

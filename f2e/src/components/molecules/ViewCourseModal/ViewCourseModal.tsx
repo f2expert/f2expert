@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Eye, 
   BookOpen, 
@@ -17,7 +17,8 @@ import {
   HelpCircle,
   Briefcase,
   Globe,
-  ChevronRight
+  ChevronRight,
+  ImageIcon
 } from 'lucide-react';
 
 import { Button } from '../../atoms/Button';
@@ -53,6 +54,14 @@ const ViewCourseModal: React.FC<ViewCourseModalProps> = ({
   onClose,
   course,
 }) => {
+  const [imageError, setImageError] = useState(false);
+
+  // Reset image error when modal opens or course changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setImageError(false);
+    }
+  }, [isOpen, course.thumbnailUrl]);
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -98,7 +107,7 @@ const ViewCourseModal: React.FC<ViewCourseModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl font-semibold">
             <Eye className="mr-2 h-5 w-5" />
@@ -148,6 +157,43 @@ const ViewCourseModal: React.FC<ViewCourseModalProps> = ({
                     <Clock className="h-4 w-4 mr-1" />
                     {course.duration}
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Course Thumbnail */}
+            <div className="mt-4">
+              <div className="bg-white rounded-lg border overflow-hidden">
+                <div className="aspect-video bg-gray-100 flex items-center justify-center">
+                  {course.thumbnailUrl && !imageError ? (
+                    <img 
+                      src={course.thumbnailUrl} 
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                      onError={() => setImageError(true)}
+                      onLoad={() => setImageError(false)}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-gray-400 p-8">
+                      <ImageIcon className="h-12 w-12 mb-2" />
+                      <span className="text-sm">
+                        {course.thumbnailUrl ? 'Thumbnail not available' : 'No thumbnail set'}
+                      </span>
+                      {course.thumbnailUrl && (
+                        <span className="text-xs text-gray-400 mt-1">Failed to load image</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 bg-gray-50">
+                  <p className="text-sm text-gray-600">Course Thumbnail</p>
+                  {course.thumbnailUrl ? (
+                    <p className="text-xs text-gray-500 truncate mt-1" title={course.thumbnailUrl}>
+                      {course.thumbnailUrl}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">No thumbnail URL provided</p>
+                  )}
                 </div>
               </div>
             </div>

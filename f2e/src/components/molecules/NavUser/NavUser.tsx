@@ -9,6 +9,7 @@ import {
   Users,
   UserCheck,
   GraduationCap,
+  Calendar,
 } from "lucide-react"
 
 import {
@@ -117,6 +118,10 @@ console.log('NavUser render: ',  user );
               <DropdownMenuItem >
                 <GraduationCap />
                 <Link to="/dashboard/course-management">Course Management</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem >
+                <Calendar />
+                <Link to="/dashboard/class-management">Class Management</Link>
               </DropdownMenuItem>
               <DropdownMenuItem >
                 <Bell />

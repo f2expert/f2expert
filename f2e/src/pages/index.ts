@@ -15,6 +15,7 @@ export {
   TrainerManagement,
   CourseManagement 
 } from './Dashboard';
+export { default as ClassManagement } from './ClassManagement';
 export { Login } from './Login';
 export { Register } from './Register';
 export { ForgotPassword } from './ForgotPassword';
