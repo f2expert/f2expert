@@ -1,0 +1,1 @@
+export { DeleteSalaryModal } from './DeleteSalaryModal';

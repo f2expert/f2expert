@@ -6,7 +6,7 @@ import { About } from '../pages/About';
 import { Contact } from '../pages/Contact';
 import { Courses } from '../pages/Courses';
 import { Tutorial, TutorialWatch } from '../pages/Tutorial';
-import { Dashboard, Topic, TopicDetails, CreateCourse, CreateTutorial, EnrolledCourses, StudentManagement, TrainerManagement, CourseManagement } from '../pages/Dashboard';
+import { Dashboard, Topic, TopicDetails, CreateCourse, CreateTutorial, EnrolledCourses, StudentManagement, TrainerManagement, CourseManagement, SalaryManagement } from '../pages/Dashboard';
 import { ClassManagement } from '../pages';
 import { CourseDetails } from '../pages/Courses';
 import { Login } from '../pages/Login';
@@ -112,6 +112,7 @@ export default function AppRoutes() {
         { path: "trainer-management", element: <TrainerManagement /> },
         { path: "course-management", element: <CourseManagement /> },
         { path: "class-management", element: <ClassManagement /> },
+        { path: "salary-management", element: <SalaryManagement /> },
         { path: ":lang/", element: <Topic /> },
         { path: ":lang/:topic", element: <TopicDetails /> }
       ],

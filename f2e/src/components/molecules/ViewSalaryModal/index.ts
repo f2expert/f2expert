@@ -1,0 +1,1 @@
+export { ViewSalaryModal } from './ViewSalaryModal';

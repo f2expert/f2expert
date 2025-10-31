@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { FileText, Contact, FileStack, FileVideo2, Home } from "lucide-react";
+import { FileText, Contact, FileStack, FileVideo2, Home, Users, UserCheck, Calendar, DollarSign, Settings } from "lucide-react";
 import { FaNodeJs, FaReact } from "react-icons/fa";
 import { TbFileTypeCss } from "react-icons/tb";
 import { GrHtml5 } from "react-icons/gr";
@@ -17,6 +17,11 @@ export const iconMap = {
   TbFileTypeCss,
   GrHtml5,
   PiDatabaseThin,
+  Users,
+  UserCheck,
+  Calendar,
+  DollarSign,
+  Settings,
 } as const;
 
 export type IconName = keyof typeof iconMap;
@@ -189,6 +194,34 @@ const initialState: SidebarDataState = {
           title: "Design",
           path: "/dashboard/database/design",
           contentId: "Ok3TQXserUI",
+        },
+      ],
+    },
+    {
+      title: "Management",
+      path: "#",
+      icon: "Settings",
+      isActive: false,
+      children: [
+        {
+          title: "Student Management",
+          path: "/dashboard/student-management",
+        },
+        {
+          title: "Trainer Management",
+          path: "/dashboard/trainer-management",
+        },
+        {
+          title: "Salary Management",
+          path: "/dashboard/salary-management",
+        },
+        {
+          title: "Class Management",
+          path: "/dashboard/class-management",
+        },
+        {
+          title: "Course Management",
+          path: "/dashboard/course-management",
         },
       ],
     },

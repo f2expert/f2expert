@@ -209,6 +209,76 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
+              {/* Management Quick Access */}
+              <div className="bg-white rounded-lg shadow">
+                <div className="p-6 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Management</h3>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Link to="/dashboard/student-management" className="block">
+                      <div className="p-4 border rounded-lg hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer">
+                        <div className="flex items-center mb-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i className="fas fa-user-graduate text-blue-600"></i>
+                          </div>
+                          <h4 className="font-medium text-gray-900">Students</h4>
+                        </div>
+                        <p className="text-sm text-gray-600">Manage student records and enrollment</p>
+                      </div>
+                    </Link>
+
+                    <Link to="/dashboard/trainer-management" className="block">
+                      <div className="p-4 border rounded-lg hover:border-green-300 hover:shadow-sm transition-all cursor-pointer">
+                        <div className="flex items-center mb-2">
+                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <i className="fas fa-chalkboard-teacher text-green-600"></i>
+                          </div>
+                          <h4 className="font-medium text-gray-900">Trainers</h4>
+                        </div>
+                        <p className="text-sm text-gray-600">Manage trainer profiles and assignments</p>
+                      </div>
+                    </Link>
+
+                    <Link to="/dashboard/salary-management" className="block">
+                      <div className="p-4 border rounded-lg hover:border-purple-300 hover:shadow-sm transition-all cursor-pointer">
+                        <div className="flex items-center mb-2">
+                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                            <i className="fas fa-dollar-sign text-purple-600"></i>
+                          </div>
+                          <h4 className="font-medium text-gray-900">Salary Management</h4>
+                        </div>
+                        <p className="text-sm text-gray-600">Manage trainer salaries and payroll</p>
+                      </div>
+                    </Link>
+
+                    <Link to="/dashboard/course-management" className="block">
+                      <div className="p-4 border rounded-lg hover:border-orange-300 hover:shadow-sm transition-all cursor-pointer">
+                        <div className="flex items-center mb-2">
+                          <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                            <i className="fas fa-book text-orange-600"></i>
+                          </div>
+                          <h4 className="font-medium text-gray-900">Courses</h4>
+                        </div>
+                        <p className="text-sm text-gray-600">Manage course content and structure</p>
+                      </div>
+                    </Link>
+
+                    <Link to="/dashboard/class-management" className="block">
+                      <div className="p-4 border rounded-lg hover:border-red-300 hover:shadow-sm transition-all cursor-pointer">
+                        <div className="flex items-center mb-2">
+                          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                            <i className="fas fa-calendar-alt text-red-600"></i>
+                          </div>
+                          <h4 className="font-medium text-gray-900">Classes</h4>
+                        </div>
+                        <p className="text-sm text-gray-600">Schedule and manage class sessions</p>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
               {/* Recent Achievements */}
               <div className="bg-white rounded-lg shadow">
                 <div className="p-6 border-b border-gray-200">
@@ -236,9 +306,14 @@ export const Dashboard: React.FC = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">My Courses</h2>
-                <Link to="/courses">
-                  <Button>Browse More Courses</Button>
-                </Link>
+                <div className="flex gap-3">
+                  <Link to="/dashboard/salary-management">
+                    <Button variant="outline">Salary Management</Button>
+                  </Link>
+                  <Link to="/courses">
+                    <Button>Browse More Courses</Button>
+                  </Link>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

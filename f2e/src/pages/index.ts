@@ -13,7 +13,8 @@ export {
   EnrolledCourses, 
   StudentManagement,
   TrainerManagement,
-  CourseManagement 
+  CourseManagement,
+  SalaryManagement 
 } from './Dashboard';
 export { default as ClassManagement } from './ClassManagement';
 export { Login } from './Login';

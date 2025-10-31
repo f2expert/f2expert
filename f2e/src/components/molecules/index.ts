@@ -39,6 +39,13 @@ export { MarkAttendanceModal } from './MarkAttendanceModal';
 export { CreateAssignmentModal } from './CreateAssignmentModal';
 export { PostAnnouncementModal } from './PostAnnouncementModal';
 
+// Salary Management Modals
+export { AddSalaryModal } from './AddSalaryModal';
+export { EditSalaryModal } from './EditSalaryModal';
+export { ViewSalaryModal } from './ViewSalaryModal';
+export { DeleteSalaryModal } from './DeleteSalaryModal';
+export { ProcessSalaryModal } from './ProcessSalaryModal';
+
 // Payment components
 export { PaymentGateway } from './PaymentGateway';
 export { PaymentMethodManager } from './PaymentMethodManager';

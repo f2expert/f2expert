@@ -10,6 +10,7 @@ import {
   UserCheck,
   GraduationCap,
   Calendar,
+  DollarSign,
 } from "lucide-react"
 
 import {
@@ -114,6 +115,10 @@ console.log('NavUser render: ',  user );
               <DropdownMenuItem >
                 <UserCheck />
                 <Link to="/dashboard/trainer-management">Trainer Management</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem >
+                <DollarSign />
+                <Link to="/dashboard/salary-management">Salary Management</Link>
               </DropdownMenuItem>
               <DropdownMenuItem >
                 <GraduationCap />

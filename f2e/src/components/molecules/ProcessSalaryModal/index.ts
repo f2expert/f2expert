@@ -1,0 +1,1 @@
+export { ProcessSalaryModal } from './ProcessSalaryModal';
