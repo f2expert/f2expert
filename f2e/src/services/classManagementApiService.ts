@@ -1,6 +1,9 @@
 // Class Management API Service
 // This service handles all API operations for class scheduling and management
 
+import { store } from '../store';
+import type { RootState } from '../store';
+
 
 export interface Address {
   street: string;
@@ -73,7 +76,6 @@ export interface CreateClassRequest {
   capacity: number;
   maxEnrollments: number;
   isRecurring: boolean;
-  duration?: number;
   recurringPattern?: RecurringPattern;
   objectives: string[];
   prerequisites: string[];
@@ -489,6 +491,26 @@ const mockAnnouncements: ClassAnnouncement[] = [
 class ClassManagementApiService {
   private delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+  // Helper method to get authentication headers
+  private getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Get token from Redux store
+    const state = store.getState() as RootState;
+    const token = state.auth.token;
+
+    if (token) {
+      console.log('Adding authentication token to request headers');
+      headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.warn('No authentication token found in store');
+    }
+
+    return headers;
+  }
+
   // Get all classes with optional filters
   async getClasses(filters?: ClassFilters, page = 1, limit = 10): Promise<ClassesResponse> {
     try {
@@ -523,9 +545,7 @@ class ClassManagementApiService {
       // Call the real API endpoint
       const response = await fetch(apiUrl, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        headers: this.getAuthHeaders()
       });
 
       if (!response.ok) {
@@ -699,9 +719,7 @@ class ClassManagementApiService {
       // Call the real API endpoint
       const response = await fetch(apiUrl, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        headers: this.getAuthHeaders()
       });
 
       if (!response.ok) {
@@ -814,9 +832,7 @@ class ClassManagementApiService {
       // Call the real API endpoint
       const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(requestBody)
       });
 
@@ -907,9 +923,7 @@ class ClassManagementApiService {
       // Call the real API endpoint
       const response = await fetch(apiUrl, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(requestBody)
       });
 
@@ -932,7 +946,7 @@ class ClassManagementApiService {
       // Transform the API response to match our ClassManagement interface
       const updatedClass: ClassManagement = {
         _id: classResult._id || classResult.id || classData._id,
-        //courseId: classResult.courseId || classData.courseId || '',
+        courseId: classResult.courseId || classData.courseId || '',
         courseName: classResult.courseName || classResult.course?.title,
         instructorId: classResult.instructorId || classData.instructorId || '',
         instructorName: classResult.instructorName || classResult.instructor?.name,
@@ -1017,9 +1031,7 @@ class ClassManagementApiService {
       // Call the real API endpoint
       const response = await fetch(apiUrl, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        headers: this.getAuthHeaders()
       });
 
       if (!response.ok) {
@@ -1088,9 +1100,7 @@ class ClassManagementApiService {
       // Call the real API endpoint
       const response = await fetch(apiUrl, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        headers: this.getAuthHeaders()
       })
 
       if (!response.ok) {
@@ -1165,9 +1175,7 @@ class ClassManagementApiService {
       // Call the real API endpoint
       const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(requestBody)
       });
 
@@ -1269,9 +1277,7 @@ class ClassManagementApiService {
       // Call the real API endpoint
       const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(requestBody)
       });
 
@@ -1409,9 +1415,7 @@ class ClassManagementApiService {
 
       const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(requestBody)
       });
 
@@ -1478,9 +1482,7 @@ class ClassManagementApiService {
       // Call the real API endpoint
       const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(requestBody)
       });
 
@@ -1617,9 +1619,7 @@ class ClassManagementApiService {
       // Call the real API endpoint
       const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(requestBody)
       });
 
