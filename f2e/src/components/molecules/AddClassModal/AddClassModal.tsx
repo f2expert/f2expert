@@ -17,7 +17,6 @@ import {
   Package,
   Tag,
   Repeat,
-  X,
   FileText
 } from 'lucide-react';
 import { FaPlus, FaTrash } from 'react-icons/fa';
@@ -66,7 +65,6 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
     },
     capacity: 30,
     maxEnrollments: 25,
-    duration: 30,
     isRecurring: false,
     recurringPattern: {
       type: 'weekly',
@@ -134,7 +132,6 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
         capacity: 30,
         maxEnrollments: 25,
         isRecurring: false,
-        duration: 30,
         recurringPattern: {
           type: 'weekly',
           interval: 1,
@@ -875,9 +872,6 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
             <DialogTitle className="text-xl font-semibold text-gray-900">
               Schedule New Class
             </DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
 
           {/* Step Progress */}

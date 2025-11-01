@@ -231,6 +231,9 @@ userSchema.virtual('fullName').get(function() {
 
 // Virtual for role display
 userSchema.virtual('roleDisplay').get(function() {
+  if (!this.role || typeof this.role !== 'string') {
+    return 'Unknown'
+  }
   return this.role.charAt(0).toUpperCase() + this.role.slice(1)
 })
 

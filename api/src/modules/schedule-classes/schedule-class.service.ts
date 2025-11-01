@@ -37,6 +37,8 @@ export interface CreateScheduleClassData {
 export interface UpdateScheduleClassData {
   className?: string
   description?: string
+  courseId?: string
+  instructorId?: string
   scheduledDate?: Date
   startTime?: string
   endTime?: string
@@ -209,8 +211,27 @@ export const getScheduleClassById = async (classId: string): Promise<ScheduleCla
 
 // Update a scheduled class
 export const updateScheduleClass = async (classId: string, updateData: UpdateScheduleClassData): Promise<ScheduleClassDocument | null> => {
-  // If updating schedule time, check for conflicts
-  if (updateData.scheduledDate || updateData.startTime || updateData.endTime) {
+  // Validate courseId if provided
+  if (updateData.courseId) {
+    const courseExists = await CourseModel.findById(updateData.courseId)
+    if (!courseExists) {
+      throw new Error("Course not found")
+    }
+  }
+
+  // Validate instructorId if provided
+  if (updateData.instructorId) {
+    const instructor = await UserModel.findById(updateData.instructorId)
+    if (!instructor) {
+      throw new Error("Instructor not found")
+    }
+    if (instructor.role !== 'trainer') {
+      throw new Error("User is not a trainer")
+    }
+  }
+
+  // If updating schedule time or instructor, check for conflicts
+  if (updateData.scheduledDate || updateData.startTime || updateData.endTime || updateData.instructorId) {
     const existingClass = await ScheduleClassModel.findById(classId)
     if (!existingClass) {
       throw new Error("Scheduled class not found")
@@ -219,11 +240,12 @@ export const updateScheduleClass = async (classId: string, updateData: UpdateSch
     const scheduledDate = updateData.scheduledDate || existingClass.scheduledDate
     const startTime = updateData.startTime || existingClass.startTime
     const endTime = updateData.endTime || existingClass.endTime
+    const instructorToCheck = updateData.instructorId || existingClass.instructorId
 
     // Check instructor conflicts (exclude current class)
     const instructorConflict = await ScheduleClassModel.findOne({
       _id: { $ne: classId },
-      instructorId: existingClass.instructorId,
+      instructorId: instructorToCheck,
       scheduledDate: scheduledDate,
       status: { $nin: ['cancelled', 'completed'] },
       $or: [

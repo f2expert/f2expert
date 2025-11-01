@@ -721,21 +721,18 @@ const ClassManagement: React.FC = () => {
                     />
                   </td>
                   <td className="px-3 py-4">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <BookOpen className="h-5 w-5 text-blue-600" />
-                      </div>
+                    <div className="flex items-start">                      
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900 max-w-xs">
                           {classItem.className}
                         </div>
                         <div className="text-sm text-gray-500 flex items-center mt-1">
                           <BookOpen className="h-3 w-3 mr-1" />
-                          {classItem.courseName}
+                          {classItem.courseId.category}
                         </div>
                         <div className="text-sm text-gray-500 flex items-center mt-1">
                           <User className="h-3 w-3 mr-1" />
-                          {classItem.instructorName}
+                          {classItem.instructorId.firstName}
                         </div>
                       </div>
                     </div>

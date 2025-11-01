@@ -592,6 +592,12 @@ export const getScheduleClassById = async (req: Request, res: Response) => {
  *                 type: string
  *               description:
  *                 type: string
+ *               courseId:
+ *                 type: string
+ *                 description: MongoDB ObjectId of the course
+ *               instructorId:
+ *                 type: string
+ *                 description: MongoDB ObjectId of the instructor (must be a trainer)
  *               scheduledDate:
  *                 type: string
  *                 format: date

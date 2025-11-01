@@ -17,7 +17,6 @@ import {
   Package,
   Tag,
   Repeat,
-  X,
   FileText
 } from 'lucide-react';
 import { FaPlus, FaTrash } from 'react-icons/fa';
@@ -871,9 +870,6 @@ const EditClassModal: React.FC<EditClassModalProps> = ({
             <DialogTitle className="text-xl font-semibold text-gray-900">
               Edit Class: {classData?.className}
             </DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
 
           {/* Step Progress */}

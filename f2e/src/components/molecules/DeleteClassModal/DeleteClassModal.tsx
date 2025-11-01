@@ -17,7 +17,6 @@ import {
   BookOpen,
   User,
   Loader2,
-  X
 } from 'lucide-react';
 
 // Import types and services
@@ -114,9 +113,6 @@ const DeleteClassModal: React.FC<DeleteClassModalProps> = ({
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleClose} disabled={isDeleting}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 

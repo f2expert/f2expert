@@ -1192,7 +1192,7 @@ export const loginUser = async (req: Request, res: Response) => {
       photo: user.photo,
       bio: user.bio,
       fullName: `${user.firstName} ${user.lastName}`,
-      roleDisplay: user.role.charAt(0).toUpperCase() + user.role.slice(1),
+      roleDisplay: user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Unknown',
       createdAt: user.createdAt?.toISOString(),
       updatedAt: user.updatedAt?.toISOString()
     }

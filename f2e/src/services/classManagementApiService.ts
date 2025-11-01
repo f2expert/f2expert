@@ -19,7 +19,7 @@ export interface RecurringPattern {
 
 export interface ClassManagement {
   _id: string;
-  courseId: string;
+  courseId?: string;
   courseName?: string; // Populated field
   instructorId: string;
   instructorName?: string; // Populated field
@@ -682,10 +682,98 @@ class ClassManagementApiService {
     }
   }
 
-  // Get class by ID
+  // Get class by ID using API endpoint
   async getClassById(id: string): Promise<ClassManagement | null> {
-    await this.delay(300);
-    return mockClasses.find(cls => cls._id === id) || null;
+    try {
+      if (!id) {
+        throw new Error('Class ID is required');
+      }
+
+      const apiUrl = `http://localhost:5000/api/schedule-classes/${id}`;
+      
+      console.log('Making get class by ID API call:', {
+        url: apiUrl,
+        method: 'GET'
+      });
+
+      // Call the real API endpoint
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          // Class not found
+          return null;
+        }
+        
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to fetch class: ${errorMessage}`);
+      }
+
+      const classResult = await response.json();
+      console.log('Get class by ID API response:', classResult);
+      
+      // Transform the API response to match our ClassManagement interface
+      const classData: ClassManagement = {
+        _id: classResult._id || classResult.id || id,
+        courseId: classResult.courseId || '',
+        courseName: classResult.courseName || classResult.course?.title,
+        instructorId: classResult.instructorId || '',
+        instructorName: classResult.instructorName || classResult.instructor?.name,
+        className: classResult.className || '',
+        description: classResult.description || '',
+        scheduledDate: classResult.scheduledDate || '',
+        startTime: classResult.startTime || '',
+        endTime: classResult.endTime || '',
+        venue: classResult.venue || '',
+        address: classResult.address || {
+          street: '',
+          city: '',
+          state: '',
+          country: '',
+          zipCode: ''
+        },
+        capacity: classResult.capacity || 0,
+        maxEnrollments: classResult.maxEnrollments || 0,
+        currentEnrollments: classResult.currentEnrollments || 0,
+        isRecurring: classResult.isRecurring || false,
+        recurringPattern: classResult.recurringPattern,
+        objectives: classResult.objectives || [],
+        prerequisites: classResult.prerequisites || [],
+        requiredMaterials: classResult.requiredMaterials || [],
+        classPrice: classResult.classPrice || 0,
+        currency: classResult.currency || 'INR',
+        tags: classResult.tags || [],
+        status: (classResult.status as ClassManagement['status']) || 'scheduled',
+        createdBy: classResult.createdBy || '',
+        createdAt: classResult.createdAt || new Date().toISOString(),
+        updatedAt: classResult.updatedAt || new Date().toISOString()
+      };
+      
+      return classData;
+      
+    } catch (error) {
+      console.error('Error fetching class by ID:', error);
+      
+      // Handle network errors specifically - fallback to mock data
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('Unable to connect to the class scheduling service. Using fallback data.');
+        return mockClasses.find(cls => cls._id === id) || null;
+      }
+      
+      throw error;
+    }
   }
 
   // Create new class using API endpoint
@@ -796,35 +884,183 @@ class ClassManagementApiService {
     }
   }
 
-  // Update existing class
+  // Update existing class using API endpoint
   async updateClass(classData: UpdateClassRequest): Promise<ClassManagement> {
-    await this.delay(600);
+    try {
+      if (!classData._id) {
+        throw new Error('Class ID is required for update');
+      }
 
-    const index = mockClasses.findIndex(cls => cls._id === classData._id);
-    if (index === -1) {
-      throw new Error('Class not found');
+      const apiUrl = `http://localhost:5000/api/schedule-classes/${classData._id}`;
+      
+      // Transform our request format to match the API expected format
+      // Remove _id from the request body as it's in the URL
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { _id, ...requestBody } = classData;
+      
+      console.log('Making update class API call:', {
+        url: apiUrl,
+        method: 'PUT',
+        body: requestBody
+      });
+
+      // Call the real API endpoint
+      const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use the text
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to update class: ${errorMessage}`);
+      }
+
+      const classResult = await response.json();
+      console.log('Update class API response:', classResult);
+      
+      // Transform the API response to match our ClassManagement interface
+      const updatedClass: ClassManagement = {
+        _id: classResult._id || classResult.id || classData._id,
+        //courseId: classResult.courseId || classData.courseId || '',
+        courseName: classResult.courseName || classResult.course?.title,
+        instructorId: classResult.instructorId || classData.instructorId || '',
+        instructorName: classResult.instructorName || classResult.instructor?.name,
+        className: classResult.className || classData.className || '',
+        description: classResult.description || classData.description || '',
+        scheduledDate: classResult.scheduledDate || classData.scheduledDate || '',
+        startTime: classResult.startTime || classData.startTime || '',
+        endTime: classResult.endTime || classData.endTime || '',
+        venue: classResult.venue || classData.venue || '',
+        address: classResult.address || classData.address || {
+          street: '',
+          city: '',
+          state: '',
+          country: '',
+          zipCode: ''
+        },
+        capacity: classResult.capacity || classData.capacity || 0,
+        maxEnrollments: classResult.maxEnrollments || classData.maxEnrollments || 0,
+        currentEnrollments: classResult.currentEnrollments || 0,
+        isRecurring: classResult.isRecurring !== undefined ? classResult.isRecurring : (classData.isRecurring || false),
+        recurringPattern: classResult.recurringPattern || classData.recurringPattern,
+        objectives: classResult.objectives || classData.objectives || [],
+        prerequisites: classResult.prerequisites || classData.prerequisites || [],
+        requiredMaterials: classResult.requiredMaterials || classData.requiredMaterials || [],
+        classPrice: classResult.classPrice || classData.classPrice || 0,
+        currency: classResult.currency || classData.currency || 'INR',
+        tags: classResult.tags || classData.tags || [],
+        status: (classResult.status as ClassManagement['status']) || 'scheduled',
+        createdBy: classResult.createdBy || classData.createdBy || '',
+        createdAt: classResult.createdAt || new Date().toISOString(),
+        updatedAt: classResult.updatedAt || new Date().toISOString()
+      };
+
+      // Also update local mock data for consistency
+      const index = mockClasses.findIndex(cls => cls._id === classData._id);
+      if (index !== -1) {
+        mockClasses[index] = updatedClass;
+      }
+      
+      return updatedClass;
+      
+    } catch (error) {
+      console.error('Error updating class:', error);
+      
+      // Handle network errors specifically - fallback to mock data update
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('Unable to connect to the class scheduling service. Using fallback update.');
+        
+        const index = mockClasses.findIndex(cls => cls._id === classData._id);
+        if (index === -1) {
+          throw new Error('Class not found');
+        }
+
+        const updatedClass: ClassManagement = {
+          ...mockClasses[index],
+          ...classData,
+          updatedAt: new Date().toISOString()
+        };
+
+        mockClasses[index] = updatedClass;
+        return updatedClass;
+      }
+      
+      throw error;
     }
-
-    const updatedClass: ClassManagement = {
-      ...mockClasses[index],
-      ...classData,
-      updatedAt: new Date().toISOString()
-    };
-
-    mockClasses[index] = updatedClass;
-    return updatedClass;
   }
 
-  // Delete class
+  // Delete class using API endpoint
   async deleteClass(id: string): Promise<void> {
-    await this.delay(400);
+    try {
+      if (!id) {
+        throw new Error('Class ID is required for deletion');
+      }
 
-    const index = mockClasses.findIndex(cls => cls._id === id);
-    if (index === -1) {
-      throw new Error('Class not found');
+      const apiUrl = `http://localhost:5000/api/schedule-classes/${id}`;
+      
+      console.log('Making delete class API call:', {
+        url: apiUrl,
+        method: 'DELETE'
+      });
+
+      // Call the real API endpoint
+      const response = await fetch(apiUrl, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use the text
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to delete class: ${errorMessage}`);
+      }
+
+      console.log('Delete class API response: Success');
+      
+      // Also remove from local mock data for consistency
+      const index = mockClasses.findIndex(cls => cls._id === id);
+      if (index !== -1) {
+        mockClasses.splice(index, 1);
+      }
+      
+    } catch (error) {
+      console.error('Error deleting class:', error);
+      
+      // Handle network errors specifically - fallback to mock data deletion
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('Unable to connect to the class scheduling service. Using fallback deletion.');
+        
+        const index = mockClasses.findIndex(cls => cls._id === id);
+        if (index === -1) {
+          throw new Error('Class not found');
+        }
+
+        mockClasses.splice(index, 1);
+        return;
+      }
+      
+      throw error;
     }
-
-    mockClasses.splice(index, 1);
   }
 
   // Get available courses for dropdown

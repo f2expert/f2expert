@@ -215,6 +215,20 @@ export const updateScheduleClassSchema = Joi.object({
   className: Joi.string().min(5).max(200).optional(),
   description: Joi.string().max(1000).optional(),
   
+  // Course and Instructor Information
+  courseId: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .optional()
+    .messages({
+      'string.pattern.base': 'Course ID must be a valid MongoDB ObjectId',
+    }),
+  instructorId: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .optional()
+    .messages({
+      'string.pattern.base': 'Instructor ID must be a valid MongoDB ObjectId',
+    }),
+  
   // Scheduling Information
   scheduledDate: Joi.date().min('now').optional(),
   startTime: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
