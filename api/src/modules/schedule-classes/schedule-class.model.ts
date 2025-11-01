@@ -144,7 +144,7 @@ const scheduleClassSchema = new Schema<ScheduleClassDocument>(
     },
     duration: { 
       type: Number, 
-      required: true,
+      required: false, // Automatically calculated in pre-save middleware
       min: 15,
       max: 480 // Maximum 8 hours
     },
@@ -413,6 +413,7 @@ scheduleClassSchema.index({ venue: 1, scheduledDate: 1 })
 
 // Pre-save middleware to calculate duration and validate times
 scheduleClassSchema.pre('save', function(next) {
+  // Always calculate duration from startTime and endTime
   if (this.startTime && this.endTime) {
     const start = new Date(`2000-01-01T${this.startTime}:00`)
     const end = new Date(`2000-01-01T${this.endTime}:00`)
@@ -423,6 +424,8 @@ scheduleClassSchema.pre('save', function(next) {
     }
     
     this.duration = diffInMinutes
+  } else {
+    return next(new Error('Both startTime and endTime are required to calculate duration'))
   }
   
   // Update current enrollments count

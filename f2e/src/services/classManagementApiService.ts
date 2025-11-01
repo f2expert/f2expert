@@ -13,7 +13,7 @@ export interface Address {
 export interface RecurringPattern {
   type: 'daily' | 'weekly' | 'monthly';
   interval: number;
-  endDate?: string;
+  endDate?: string;  
   daysOfWeek?: number[]; // 0 = Sunday, 1 = Monday, etc.
 }
 
@@ -73,6 +73,7 @@ export interface CreateClassRequest {
   capacity: number;
   maxEnrollments: number;
   isRecurring: boolean;
+  duration?: number;
   recurringPattern?: RecurringPattern;
   objectives: string[];
   prerequisites: string[];
@@ -113,11 +114,44 @@ export interface InstructorUser {
   isActive?: boolean;
 }
 
+export interface ApiClassResponse {
+  _id?: string;
+  id?: string;
+  courseId?: string;
+  courseName?: string;
+  course?: { title?: string };
+  instructorId?: string;
+  instructorName?: string;
+  instructor?: { name?: string };
+  className?: string;
+  description?: string;
+  scheduledDate?: string;
+  startTime?: string;
+  endTime?: string;
+  venue?: string;
+  address?: Address;
+  capacity?: number;
+  maxEnrollments?: number;
+  currentEnrollments?: number;
+  isRecurring?: boolean;
+  recurringPattern?: RecurringPattern;
+  objectives?: string[];
+  prerequisites?: string[];
+  requiredMaterials?: string[];
+  classPrice?: number;
+  currency?: string;
+  tags?: string[];
+  status?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Mock data for development - replace with actual API calls
 const mockClasses: ClassManagement[] = [
   {
     _id: '507f1f77bcf86cd799439020',
-    courseId: '507f1f77bcf86cd799439011',
+    courseId: '68ea3dfe0c5167bd4aaec917',
     courseName: 'JavaScript Fundamentals',
     instructorId: '507f1f77bcf86cd799439012',
     instructorName: 'Priya Sharma',
@@ -162,7 +196,7 @@ const mockClasses: ClassManagement[] = [
   },
   {
     _id: '507f1f77bcf86cd799439021',
-    courseId: '507f1f77bcf86cd799439011',
+    courseId: '68ea3dfe0c5167bd4aaec917',
     courseName: 'JavaScript Fundamentals',
     instructorId: '507f1f77bcf86cd799439012',
     instructorName: 'Priya Sharma',
@@ -457,79 +491,195 @@ class ClassManagementApiService {
 
   // Get all classes with optional filters
   async getClasses(filters?: ClassFilters, page = 1, limit = 10): Promise<ClassesResponse> {
-    // Simulate API delay
-    await this.delay(500);
-
-    let filteredClasses = [...mockClasses];
-
-    // Apply filters
-    if (filters) {
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        filteredClasses = filteredClasses.filter(cls =>
-          cls.className.toLowerCase().includes(searchTerm) ||
-          cls.courseName?.toLowerCase().includes(searchTerm) ||
-          cls.instructorName?.toLowerCase().includes(searchTerm) ||
-          cls.venue.toLowerCase().includes(searchTerm) ||
-          cls.tags.some(tag => tag.toLowerCase().includes(searchTerm))
-        );
+    try {
+      // Build query parameters for API
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('limit', limit.toString());
+      
+      if (filters) {
+        if (filters.search) params.append('search', filters.search);
+        if (filters.courseId) params.append('courseId', filters.courseId);
+        if (filters.instructorId) params.append('instructorId', filters.instructorId);
+        if (filters.status) params.append('status', filters.status);
+        if (filters.venue) params.append('venue', filters.venue);
+        if (filters.priceRange) params.append('priceRange', filters.priceRange);
+        if (filters.dateRange) {
+          params.append('startDate', filters.dateRange.start);
+          params.append('endDate', filters.dateRange.end);
+        }
       }
 
-      if (filters.courseId) {
-        filteredClasses = filteredClasses.filter(cls => cls.courseId === filters.courseId);
+      const apiUrl = `http://localhost:5000/api/schedule-classes?${params.toString()}`;
+      
+      console.log('Making get classes API call:', {
+        url: apiUrl,
+        method: 'GET',
+        filters,
+        page,
+        limit
+      });
+
+      // Call the real API endpoint
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to fetch classes: ${errorMessage}`);
       }
 
-      if (filters.instructorId) {
-        filteredClasses = filteredClasses.filter(cls => cls.instructorId === filters.instructorId);
+      const apiResponse = await response.json();
+      console.log('Get classes API response:', apiResponse);
+      
+      // Transform API response to match our expected format
+      // The API might return the data directly or wrapped in a data property
+      const classesData = apiResponse.data.classes || apiResponse;
+      const classes: ApiClassResponse[] = Array.isArray(classesData) ? classesData : [];
+      
+      // Transform each class to ensure it matches our interface
+      const transformedClasses: ClassManagement[] = classes.map((cls: ApiClassResponse) => ({
+        _id: cls._id || cls.id || '',
+        courseId: cls.courseId || '',
+        courseName: cls.courseName || cls.course?.title,
+        instructorId: cls.instructorId || '',
+        instructorName: cls.instructorName || cls.instructor?.name,
+        className: cls.className || '',
+        description: cls.description || '',
+        scheduledDate: cls.scheduledDate || '',
+        startTime: cls.startTime || '',
+        endTime: cls.endTime || '',
+        venue: cls.venue || '',
+        address: cls.address || {
+          street: '',
+          city: '',
+          state: '',
+          country: '',
+          zipCode: ''
+        },
+        capacity: cls.capacity || 0,
+        maxEnrollments: cls.maxEnrollments || 0,
+        currentEnrollments: cls.currentEnrollments || 0,
+        isRecurring: cls.isRecurring || false,
+        recurringPattern: cls.recurringPattern,
+        objectives: cls.objectives || [],
+        prerequisites: cls.prerequisites || [],
+        requiredMaterials: cls.requiredMaterials || [],
+        classPrice: cls.classPrice || 0,
+        currency: cls.currency || 'INR',
+        tags: cls.tags || [],
+        status: (cls.status as ClassManagement['status']) || 'scheduled',
+        createdBy: cls.createdBy || '',
+        createdAt: cls.createdAt || new Date().toISOString(),
+        updatedAt: cls.updatedAt || new Date().toISOString()
+      }));
+
+      // Update local mock data for consistency
+      if (page === 1) {
+        // Replace mock data with API data for first page
+        mockClasses.splice(0, mockClasses.length, ...transformedClasses);
       }
 
-      if (filters.status) {
-        filteredClasses = filteredClasses.filter(cls => cls.status === filters.status);
-      }
+      return {
+        classes: transformedClasses,
+        total: apiResponse.total || transformedClasses.length,
+        page: apiResponse.page || page,
+        limit: apiResponse.limit || limit,
+        totalPages: apiResponse.totalPages || Math.ceil((apiResponse.total || transformedClasses.length) / limit)
+      };
+      
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+      
+      // Handle network errors specifically - fallback to mock data
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('Unable to connect to the class scheduling service. Using fallback data.');
+        
+        // Apply filters to mock data as fallback
+        let filteredClasses = [...mockClasses];
 
-      if (filters.venue) {
-        filteredClasses = filteredClasses.filter(cls => 
-          cls.venue.toLowerCase().includes(filters.venue!.toLowerCase())
-        );
-      }
-
-      if (filters.dateRange) {
-        filteredClasses = filteredClasses.filter(cls => {
-          const classDate = new Date(cls.scheduledDate);
-          const startDate = new Date(filters.dateRange!.start);
-          const endDate = new Date(filters.dateRange!.end);
-          return classDate >= startDate && classDate <= endDate;
-        });
-      }
-
-      if (filters.priceRange) {
-        filteredClasses = filteredClasses.filter(cls => {
-          const price = cls.classPrice;
-          switch (filters.priceRange) {
-            case 'free': return price === 0;
-            case 'under-500': return price > 0 && price < 500;
-            case '500-1000': return price >= 500 && price < 1000;
-            case 'over-1000': return price >= 1000;
-            default: return true;
+        if (filters) {
+          if (filters.search) {
+            const searchTerm = filters.search.toLowerCase();
+            filteredClasses = filteredClasses.filter(cls =>
+              cls.className.toLowerCase().includes(searchTerm) ||
+              cls.courseName?.toLowerCase().includes(searchTerm) ||
+              cls.instructorName?.toLowerCase().includes(searchTerm) ||
+              cls.venue.toLowerCase().includes(searchTerm) ||
+              cls.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+            );
           }
-        });
+
+          if (filters.courseId) {
+            filteredClasses = filteredClasses.filter(cls => cls.courseId === filters.courseId);
+          }
+
+          if (filters.instructorId) {
+            filteredClasses = filteredClasses.filter(cls => cls.instructorId === filters.instructorId);
+          }
+
+          if (filters.status) {
+            filteredClasses = filteredClasses.filter(cls => cls.status === filters.status);
+          }
+
+          if (filters.venue) {
+            filteredClasses = filteredClasses.filter(cls => 
+              cls.venue.toLowerCase().includes(filters.venue!.toLowerCase())
+            );
+          }
+
+          if (filters.dateRange) {
+            filteredClasses = filteredClasses.filter(cls => {
+              const classDate = new Date(cls.scheduledDate);
+              const startDate = new Date(filters.dateRange!.start);
+              const endDate = new Date(filters.dateRange!.end);
+              return classDate >= startDate && classDate <= endDate;
+            });
+          }
+
+          if (filters.priceRange) {
+            filteredClasses = filteredClasses.filter(cls => {
+              const price = cls.classPrice;
+              switch (filters.priceRange) {
+                case 'free': return price === 0;
+                case 'under-500': return price > 0 && price < 500;
+                case '500-1000': return price >= 500 && price < 1000;
+                case 'over-1000': return price >= 1000;
+                default: return true;
+              }
+            });
+          }
+        }
+
+        // Calculate pagination for fallback
+        const total = filteredClasses.length;
+        const totalPages = Math.ceil(total / limit);
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedClasses = filteredClasses.slice(startIndex, endIndex);
+
+        return {
+          classes: paginatedClasses,
+          total,
+          page,
+          limit,
+          totalPages
+        };
       }
+      
+      throw error;
     }
-
-    // Calculate pagination
-    const total = filteredClasses.length;
-    const totalPages = Math.ceil(total / limit);
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedClasses = filteredClasses.slice(startIndex, endIndex);
-
-    return {
-      classes: paginatedClasses,
-      total,
-      page,
-      limit,
-      totalPages
-    };
   }
 
   // Get class by ID
@@ -538,29 +688,112 @@ class ClassManagementApiService {
     return mockClasses.find(cls => cls._id === id) || null;
   }
 
-  // Create new class
+  // Create new class using API endpoint
   async createClass(classData: CreateClassRequest): Promise<ClassManagement> {
-    await this.delay(800);
+    try {
+      const apiUrl = 'http://localhost:5000/api/schedule-classes';
+      
+      // Transform our request format to match the API expected format
+      const requestBody = {
+        courseId: classData.courseId,
+        instructorId: classData.instructorId,
+        className: classData.className,
+        description: classData.description,
+        scheduledDate: classData.scheduledDate,
+        startTime: classData.startTime,
+        endTime: classData.endTime,
+        venue: classData.venue,
+        address: classData.address,
+        capacity: classData.capacity,
+        maxEnrollments: classData.maxEnrollments,
+        isRecurring: classData.isRecurring,
+        recurringPattern: classData.recurringPattern,
+        objectives: classData.objectives,
+        prerequisites: classData.prerequisites,
+        requiredMaterials: classData.requiredMaterials,
+        classPrice: classData.classPrice,
+        currency: classData.currency,
+        tags: classData.tags,
+        createdBy: classData.createdBy
+      };
 
-    const newClass: ClassManagement = {
-      _id: `507f1f77bcf86cd79943${Date.now().toString().slice(-4)}`,
-      ...classData,
-      currentEnrollments: 0,
-      status: 'scheduled',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+      console.log('Making create class API call:', {
+        url: apiUrl,
+        method: 'POST',
+        body: requestBody
+      });
 
-    // Add course and instructor names (in real app, these would be populated by backend)
-    if (classData.courseId === '507f1f77bcf86cd799439011') {
-      newClass.courseName = 'JavaScript Fundamentals';
+      // Call the real API endpoint
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use the text
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to create class: ${errorMessage}`);
+      }
+
+      const classResult = await response.json();
+      console.log('Create class API response:', classResult);
+      
+      // Transform the API response to match our ClassManagement interface
+      const newClass: ClassManagement = {
+        _id: classResult._id || classResult.id || `class_${Date.now()}`,
+        courseId: classResult.courseId || classData.courseId,
+        courseName: classResult.courseName || classResult.course?.title,
+        instructorId: classResult.instructorId || classData.instructorId,
+        instructorName: classResult.instructorName || classResult.instructor?.name,
+        className: classResult.className || classData.className,
+        description: classResult.description || classData.description,
+        scheduledDate: classResult.scheduledDate || classData.scheduledDate,
+        startTime: classResult.startTime || classData.startTime,
+        endTime: classResult.endTime || classData.endTime,
+        venue: classResult.venue || classData.venue,
+        address: classResult.address || classData.address,
+        capacity: classResult.capacity || classData.capacity,
+        maxEnrollments: classResult.maxEnrollments || classData.maxEnrollments,
+        currentEnrollments: classResult.currentEnrollments || 0,
+        isRecurring: classResult.isRecurring || classData.isRecurring,
+        recurringPattern: classResult.recurringPattern || classData.recurringPattern,
+        objectives: classResult.objectives || classData.objectives,
+        prerequisites: classResult.prerequisites || classData.prerequisites,
+        requiredMaterials: classResult.requiredMaterials || classData.requiredMaterials,
+        classPrice: classResult.classPrice || classData.classPrice,
+        currency: classResult.currency || classData.currency,
+        tags: classResult.tags || classData.tags,
+        status: classResult.status || 'scheduled',
+        createdBy: classResult.createdBy || classData.createdBy,
+        createdAt: classResult.createdAt || new Date().toISOString(),
+        updatedAt: classResult.updatedAt || new Date().toISOString()
+      };
+
+      // Also update local mock data for consistency
+      mockClasses.unshift(newClass);
+      
+      return newClass;
+      
+    } catch (error) {
+      console.error('Error creating class:', error);
+      
+      // Handle network errors specifically
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Unable to connect to the class scheduling service. Please ensure the server is running on localhost:5000');
+      }
+      
+      throw error;
     }
-    if (classData.instructorId === '507f1f77bcf86cd799439012') {
-      newClass.instructorName = 'Priya Sharma';
-    }
-
-    mockClasses.unshift(newClass);
-    return newClass;
   }
 
   // Update existing class
@@ -598,7 +831,7 @@ class ClassManagementApiService {
   async getCourses(): Promise<Array<{ _id: string; title: string }>> {
     await this.delay(200);
     return [
-      { _id: '507f1f77bcf86cd799439011', title: 'JavaScript Fundamentals' },
+      { _id: '68ea3dfe0c5167bd4aaec917', title: 'JavaScript Fundamentals' },
       { _id: '507f1f77bcf86cd799439014', title: 'React Development Bootcamp' },
       { _id: '507f1f77bcf86cd799439016', title: 'Node.js Backend Development' },
       { _id: '507f1f77bcf86cd799439017', title: 'Python Data Science' },

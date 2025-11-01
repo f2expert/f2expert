@@ -162,7 +162,9 @@ import { ApiResponse } from "../../app/types/ApiResponse.interface"
  *           example: "12:00"
  *         duration:
  *           type: integer
+ *           description: "Duration of the class in minutes (automatically calculated from startTime and endTime)"
  *           example: 180
+ *           readOnly: true
  *         venue:
  *           type: string
  *           example: "Classroom A"

@@ -26,6 +26,7 @@ import { cn } from '../../../lib/utils';
 // Import types and services
 import type { CreateClassRequest, Address, RecurringPattern } from '../../../services';
 import { classManagementApiService } from '../../../services';
+import { useAuth } from '../../../hooks';
 
 interface AddClassModalProps {
   isOpen: boolean;
@@ -44,6 +45,7 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
   // Form data state
   const [formData, setFormData] = useState<FormData>({
@@ -64,6 +66,7 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
     },
     capacity: 30,
     maxEnrollments: 25,
+    duration: 30,
     isRecurring: false,
     recurringPattern: {
       type: 'weekly',
@@ -77,7 +80,7 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
     classPrice: 0,
     currency: 'INR',
     tags: [''],
-    createdBy: '507f1f77bcf86cd799439013' // This would come from auth context in real app
+    createdBy: user?.id ?? '507f1f77bcf86cd799439013'
   });
 
   // Dropdown options
@@ -131,11 +134,12 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
         capacity: 30,
         maxEnrollments: 25,
         isRecurring: false,
+        duration: 30,
         recurringPattern: {
           type: 'weekly',
           interval: 1,
           endDate: '',
-          daysOfWeek: []
+          daysOfWeek: [],
         },
         objectives: [''],
         prerequisites: [''],
