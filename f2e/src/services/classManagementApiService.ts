@@ -655,7 +655,7 @@ class ClassManagementApiService {
 
     // Get token from Redux store
     const state = store.getState() as RootState;
-    const token = state.auth.token;
+    const token = (state as RootState).auth.token;
 
     if (token) {
       console.log('Adding authentication token to request headers');
@@ -901,58 +901,45 @@ class ClassManagementApiService {
       
       // Transform the API response to match our ClassManagement interface
       const classData: ClassManagement = {
-        _id: classResult._id || classResult.id || id,
-        courseId: classResult.courseId || '',
-        courseName: classResult.courseName || classResult.course?.title,
-        instructorId: classResult.instructorId || '',
-        instructorName: classResult.instructorName || classResult.instructor?.name,
-        className: classResult.className || '',
-        description: classResult.description || '',
-        scheduledDate: classResult.scheduledDate || '',
-        startTime: classResult.startTime || '',
-        endTime: classResult.endTime || '',
-        venue: classResult.venue || '',
-        address: classResult.address || {
+        _id: classResult.data._id || classResult.id || id,
+        courseId: classResult.data.courseId || '',
+        courseName: classResult.data.courseName || classResult.data.course?.title,
+        instructorId: classResult.data.instructorId || '',
+        instructorName: classResult.data.instructorName || classResult.data.instructor?.name,
+        className: classResult.data.className || '',
+        description: classResult.data.description || '',
+        scheduledDate: classResult.data.scheduledDate || '',
+        startTime: classResult.data.startTime || '',
+        endTime: classResult.data.endTime || '',
+        venue: classResult.data.venue || '',
+        address: classResult.data.address || {
           street: '',
           city: '',
           state: '',
           country: '',
           zipCode: ''
         },
-        capacity: classResult.capacity || 0,
-        maxEnrollments: classResult.maxEnrollments || 0,
-        currentEnrollments: this.getEnrollmentCount(classResult),
-        enrolledStudents: classResult.enrolledStudents || [],
-        isRecurring: classResult.isRecurring || false,
-        recurringPattern: classResult.recurringPattern,
-        objectives: classResult.objectives || [],
-        prerequisites: classResult.prerequisites || [],
-        requiredMaterials: classResult.requiredMaterials || [],
-        classPrice: classResult.classPrice || 0,
-        currency: classResult.currency || 'INR',
-        tags: classResult.tags || [],
-        status: (classResult.status as ClassManagement['status']) || 'scheduled',
-        createdBy: classResult.createdBy || '',
-        createdAt: classResult.createdAt || new Date().toISOString(),
-        updatedAt: classResult.updatedAt || new Date().toISOString()
+        capacity: classResult.data.capacity || 0,
+        maxEnrollments: classResult.data.maxEnrollments || 0,
+        currentEnrollments: this.getEnrollmentCount(classResult.data),
+        enrolledStudents: classResult.data.enrolledStudents || [],
+        materials: classResult.data.materials || [],
+        attendance: classResult.data.attendance || [],
+        assignments: classResult.data.assignments || [],
+        announcements: classResult.data.announcements || [],
+        isRecurring: classResult.data.isRecurring || false,
+        recurringPattern: classResult.data.recurringPattern,
+        objectives: classResult.data.objectives || [],
+        prerequisites: classResult.data.prerequisites || [],
+        requiredMaterials: classResult.data.requiredMaterials || [],
+        classPrice: classResult.data.classPrice || 0,
+        currency: classResult.data.currency || 'INR',
+        tags: classResult.data.tags || [],
+        status: (classResult.data.status as ClassManagement['status']) || 'scheduled',
+        createdBy: classResult.data.createdBy || '',
+        createdAt: classResult.data.createdAt || new Date().toISOString(),
+        updatedAt: classResult.data.updatedAt || new Date().toISOString()
       };
-      
-      // Attach embedded data directly to the ClassManagement interface properties
-      classData.materials = classResult.materials || [];
-      classData.attendance = classResult.attendance || [];
-      classData.assignments = classResult.assignments || [];
-      classData.announcements = classResult.announcements || [];
-      
-      console.log('Class data with embedded information:', {
-        classId: classData._id,
-        className: classData.className,
-        embeddedDataCounts: {
-          materials: classData.materials?.length || 0,
-          attendance: classData.attendance?.length || 0,
-          assignments: classData.assignments?.length || 0,
-          announcements: classData.announcements?.length || 0
-        }
-      });
       
       return classData;
       
@@ -1590,40 +1577,33 @@ class ClassManagementApiService {
     }
   }
 
-  async markAttendance(attendanceData: MarkAttendanceRequest): Promise<AttendanceRecord> {
+  async markAttendance(attendanceData: StudentAttendance[], classId: string): Promise<AttendanceRecord> {
     try {
-      // Create the attendance record locally first
-      const newRecord: AttendanceRecord = {
-        _id: `507f1f77bcf86cd79943${Date.now().toString().slice(-4)}`,
-        ...attendanceData,
-        totalStudents: attendanceData.studentAttendance.length,
-        presentCount: attendanceData.studentAttendance.filter(s => s.status === 'present').length,
-        absentCount: attendanceData.studentAttendance.filter(s => s.status === 'absent').length,
-        lateCount: attendanceData.studentAttendance.filter(s => s.status === 'late').length,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      const apiUrl = `http://localhost:5000/api/schedule-classes/${classId}/attendance/bulk`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({attendance: attendanceData})
+      });
 
-      // Update local mock data
-      const existingIndex = mockAttendance.findIndex(
-        record => record.classId === attendanceData.classId && 
-                 record.sessionDate === attendanceData.sessionDate
-      );
-
-      if (existingIndex >= 0) {
-        mockAttendance[existingIndex] = newRecord;
-      } else {
-        mockAttendance.push(newRecord);
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to mark attendance: ${errorMessage}`);
       }
 
-      // For each student, we could call the individual attendance API
-      // Here's an example with the first student:
-      if (attendanceData.studentAttendance.length > 0) {
-        const firstStudent = attendanceData.studentAttendance[0];
-        await this.markIndividualAttendance(attendanceData.classId, firstStudent);
-      }
+      const attendanceResult = await response.json();
+      console.log('Attendance API response:', attendanceResult);
+      
+      return attendanceResult;      
 
-      return newRecord;
     } catch (error) {
       console.error('Error marking attendance:', error);
       throw error;
@@ -2113,6 +2093,7 @@ export interface StudentAttendance {
   studentName?: string;
   status: 'present' | 'absent' | 'late' | 'excused';
   checkInTime?: string;
+  checkOutTime?: string;
   notes?: string;
 }
 

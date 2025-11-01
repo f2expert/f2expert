@@ -11,7 +11,6 @@ import {
   classManagementApiService, 
   type ClassManagement as Class,
   type StudentAttendance,
-  type MarkAttendanceRequest
 } from '../../../services';
 
 interface MarkAttendanceModalProps {
@@ -29,7 +28,6 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
   isOpen,
   onClose,
   class: classData,
-  onAttendanceMarked
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,40 +43,15 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       // Mock enrolled students - in real app, this would come from enrollment API
-      const mockEnrolledStudents: StudentRecord[] = [
-        {
-          studentId: '507f1f77bcf86cd799440001',
-          studentName: 'Arjun Patel',
-          studentEmail: 'arjun.patel@email.com',
-          status: 'present',
-          checkInTime: '',
-          notes: ''
-        },
-        {
-          studentId: '507f1f77bcf86cd799440002',
-          studentName: 'Priya Sharma',
-          studentEmail: 'priya.sharma@email.com',
+      const mockEnrolledStudents: StudentRecord[] = classData?.enrolledStudents?.map(student => ({
+          studentId: student.studentId._id,
+          studentName: `${student.studentId.firstName} ${student.studentId.lastName}`,
+          studentEmail: student.studentId.email,
           status: 'absent',
           checkInTime: '',
+          checkOutTime: '',
           notes: ''
-        },
-        {
-          studentId: '507f1f77bcf86cd799440003',
-          studentName: 'Rahul Kumar',
-          studentEmail: 'rahul.kumar@email.com',
-          status: 'present',
-          checkInTime: '',
-          notes: ''
-        },
-        {
-          studentId: '507f1f77bcf86cd799440004',
-          studentName: 'Sneha Gupta',
-          studentEmail: 'sneha.gupta@email.com',
-          status: 'late',
-          checkInTime: '',
-          notes: ''
-        }
-      ];
+      })) || [];
 
       const today = new Date().toISOString().split('T')[0];
       setSessionDate(today);
@@ -114,6 +87,15 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
         : student
     ));
   };
+  
+  // Handle check-out time change for a student
+  const handleCheckOutTimeChange = (studentId: string, checkOutTime: string) => {
+    setStudents(prev => prev.map(student => 
+      student.studentId === studentId 
+        ? { ...student, checkOutTime }
+        : student
+    ));
+  };
 
   // Handle student notes change
   const handleStudentNotesChange = (studentId: string, notes: string) => {
@@ -137,97 +119,27 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
 
     try {
       // Prepare attendance data for API call
-      const attendanceData: MarkAttendanceRequest = {
-        classId: classData._id,
-        sessionDate,
-        sessionNumber,
-        studentAttendance: students.map(student => ({
+      const attendanceData: StudentAttendance[] = students.map(student => ({
           studentId: student.studentId,
-          studentName: student.studentName,
           status: student.status,
           checkInTime: student.checkInTime || undefined,
+          checkOutTime: student.checkOutTime || undefined,
           notes: student.notes || undefined
-        })),
-        notes: notes || undefined,
-        markedBy: 'current-user-id' // In real app, get from auth context
-      };
-
-      console.log('Marking attendance with data:', attendanceData);
+        }));
 
       // For demonstration, we'll use the mock API method
       // In real implementation, this would call the attendance API endpoint
-      await classManagementApiService.markAttendance(attendanceData);
+      await classManagementApiService.markAttendance(attendanceData, classData._id);
 
       // However, let's also demonstrate the real API call
-      await markAttendanceViaApi(students[0]); // Call with first student as example
-
       setSuccess('Attendance marked successfully!');
-      
-      // Close modal after success
-      setTimeout(() => {
-        onAttendanceMarked();
-        onClose();
-      }, 1500);
+      onClose();
 
     } catch (err) {
       console.error('Error marking attendance:', err);
       setError(err instanceof Error ? err.message : 'Failed to mark attendance');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Real API call to attendance endpoint
-  const markAttendanceViaApi = async (student: StudentRecord) => {
-    try {
-      const apiUrl = `http://localhost:5000/api/schedule-classes/${classData._id}/attendance`;
-      const requestBody = {
-        studentId: student.studentId,
-        status: student.status,
-        checkInTime: student.checkInTime || new Date().toISOString(),
-        checkOutTime: "2025-11-15T12:00:00Z", // Default checkout time
-        notes: student.notes || `Attendance marked for ${student.studentName}`
-      };
-
-      console.log('Making attendance API call:', {
-        url: apiUrl,
-        method: 'POST',
-        body: requestBody
-      });
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch {
-          const errorText = await response.text();
-          errorMessage = errorText || errorMessage;
-        }
-        throw new Error(`Failed to mark attendance: ${errorMessage}`);
-      }
-
-      const attendanceResult = await response.json();
-      console.log('Attendance API response:', attendanceResult);
-      
-      return attendanceResult;
-    } catch (error) {
-      console.error('Error calling attendance API:', error);
-      
-      // Handle network errors specifically
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Unable to connect to the attendance service. Please ensure the server is running on localhost:5000');
-      }
-      
-      throw error;
     }
   };
 
@@ -280,7 +192,7 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
           </div>
 
           {/* Content */}
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="p-4 overflow-y-auto max-h-[calc(90vh-150px)]">
             {/* Session Information */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
               <div>
@@ -366,7 +278,7 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
                       </BadgeComponent>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       {/* Attendance Status */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -400,6 +312,29 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
                               handleCheckInTimeChange(student.studentId, fullDateTime);
                             } else {
                               handleCheckInTimeChange(student.studentId, '');
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          disabled={student.status === 'absent'}
+                        />
+                      </div>
+
+                      {/* Check-out Time */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Check-out Time
+                        </label>
+                        <input
+                          type="time"
+                          value={student.checkOutTime ? new Date(student.checkOutTime).toTimeString().substring(0, 5) : ''}
+                          onChange={(e) => {
+                            const time = e.target.value;
+                            if (time) {
+                              const today = new Date().toISOString().split('T')[0];
+                              const fullDateTime = `${today}T${time}:00Z`;
+                              handleCheckOutTimeChange(student.studentId, fullDateTime);
+                            } else {
+                              handleCheckOutTimeChange(student.studentId, '');
                             }
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -455,7 +390,7 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-end space-x-3 p-1 border-t border-gray-200 bg-gray-50">
             <Button
               variant="outline"
               onClick={onClose}

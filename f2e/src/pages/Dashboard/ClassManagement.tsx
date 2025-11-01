@@ -28,6 +28,7 @@ import {
   GraduationCap,
   CheckCircle,
   Pin,
+  AlertCircle,
   Upload as UploadIcon,
   FileDown,
   MessageSquare
@@ -52,11 +53,7 @@ import { ViewClassModal, EditClassModal, DeleteClassModal, AddClassModal, Enroll
 import { 
   classManagementApiService, 
   type ClassManagement as Class, 
-  type ClassFilters,
-  type ClassMaterial,
-  type ClassAttendanceRecord as AttendanceRecord,
-  type ClassAssignment,
-  type ClassAnnouncement
+  type ClassFilters
 } from '../../services';
 
 const ClassManagement: React.FC = () => {
@@ -64,110 +61,6 @@ const ClassManagement: React.FC = () => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Utility function to transform and load all module data from class response
-  const loadAllModuleData = useCallback((classData: Class, classId: string) => {
-    // Transform materials
-    if (classData.materials) {
-      const transformedMaterials = classData.materials.map((material, index) => ({
-        _id: `material_${Date.now()}_${index}`,
-        classId,
-        title: material.title,
-        description: material.description,
-        type: 'document' as const,
-        fileUrl: material.fileUrl,
-        fileName: material.title,
-        downloadCount: 0,
-        isRequired: material.isRequired,
-        uploadedBy: 'system',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }));
-      setMaterials(transformedMaterials);
-    } else {
-      setMaterials([]);
-    }
-
-    // Transform attendance
-    if (classData.attendance) {
-      const transformedAttendance = [{
-        _id: `attendance_${Date.now()}`,
-        classId,
-        sessionDate: new Date().toISOString().split('T')[0],
-        sessionNumber: 1,
-        studentAttendance: classData.attendance.map(record => ({
-          studentId: record.studentId,
-          status: record.status,
-          checkInTime: record.checkInTime,
-          notes: record.notes
-        })),
-        totalStudents: classData.attendance.length,
-        presentCount: classData.attendance.filter(r => r.status === 'present').length,
-        absentCount: classData.attendance.filter(r => r.status === 'absent').length,
-        lateCount: classData.attendance.filter(r => r.status === 'late').length,
-        markedBy: 'system',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }];
-      setAttendance(transformedAttendance);
-    } else {
-      setAttendance([]);
-    }
-
-    // Transform assignments
-    if (classData.assignments) {
-      const transformedAssignments = classData.assignments.map((assignment, index) => ({
-        _id: `assignment_${Date.now()}_${index}`,
-        classId,
-        title: assignment.title,
-        description: assignment.description,
-        instructions: assignment.description,
-        type: 'individual' as const,
-        maxScore: 100,
-        dueDate: assignment.dueDate,
-        submissionFormat: 'text' as const,
-        isRequired: true,
-        allowLateSubmissions: false,
-        submissions: [],
-        createdBy: 'system',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }));
-      setAssignments(transformedAssignments);
-    } else {
-      setAssignments([]);
-    }
-
-    // Transform announcements
-    if (classData.announcements) {
-      const transformedAnnouncements = classData.announcements.map((announcement, index) => ({
-        _id: `announcement_${Date.now()}_${index}`,
-        classId,
-        title: announcement.isUrgent ? 'Urgent Announcement' : 'Class Announcement',
-        content: announcement.message,
-        type: announcement.isUrgent ? 'urgent' as const : 'general' as const,
-        priority: announcement.isUrgent ? 'high' as const : 'medium' as const,
-        targetAudience: 'all' as const,
-        isVisible: true,
-        isPinned: announcement.isUrgent,
-        readBy: announcement.readBy,
-        createdBy: 'system',
-        createdAt: announcement.createdAt,
-        updatedAt: announcement.createdAt
-      }));
-      setAnnouncements(transformedAnnouncements);
-    } else {
-      setAnnouncements([]);
-    }
-
-    console.log('Loaded all module data for class:', {
-      classId,
-      materials: classData.materials?.length || 0,
-      attendance: classData.attendance?.length || 0,
-      assignments: classData.assignments?.length || 0,
-      announcements: classData.announcements?.length || 0
-    });
-  }, []);
 
   // Filter states
   const [filters, setFilters] = useState<ClassFilters>({
@@ -191,11 +84,7 @@ const ClassManagement: React.FC = () => {
   // Tab navigation states
   const [activeTab, setActiveTab] = useState<'classes' | 'enrollments' | 'materials' | 'attendance' | 'assignments' | 'announcements'>('classes');
 
-  // Module data states
-  const [materials, setMaterials] = useState<ClassMaterial[]>([]);
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-  const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
-  const [announcements, setAnnouncements] = useState<ClassAnnouncement[]>([]);
+  // Module data states - now using selectedClass properties directly
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -336,7 +225,6 @@ const ClassManagement: React.FC = () => {
         const updatedClassData = await classManagementApiService.getClassById(selectedClass._id);
         if (updatedClassData) {
           setSelectedClass(updatedClassData);
-          loadAllModuleData(updatedClassData, selectedClass._id);
         }
       } catch (error) {
         console.error('Error reloading class data:', error);
@@ -361,7 +249,6 @@ const ClassManagement: React.FC = () => {
         const updatedClassData = await classManagementApiService.getClassById(selectedClass._id);
         if (updatedClassData) {
           setSelectedClass(updatedClassData);
-          loadAllModuleData(updatedClassData, selectedClass._id);
         }
       } catch (error) {
         console.error('Error reloading class data:', error);
@@ -386,7 +273,6 @@ const ClassManagement: React.FC = () => {
         const updatedClassData = await classManagementApiService.getClassById(selectedClass._id);
         if (updatedClassData) {
           setSelectedClass(updatedClassData);
-          loadAllModuleData(updatedClassData, selectedClass._id);
         }
       } catch (error) {
         console.error('Error reloading class data:', error);
@@ -411,7 +297,6 @@ const ClassManagement: React.FC = () => {
         const updatedClassData = await classManagementApiService.getClassById(selectedClass._id);
         if (updatedClassData) {
           setSelectedClass(updatedClassData);
-          loadAllModuleData(updatedClassData, selectedClass._id);
         }
       } catch (error) {
         console.error('Error reloading class data:', error);
@@ -550,10 +435,10 @@ const ClassManagement: React.FC = () => {
   const tabs = [
     { id: 'classes' as const, label: 'Classes', icon: BookOpen, count: classes.length },
     { id: 'enrollments' as const, label: 'Enrollments', icon: UserCheck, count: getEnrollmentTabCount() },
-    { id: 'materials' as const, label: 'Materials', icon: FileText, count: materials.length },
-    { id: 'attendance' as const, label: 'Attendance', icon: ClipboardCheck, count: attendance.length },
-    { id: 'assignments' as const, label: 'Assignments', icon: PenTool, count: assignments.length },
-    { id: 'announcements' as const, label: 'Announcements', icon: Megaphone, count: announcements.length }
+    { id: 'materials' as const, label: 'Materials', icon: FileText, count: selectedClass?.materials?.length || 0 },
+    { id: 'attendance' as const, label: 'Attendance', icon: ClipboardCheck, count: selectedClass?.attendance?.length || 0 },
+    { id: 'assignments' as const, label: 'Assignments', icon: PenTool, count: selectedClass?.assignments?.length || 0 },
+    { id: 'announcements' as const, label: 'Announcements', icon: Megaphone, count: selectedClass?.announcements?.length || 0 }
   ];
 
   return (
@@ -627,30 +512,21 @@ const ClassManagement: React.FC = () => {
                   if (classId) {
                     try {
                       // Load complete class data with embedded modules using the single API call
-                      const classWithEmbeddedData = await classManagementApiService.getClassById(classId);
-                      if (classWithEmbeddedData) {
-                        setSelectedClass(classWithEmbeddedData);
-                        // Load all module data using the utility function
-                        loadAllModuleData(classWithEmbeddedData, classId);
+                      const classDetails = await classManagementApiService.getClassById(classId);
+                      if (classDetails) {
+                        console.log('Loaded class with embedded data:', classDetails);
+                        setSelectedClass(classDetails);                       
                       }
                     } catch (error) {
                       console.error('Error loading class data:', error);
                       // Fallback to basic class selection
                       const classItem = classes.find(c => c._id === classId);
                       setSelectedClass(classItem || null);
-                      // Clear module data on error
-                      setMaterials([]);
-                      setAttendance([]);
-                      setAssignments([]);
-                      setAnnouncements([]);
+                      // Module data cleared via selectedClass state
                     }
                   } else {
                     setSelectedClass(null);
-                    // Clear all module data when no class is selected
-                    setMaterials([]);
-                    setAttendance([]);
-                    setAssignments([]);
-                    setAnnouncements([]);
+                    // Module data cleared via selectedClass state
                   }
                 }}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1102,16 +978,16 @@ const ClassManagement: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              
-              {materials.length === 0 ? (
+
+              {selectedClass?.materials?.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="mx-auto h-8 w-8 text-gray-400" />
                   <p className="mt-2 text-sm text-gray-500">No materials uploaded for this class.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {materials.map((material) => (
-                    <div key={material._id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  {selectedClass?.materials?.map((material, index) => (
+                    <div key={`material-${index}`} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                       <div className="flex items-start justify-between mb-2">
                         <FileText className="h-5 w-5 text-blue-500 mt-1" />
                         <DropdownMenu>
@@ -1129,8 +1005,10 @@ const ClassManagement: React.FC = () => {
                       <h4 className="font-medium text-sm mb-1">{material.title}</h4>
                       <p className="text-xs text-gray-500 mb-2">{material.description}</p>
                       <div className="flex items-center justify-between text-xs text-gray-400">
-                        <span>{material.type}</span>
-                        <span>{material.downloadCount} downloads</span>
+                        <span>{material.fileType}</span>
+                        <span className={material.isRequired ? 'text-red-500 font-medium' : 'text-gray-400'}>
+                          {material.isRequired ? 'Required' : 'Optional'}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -1169,30 +1047,44 @@ const ClassManagement: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              
-              {attendance.length === 0 ? (
+
+              {selectedClass?.attendance?.length === 0 ? (
                 <div className="text-center py-8">
                   <ClipboardCheck className="mx-auto h-8 w-8 text-gray-400" />
                   <p className="mt-2 text-sm text-gray-500">No attendance records found for this class.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {attendance.map((record) => (
-                    <div key={record._id} className="border rounded-lg p-4">
+                  {selectedClass?.attendance?.map((record, index) => (
+                    <div key={`attendance-${index}`} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-4">
                         <div>
-                          <h4 className="font-medium">Session: {formatDate(record.sessionDate)}</h4>
-                          <p className="text-sm text-gray-500">Session Topic</p>
+                          <h4 className="font-medium">Student: {record.studentId}</h4>
+                          <p className="text-sm text-gray-500">
+                            Status: <span className={`font-medium ${
+                              record.status === 'present' ? 'text-green-600' : 
+                              record.status === 'late' ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                            </span>
+                          </p>
                         </div>
                         <div className="text-right">
-                          <div className="flex space-x-4 text-sm">
-                            <span className="text-green-600">Present: {record.presentCount}</span>
-                            <span className="text-red-600">Absent: {record.absentCount}</span>
-                            <span className="text-yellow-600">Late: {record.lateCount}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Total: {record.totalStudents} students
-                          </p>
+                          {record.checkInTime && (
+                            <p className="text-xs text-gray-500">
+                              Check In: {record.checkInTime}
+                            </p>
+                          )}
+                          {record.checkOutTime && (
+                            <p className="text-xs text-gray-500">
+                              Check Out: {record.checkOutTime}
+                            </p>
+                          )}
+                          {record.notes && (
+                            <p className="text-xs text-gray-600 mt-1">
+                              Notes: {record.notes}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1232,31 +1124,33 @@ const ClassManagement: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              
-              {assignments.length === 0 ? (
+
+              {selectedClass?.assignments?.length === 0 ? (
                 <div className="text-center py-8">
                   <PenTool className="mx-auto h-8 w-8 text-gray-400" />
                   <p className="mt-2 text-sm text-gray-500">No assignments created for this class.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {assignments.map((assignment) => (
-                    <div key={assignment._id} className="border rounded-lg p-4">
+                  {selectedClass?.assignments?.map((assignment, index) => (
+                    <div key={`assignment-${index}`} className="border rounded-lg p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h4 className="font-medium mb-2">{assignment.title}</h4>
                           <p className="text-sm text-gray-600 mb-2">{assignment.description}</p>
                           <div className="flex items-center space-x-4 text-xs text-gray-500">
                             <span>Due: {formatDate(assignment.dueDate)}</span>
-                            <span>Max Score: {assignment.maxScore}</span>
-                            <span>Submissions: {assignment.submissions?.length || 0}</span>
+                            <span>Students Submitted: {assignment.submittedStudents?.length || 0}</span>
+                            <span className={assignment.isCompleted ? 'text-green-600' : 'text-yellow-600'}>
+                              {assignment.isCompleted ? 'Completed' : 'In Progress'}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <BadgeComponent 
-                            variant={assignment.isRequired ? 'default' : 'secondary'}
+                            variant={assignment.isCompleted ? 'default' : 'secondary'}
                           >
-                            {assignment.isRequired ? 'Required' : 'Optional'}
+                            {assignment.isCompleted ? 'Completed' : 'Pending'}
                           </BadgeComponent>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -1309,30 +1203,27 @@ const ClassManagement: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              
-              {announcements.length === 0 ? (
+
+              {selectedClass?.announcements?.length === 0 ? (
                 <div className="text-center py-8">
                   <Megaphone className="mx-auto h-8 w-8 text-gray-400" />
                   <p className="mt-2 text-sm text-gray-500">No announcements posted for this class.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {announcements.map((announcement) => (
-                    <div key={announcement._id} className="border rounded-lg p-4">
+                  {selectedClass?.announcements?.map((announcement, index) => (
+                    <div key={`announcement-${index}`} className="border rounded-lg p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center space-x-2">
-                          <h4 className="font-medium">{announcement.title}</h4>
-                          {announcement.isPinned && (
-                            <BadgeComponent variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                              <Pin className="h-3 w-3 mr-1" />
-                              Pinned
+                          <h4 className="font-medium">Announcement</h4>
+                          {announcement.isUrgent && (
+                            <BadgeComponent variant="destructive" className="bg-red-50 text-red-700 border-red-200">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Urgent
                             </BadgeComponent>
                           )}
-                          <BadgeComponent 
-                            variant={announcement.priority === 'high' ? 'destructive' : 
-                                   announcement.priority === 'medium' ? 'default' : 'secondary'}
-                          >
-                            {announcement.priority}
+                          <BadgeComponent variant="outline">
+                            {formatDate(announcement.createdAt)}
                           </BadgeComponent>
                         </div>
                         <DropdownMenu>
@@ -1343,26 +1234,16 @@ const ClassManagement: React.FC = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
                             <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem>
-                              {announcement.isPinned ? 'Unpin' : 'Pin'} Announcement
-                            </DropdownMenuItem>
                             <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
                       
-                      <p className="text-sm text-gray-600 mb-3">{announcement.content}</p>
+                      <p className="text-sm text-gray-600 mb-3">{announcement.message}</p>
                       
-                      {announcement.attachments && announcement.attachments.length > 0 && (
+                      {announcement.readBy && announcement.readBy.length > 0 && (
                         <div className="mb-3">
-                          <p className="text-xs text-gray-500 mb-1">Attachments:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {announcement.attachments.map((attachment, index) => (
-                              <span key={index} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                                {attachment.fileName}
-                              </span>
-                            ))}
-                          </div>
+                          <p className="text-xs text-gray-500 mb-1">Read by {announcement.readBy.length} student(s)</p>
                         </div>
                       )}
                       
