@@ -125,6 +125,12 @@ export const createScheduleClass = async (data: CreateScheduleClassData): Promis
   const scheduleClass = new ScheduleClassModel(data)
   await scheduleClass.save()
 
+  // Populate the created schedule class before returning
+  await scheduleClass.populate('courseId', 'title description category level')
+  await scheduleClass.populate('instructorId', 'firstName lastName email phone')
+  await scheduleClass.populate('enrolledStudents.studentId', 'firstName lastName email phone fullName')
+  await scheduleClass.populate('waitlistStudents.studentId', 'firstName lastName email phone fullName')
+
   return scheduleClass
 }
 
@@ -175,7 +181,7 @@ export const getScheduleClasses = async (filters: FilterOptions) => {
       .find(query)
       .populate('courseId', 'title category level')
       .populate('instructorId', 'firstName lastName email')
-      .populate('enrolledStudents.studentId', 'firstName lastName email')
+      .populate('enrolledStudents.studentId', 'firstName lastName email fullName')
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(limit)
@@ -202,9 +208,9 @@ export const getScheduleClassById = async (classId: string): Promise<ScheduleCla
     .findById(classId)
     .populate('courseId', 'title description category level')
     .populate('instructorId', 'firstName lastName email phone')
-    .populate('enrolledStudents.studentId', 'firstName lastName email phone')
-    .populate('waitlistStudents.studentId', 'firstName lastName email phone')
-    .populate('attendance.studentId', 'firstName lastName email')
+    .populate('enrolledStudents.studentId', 'firstName lastName email phone fullName')
+    .populate('waitlistStudents.studentId', 'firstName lastName email phone fullName')
+    .populate('attendance.studentId', 'firstName lastName email fullName')
 
   return scheduleClass
 }
@@ -300,6 +306,8 @@ export const updateScheduleClass = async (classId: string, updateData: UpdateSch
     .findByIdAndUpdate(classId, updateData, { new: true, runValidators: true })
     .populate('courseId', 'title category level')
     .populate('instructorId', 'firstName lastName email')
+    .populate('enrolledStudents.studentId', 'firstName lastName email phone fullName')
+    .populate('waitlistStudents.studentId', 'firstName lastName email phone fullName')
 
   return updatedClass
 }
@@ -535,8 +543,8 @@ export const getClassesByStudent = async (studentId: string, filters?: Partial<F
 export const getAttendanceReport = async (classId: string) => {
   const scheduleClass = await ScheduleClassModel
     .findById(classId)
-    .populate('enrolledStudents.studentId', 'firstName lastName email')
-    .populate('attendance.studentId', 'firstName lastName email')
+    .populate('enrolledStudents.studentId', 'firstName lastName email fullName')
+    .populate('attendance.studentId', 'firstName lastName email fullName')
 
   if (!scheduleClass) {
     throw new Error("Scheduled class not found")

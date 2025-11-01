@@ -60,6 +60,7 @@ export {
   type Address,
   type RecurringPattern,
   type ClassEnrollment,
+  type EnrolledStudent,
   type CreateEnrollmentRequest,
   type ClassMaterial,
   type CreateMaterialRequest,
@@ -73,5 +74,10 @@ export {
   type GradeAssignmentRequest,
   type ClassAnnouncement,
   type AnnouncementAttachment,
-  type CreateAnnouncementRequest
+  type CreateAnnouncementRequest,
+  type ApiAttendanceRecord,
+  type ApiMaterial,
+  type ApiAssignment,
+  type ApiAnnouncement,
+  ApiResponseTransformer
 } from './classManagementApiService';

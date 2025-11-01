@@ -1,5 +1,28 @@
 // Class Management API Service
 // This service handles all API operations for class scheduling and management
+//
+// ENROLLMENT INFORMATION:
+// The API response now includes enrolled student information in the format:
+// "enrolledStudents": [
+//   {
+//     "_id": "enrollment_id",
+//     "studentId": {
+//       "_id": "student_id",
+//       "firstName": "Student",
+//       "lastName": "Name", 
+//       "email": "student@email.com"
+//     },
+//     "enrollmentDate": "2025-11-01T11:59:16.891Z",
+//     "status": "enrolled"
+//   }
+// ]
+//
+// Usage example:
+// const classData = await classManagementApiService.getClassById('class_id');
+// const enrolledCount = classData.currentEnrollments;
+// const studentNames = classData.enrolledStudents?.map(enrollment => 
+//   ClassManagementApiService.getStudentDisplayName(enrollment)
+// );
 
 import { store } from '../store';
 import type { RootState } from '../store';
@@ -20,6 +43,18 @@ export interface RecurringPattern {
   daysOfWeek?: number[]; // 0 = Sunday, 1 = Monday, etc.
 }
 
+export interface EnrolledStudent {
+  _id: string;
+  studentId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  enrollmentDate: string;
+  status: 'enrolled' | 'waitlist' | 'cancelled' | 'completed';
+}
+
 export interface ClassManagement {
   _id: string;
   courseId?: string;
@@ -36,6 +71,11 @@ export interface ClassManagement {
   capacity: number;
   maxEnrollments: number;
   currentEnrollments?: number; // For display purposes
+  enrolledStudents?: EnrolledStudent[]; // API enrollment information
+  attendance?: ApiAttendanceRecord[]; // API attendance data
+  materials?: ApiMaterial[]; // API materials data
+  assignments?: ApiAssignment[]; // API assignments data
+  announcements?: ApiAnnouncement[]; // API announcements data
   isRecurring: boolean;
   recurringPattern?: RecurringPattern;
   objectives: string[];
@@ -135,6 +175,7 @@ export interface ApiClassResponse {
   capacity?: number;
   maxEnrollments?: number;
   currentEnrollments?: number;
+  enrolledStudents?: EnrolledStudent[];
   isRecurring?: boolean;
   recurringPattern?: RecurringPattern;
   objectives?: string[];
@@ -147,6 +188,43 @@ export interface ApiClassResponse {
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
+  // New embedded data from API response
+  attendance?: ApiAttendanceRecord[];
+  materials?: ApiMaterial[];
+  assignments?: ApiAssignment[];
+  announcements?: ApiAnnouncement[];
+}
+
+// API Response Interfaces for embedded data
+export interface ApiAttendanceRecord {
+  studentId: string;
+  status: 'present' | 'absent' | 'late';
+  checkInTime?: string;
+  checkOutTime?: string;
+  notes?: string;
+}
+
+export interface ApiMaterial {
+  title: string;
+  description: string;
+  fileUrl: string;
+  fileType: string;
+  isRequired: boolean;
+}
+
+export interface ApiAssignment {
+  title: string;
+  description: string;
+  dueDate: string;
+  isCompleted: boolean;
+  submittedStudents: string[];
+}
+
+export interface ApiAnnouncement {
+  message: string;
+  createdAt: string;
+  isUrgent: boolean;
+  readBy: string[];
 }
 
 // Mock data for development - replace with actual API calls
@@ -173,6 +251,30 @@ const mockClasses: ClassManagement[] = [
     capacity: 30,
     maxEnrollments: 25,
     currentEnrollments: 18,
+    enrolledStudents: [
+      {
+        _id: '6905f614ff7ba823c161eede',
+        studentId: {
+          _id: '68f4a9e6f9348402db1e8db1',
+          firstName: 'Sumitra',
+          lastName: 'Devi',
+          email: 'sumitra05465@gmail.com'
+        },
+        enrollmentDate: '2025-11-01T11:59:16.891Z',
+        status: 'enrolled'
+      },
+      {
+        _id: '6905f614ff7ba823c161eedf',
+        studentId: {
+          _id: '68f4a9e6f9348402db1e8db2',
+          firstName: 'Arjun',
+          lastName: 'Patel',
+          email: 'arjun.patel@email.com'
+        },
+        enrollmentDate: '2025-10-28T10:30:00.000Z',
+        status: 'enrolled'
+      }
+    ],
     isRecurring: false,
     objectives: [
       'Understand JavaScript syntax',
@@ -218,6 +320,19 @@ const mockClasses: ClassManagement[] = [
     capacity: 30,
     maxEnrollments: 25,
     currentEnrollments: 22,
+    enrolledStudents: [
+      {
+        _id: '6905f614ff7ba823c161eee0',
+        studentId: {
+          _id: '68f4a9e6f9348402db1e8db3',
+          firstName: 'Priya',
+          lastName: 'Sharma',
+          email: 'priya.sharma@email.com'
+        },
+        enrollmentDate: '2025-10-25T14:00:00.000Z',
+        status: 'enrolled'
+      }
+    ],
     isRecurring: true,
     recurringPattern: {
       type: 'weekly',
@@ -269,6 +384,19 @@ const mockClasses: ClassManagement[] = [
     capacity: 20,
     maxEnrollments: 18,
     currentEnrollments: 15,
+    enrolledStudents: [
+      {
+        _id: '6905f614ff7ba823c161eee1',
+        studentId: {
+          _id: '68f4a9e6f9348402db1e8db4',
+          firstName: 'Rahul',
+          lastName: 'Kumar',
+          email: 'rahul.kumar@email.com'
+        },
+        enrollmentDate: '2025-10-20T09:15:00.000Z',
+        status: 'enrolled'
+      }
+    ],
     isRecurring: false,
     objectives: [
       'Master React hooks usage',
@@ -491,6 +619,34 @@ const mockAnnouncements: ClassAnnouncement[] = [
 class ClassManagementApiService {
   private delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+  // Helper method to extract enrollment count from API response
+  private getEnrollmentCount(cls: ApiClassResponse): number {
+    if (cls.currentEnrollments !== undefined) {
+      return cls.currentEnrollments;
+    }
+    if (cls.enrolledStudents && Array.isArray(cls.enrolledStudents)) {
+      return cls.enrolledStudents.filter(student => student.status === 'enrolled').length;
+    }
+    return 0;
+  }
+
+  // Helper method to get student display name from enrollment
+  static getStudentDisplayName(student: EnrolledStudent): string {
+    const { firstName = '', lastName = '' } = student.studentId;
+    return `${firstName} ${lastName}`.trim() || student.studentId.email || 'Unknown Student';
+  }
+
+  // Helper method to map file types
+  private mapFileType(fileType: string): ClassMaterial['type'] {
+    const lowerType = fileType.toLowerCase();
+    if (lowerType.includes('pdf') || lowerType.includes('doc')) return 'document';
+    if (lowerType.includes('video') || lowerType.includes('mp4')) return 'video';
+    if (lowerType.includes('audio') || lowerType.includes('mp3')) return 'audio';
+    if (lowerType.includes('image') || lowerType.includes('png') || lowerType.includes('jpg')) return 'image';
+    if (lowerType.includes('link') || lowerType.includes('url')) return 'link';
+    return 'other';
+  }
+
   // Helper method to get authentication headers
   private getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
@@ -565,7 +721,7 @@ class ClassManagementApiService {
       
       // Transform API response to match our expected format
       // The API might return the data directly or wrapped in a data property
-      const classesData = apiResponse.data.classes || apiResponse;
+      const classesData = apiResponse.data?.classes || apiResponse.classes || apiResponse.data || apiResponse;
       const classes: ApiClassResponse[] = Array.isArray(classesData) ? classesData : [];
       
       // Transform each class to ensure it matches our interface
@@ -590,7 +746,8 @@ class ClassManagementApiService {
         },
         capacity: cls.capacity || 0,
         maxEnrollments: cls.maxEnrollments || 0,
-        currentEnrollments: cls.currentEnrollments || 0,
+        currentEnrollments: this.getEnrollmentCount(cls),
+        enrolledStudents: cls.enrolledStudents || [],
         isRecurring: cls.isRecurring || false,
         recurringPattern: cls.recurringPattern,
         objectives: cls.objectives || [],
@@ -764,7 +921,8 @@ class ClassManagementApiService {
         },
         capacity: classResult.capacity || 0,
         maxEnrollments: classResult.maxEnrollments || 0,
-        currentEnrollments: classResult.currentEnrollments || 0,
+        currentEnrollments: this.getEnrollmentCount(classResult),
+        enrolledStudents: classResult.enrolledStudents || [],
         isRecurring: classResult.isRecurring || false,
         recurringPattern: classResult.recurringPattern,
         objectives: classResult.objectives || [],
@@ -778,6 +936,23 @@ class ClassManagementApiService {
         createdAt: classResult.createdAt || new Date().toISOString(),
         updatedAt: classResult.updatedAt || new Date().toISOString()
       };
+      
+      // Attach embedded data directly to the ClassManagement interface properties
+      classData.materials = classResult.materials || [];
+      classData.attendance = classResult.attendance || [];
+      classData.assignments = classResult.assignments || [];
+      classData.announcements = classResult.announcements || [];
+      
+      console.log('Class data with embedded information:', {
+        classId: classData._id,
+        className: classData.className,
+        embeddedDataCounts: {
+          materials: classData.materials?.length || 0,
+          attendance: classData.attendance?.length || 0,
+          assignments: classData.assignments?.length || 0,
+          announcements: classData.announcements?.length || 0
+        }
+      });
       
       return classData;
       
@@ -868,7 +1043,8 @@ class ClassManagementApiService {
         address: classResult.address || classData.address,
         capacity: classResult.capacity || classData.capacity,
         maxEnrollments: classResult.maxEnrollments || classData.maxEnrollments,
-        currentEnrollments: classResult.currentEnrollments || 0,
+        currentEnrollments: this.getEnrollmentCount(classResult),
+        enrolledStudents: classResult.enrolledStudents || [],
         isRecurring: classResult.isRecurring || classData.isRecurring,
         recurringPattern: classResult.recurringPattern || classData.recurringPattern,
         objectives: classResult.objectives || classData.objectives,
@@ -965,7 +1141,8 @@ class ClassManagementApiService {
         },
         capacity: classResult.capacity || classData.capacity || 0,
         maxEnrollments: classResult.maxEnrollments || classData.maxEnrollments || 0,
-        currentEnrollments: classResult.currentEnrollments || 0,
+        currentEnrollments: this.getEnrollmentCount(classResult),
+        enrolledStudents: classResult.enrolledStudents || [],
         isRecurring: classResult.isRecurring !== undefined ? classResult.isRecurring : (classData.isRecurring || false),
         recurringPattern: classResult.recurringPattern || classData.recurringPattern,
         objectives: classResult.objectives || classData.objectives || [],
@@ -1253,8 +1430,43 @@ class ClassManagementApiService {
   // ===============================
 
   async getClassMaterials(classId: string): Promise<ClassMaterial[]> {
-    await this.delay(300);
-    return mockMaterials.filter(material => material.classId === classId);
+    try {
+      // Fetch class data which includes embedded materials
+      const classData = await this.getClassById(classId);
+      if (!classData) {
+        console.warn(`Class with ID ${classId} not found`);
+        return mockMaterials.filter(material => material.classId === classId);
+      }
+
+      // Check if the API response includes embedded materials
+      if (classData.materials && Array.isArray(classData.materials)) {
+        // Transform API materials to ClassMaterial format
+        const transformedMaterials: ClassMaterial[] = classData.materials.map((material, index) => ({
+          _id: `material_${Date.now()}_${index}`,
+          classId,
+          title: material.title,
+          description: material.description,
+          type: this.mapFileType(material.fileType),
+          fileUrl: material.fileUrl,
+          fileName: material.title,
+          downloadCount: 0,
+          isRequired: material.isRequired,
+          uploadedBy: 'system',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }));
+        return transformedMaterials;
+      }
+
+      // Fallback to mock data if no embedded materials
+      await this.delay(300);
+      return mockMaterials.filter(material => material.classId === classId);
+    } catch (error) {
+      console.error('Error fetching class materials:', error);
+      // Fallback to mock data on error
+      await this.delay(300);
+      return mockMaterials.filter(material => material.classId === classId);
+    }
   }
 
   async uploadMaterial(materialData: CreateMaterialRequest): Promise<ClassMaterial> {
@@ -1352,8 +1564,30 @@ class ClassManagementApiService {
   // ===============================
 
   async getClassAttendance(classId: string): Promise<AttendanceRecord[]> {
-    await this.delay(300);
-    return mockAttendance.filter(record => record.classId === classId);
+    try {
+      // Fetch class data which includes embedded attendance
+      const classData = await this.getClassById(classId);
+      if (!classData) {
+        console.warn(`Class with ID ${classId} not found`);
+        return mockAttendance.filter(record => record.classId === classId);
+      }
+
+      // Check if the API response includes embedded attendance
+      if (classData.attendance && Array.isArray(classData.attendance)) {
+        const transformedAttendance = ApiResponseTransformer.transformAttendanceRecords(classData.attendance);
+        // Set the correct classId for each record
+        return transformedAttendance.map(record => ({ ...record, classId }));
+      }
+
+      // Fallback to mock data if no embedded attendance
+      await this.delay(300);
+      return mockAttendance.filter(record => record.classId === classId);
+    } catch (error) {
+      console.error('Error fetching class attendance:', error);
+      // Fallback to mock data on error
+      await this.delay(300);
+      return mockAttendance.filter(record => record.classId === classId);
+    }
   }
 
   async markAttendance(attendanceData: MarkAttendanceRequest): Promise<AttendanceRecord> {
@@ -1460,8 +1694,46 @@ class ClassManagementApiService {
   // ===============================
 
   async getClassAssignments(classId: string): Promise<ClassAssignment[]> {
-    await this.delay(300);
-    return mockAssignments.filter(assignment => assignment.classId === classId);
+    try {
+      // Fetch class data which includes embedded assignments
+      const classData = await this.getClassById(classId);
+      if (!classData) {
+        console.warn(`Class with ID ${classId} not found`);
+        return mockAssignments.filter(assignment => assignment.classId === classId);
+      }
+
+      // Check if the API response includes embedded assignments
+      if (classData.assignments && Array.isArray(classData.assignments)) {
+        // Transform API assignments to ClassAssignment format
+        const transformedAssignments: ClassAssignment[] = classData.assignments.map((assignment, index) => ({
+          _id: `assignment_${Date.now()}_${index}`,
+          classId,
+          title: assignment.title,
+          description: assignment.description,
+          instructions: assignment.description,
+          type: 'individual' as const,
+          maxScore: 100,
+          dueDate: assignment.dueDate,
+          submissionFormat: 'text' as const,
+          isRequired: true,
+          allowLateSubmissions: false,
+          submissions: [],
+          createdBy: 'system',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }));
+        return transformedAssignments;
+      }
+
+      // Fallback to mock data if no embedded assignments
+      await this.delay(300);
+      return mockAssignments.filter(assignment => assignment.classId === classId);
+    } catch (error) {
+      console.error('Error fetching class assignments:', error);
+      // Fallback to mock data on error
+      await this.delay(300);
+      return mockAssignments.filter(assignment => assignment.classId === classId);
+    }
   }
 
   async createAssignment(assignmentData: CreateAssignmentRequest): Promise<ClassAssignment> {
@@ -1591,15 +1863,60 @@ class ClassManagementApiService {
   // ===============================
 
   async getClassAnnouncements(classId: string): Promise<ClassAnnouncement[]> {
-    await this.delay(300);
-    return mockAnnouncements
-      .filter(announcement => announcement.classId === classId)
-      .sort((a, b) => {
-        // Sort by pinned first, then by creation date
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
+    try {
+      // Fetch class data which includes embedded announcements
+      const classData = await this.getClassById(classId);
+      if (!classData) {
+        console.warn(`Class with ID ${classId} not found`);
+        return mockAnnouncements.filter(announcement => announcement.classId === classId);
+      }
+
+      // Check if the API response includes embedded announcements
+      if (classData.announcements && Array.isArray(classData.announcements)) {
+        // Transform API announcements to ClassAnnouncement format
+        const transformedAnnouncements: ClassAnnouncement[] = classData.announcements.map((announcement, index) => ({
+          _id: `announcement_${Date.now()}_${index}`,
+          classId,
+          title: announcement.isUrgent ? 'Urgent Announcement' : 'Class Announcement',
+          content: announcement.message,
+          type: announcement.isUrgent ? 'urgent' as const : 'general' as const,
+          priority: announcement.isUrgent ? 'high' as const : 'medium' as const,
+          targetAudience: 'all' as const,
+          isVisible: true,
+          isPinned: announcement.isUrgent,
+          readBy: announcement.readBy,
+          createdBy: 'system',
+          createdAt: announcement.createdAt,
+          updatedAt: announcement.createdAt
+        }));
+        
+        // Set the correct classId for each announcement and sort them
+        return transformedAnnouncements
+          .map(announcement => ({ ...announcement, classId }))
+          .sort((a, b) => {
+            // Sort by pinned first, then by creation date
+            if (a.isPinned && !b.isPinned) return -1;
+            if (!a.isPinned && b.isPinned) return 1;
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+      }
+
+      // Fallback to mock data if no embedded announcements
+      await this.delay(300);
+      return mockAnnouncements
+        .filter(announcement => announcement.classId === classId)
+        .sort((a, b) => {
+          // Sort by pinned first, then by creation date
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+    } catch (error) {
+      console.error('Error fetching class announcements:', error);
+      // Fallback to mock data on error
+      await this.delay(300);
+      return mockAnnouncements.filter(announcement => announcement.classId === classId);
+    }
   }
 
   async createAnnouncement(announcementData: CreateAnnouncementRequest): Promise<ClassAnnouncement> {
@@ -1923,6 +2240,109 @@ export interface CreateAnnouncementRequest {
   expiresAt?: string;
   attachments?: AnnouncementAttachment[];
   createdBy: string;
+}
+
+// ===============================
+// API RESPONSE TRANSFORMATION HELPERS
+// ===============================
+
+// Helper functions to transform API response data to internal interfaces
+export class ApiResponseTransformer {
+  static transformAttendanceRecords(apiAttendance: ApiAttendanceRecord[] = []): AttendanceRecord[] {
+    // Group attendance by session (for now, create one session)
+    if (apiAttendance.length === 0) return [];
+    
+    const sessionAttendance: StudentAttendance[] = apiAttendance.map(record => ({
+      studentId: record.studentId,
+      status: record.status,
+      checkInTime: record.checkInTime,
+      notes: record.notes
+    }));
+
+    const presentCount = apiAttendance.filter(r => r.status === 'present').length;
+    const absentCount = apiAttendance.filter(r => r.status === 'absent').length;
+    const lateCount = apiAttendance.filter(r => r.status === 'late').length;
+
+    return [{
+      _id: `attendance_${Date.now()}`,
+      classId: '',
+      sessionDate: new Date().toISOString().split('T')[0],
+      sessionNumber: 1,
+      studentAttendance: sessionAttendance,
+      totalStudents: apiAttendance.length,
+      presentCount,
+      absentCount,
+      lateCount,
+      markedBy: 'system',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }];
+  }
+
+  static transformMaterials(apiMaterials: ApiMaterial[] = []): ClassMaterial[] {
+    return apiMaterials.map((material, index) => ({
+      _id: `material_${Date.now()}_${index}`,
+      classId: '',
+      title: material.title,
+      description: material.description,
+      type: this.mapFileType(material.fileType),
+      fileUrl: material.fileUrl,
+      fileName: material.title,
+      downloadCount: 0,
+      isRequired: material.isRequired,
+      uploadedBy: 'system',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }));
+  }
+
+  static transformAssignments(apiAssignments: ApiAssignment[] = []): ClassAssignment[] {
+    return apiAssignments.map((assignment, index) => ({
+      _id: `assignment_${Date.now()}_${index}`,
+      classId: '',
+      title: assignment.title,
+      description: assignment.description,
+      instructions: assignment.description,
+      type: 'individual' as const,
+      maxScore: 100,
+      dueDate: assignment.dueDate,
+      submissionFormat: 'text' as const,
+      isRequired: true,
+      allowLateSubmissions: false,
+      submissions: [],
+      createdBy: 'system',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }));
+  }
+
+  static transformAnnouncements(apiAnnouncements: ApiAnnouncement[] = []): ClassAnnouncement[] {
+    return apiAnnouncements.map((announcement, index) => ({
+      _id: `announcement_${Date.now()}_${index}`,
+      classId: '',
+      title: announcement.isUrgent ? 'Urgent Announcement' : 'Class Announcement',
+      content: announcement.message,
+      type: announcement.isUrgent ? 'urgent' as const : 'general' as const,
+      priority: announcement.isUrgent ? 'high' as const : 'medium' as const,
+      targetAudience: 'all' as const,
+      isVisible: true,
+      isPinned: announcement.isUrgent,
+      readBy: announcement.readBy,
+      createdBy: 'system',
+      createdAt: announcement.createdAt,
+      updatedAt: announcement.createdAt
+    }));
+  }
+
+  private static mapFileType(fileType: string): ClassMaterial['type'] {
+    const lowerType = fileType.toLowerCase();
+    if (lowerType.includes('pdf') || lowerType.includes('doc')) return 'document';
+    if (lowerType.includes('video') || lowerType.includes('mp4')) return 'video';
+    if (lowerType.includes('audio') || lowerType.includes('mp3')) return 'audio';
+    if (lowerType.includes('image') || lowerType.includes('png') || lowerType.includes('jpg')) return 'image';
+    if (lowerType.includes('link') || lowerType.includes('url')) return 'link';
+    return 'other';
+  }
 }
 
 // Export singleton instance

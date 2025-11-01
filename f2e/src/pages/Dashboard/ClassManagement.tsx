@@ -53,7 +53,6 @@ import {
   classManagementApiService, 
   type ClassManagement as Class, 
   type ClassFilters,
-  type ClassEnrollment,
   type ClassMaterial,
   type ClassAttendanceRecord as AttendanceRecord,
   type ClassAssignment,
@@ -65,6 +64,110 @@ const ClassManagement: React.FC = () => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Utility function to transform and load all module data from class response
+  const loadAllModuleData = useCallback((classData: Class, classId: string) => {
+    // Transform materials
+    if (classData.materials) {
+      const transformedMaterials = classData.materials.map((material, index) => ({
+        _id: `material_${Date.now()}_${index}`,
+        classId,
+        title: material.title,
+        description: material.description,
+        type: 'document' as const,
+        fileUrl: material.fileUrl,
+        fileName: material.title,
+        downloadCount: 0,
+        isRequired: material.isRequired,
+        uploadedBy: 'system',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+      setMaterials(transformedMaterials);
+    } else {
+      setMaterials([]);
+    }
+
+    // Transform attendance
+    if (classData.attendance) {
+      const transformedAttendance = [{
+        _id: `attendance_${Date.now()}`,
+        classId,
+        sessionDate: new Date().toISOString().split('T')[0],
+        sessionNumber: 1,
+        studentAttendance: classData.attendance.map(record => ({
+          studentId: record.studentId,
+          status: record.status,
+          checkInTime: record.checkInTime,
+          notes: record.notes
+        })),
+        totalStudents: classData.attendance.length,
+        presentCount: classData.attendance.filter(r => r.status === 'present').length,
+        absentCount: classData.attendance.filter(r => r.status === 'absent').length,
+        lateCount: classData.attendance.filter(r => r.status === 'late').length,
+        markedBy: 'system',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }];
+      setAttendance(transformedAttendance);
+    } else {
+      setAttendance([]);
+    }
+
+    // Transform assignments
+    if (classData.assignments) {
+      const transformedAssignments = classData.assignments.map((assignment, index) => ({
+        _id: `assignment_${Date.now()}_${index}`,
+        classId,
+        title: assignment.title,
+        description: assignment.description,
+        instructions: assignment.description,
+        type: 'individual' as const,
+        maxScore: 100,
+        dueDate: assignment.dueDate,
+        submissionFormat: 'text' as const,
+        isRequired: true,
+        allowLateSubmissions: false,
+        submissions: [],
+        createdBy: 'system',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+      setAssignments(transformedAssignments);
+    } else {
+      setAssignments([]);
+    }
+
+    // Transform announcements
+    if (classData.announcements) {
+      const transformedAnnouncements = classData.announcements.map((announcement, index) => ({
+        _id: `announcement_${Date.now()}_${index}`,
+        classId,
+        title: announcement.isUrgent ? 'Urgent Announcement' : 'Class Announcement',
+        content: announcement.message,
+        type: announcement.isUrgent ? 'urgent' as const : 'general' as const,
+        priority: announcement.isUrgent ? 'high' as const : 'medium' as const,
+        targetAudience: 'all' as const,
+        isVisible: true,
+        isPinned: announcement.isUrgent,
+        readBy: announcement.readBy,
+        createdBy: 'system',
+        createdAt: announcement.createdAt,
+        updatedAt: announcement.createdAt
+      }));
+      setAnnouncements(transformedAnnouncements);
+    } else {
+      setAnnouncements([]);
+    }
+
+    console.log('Loaded all module data for class:', {
+      classId,
+      materials: classData.materials?.length || 0,
+      attendance: classData.attendance?.length || 0,
+      assignments: classData.assignments?.length || 0,
+      announcements: classData.announcements?.length || 0
+    });
+  }, []);
 
   // Filter states
   const [filters, setFilters] = useState<ClassFilters>({
@@ -89,7 +192,6 @@ const ClassManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'classes' | 'enrollments' | 'materials' | 'attendance' | 'assignments' | 'announcements'>('classes');
 
   // Module data states
-  const [enrollments, setEnrollments] = useState<ClassEnrollment[]>([]);
   const [materials, setMaterials] = useState<ClassMaterial[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
@@ -121,36 +223,12 @@ const ClassManagement: React.FC = () => {
     }
   }, [filters]);
 
-  // Load module data based on selected class
-  const loadModuleData = useCallback(async (classId: string) => {
-    if (!classId) return;
-    
-    try {
-      const [enrollmentsData, materialsData, attendanceData, assignmentsData, announcementsData] = await Promise.all([
-        classManagementApiService.getClassEnrollments(classId),
-        classManagementApiService.getClassMaterials(classId),
-        classManagementApiService.getClassAttendance(classId),
-        classManagementApiService.getClassAssignments(classId),
-        classManagementApiService.getClassAnnouncements(classId)
-      ]);
 
-      setEnrollments(enrollmentsData);
-      setMaterials(materialsData);
-      setAttendance(attendanceData);
-      setAssignments(assignmentsData);
-      setAnnouncements(announcementsData);
-    } catch (err) {
-      console.error('Failed to load module data:', err);
-    }
-  }, []);
 
-  // Handle tab change and load appropriate data
+  // Handle tab change - just switch tabs, data is already loaded
   const handleTabChange = (tabId: typeof activeTab) => {
     setActiveTab(tabId);
-    // If switching to a module tab and a class is selected, load that class's data
-    if (tabId !== 'classes' && selectedClass?._id) {
-      loadModuleData(selectedClass._id);
-    }
+    // No need to load data again, it's already loaded when class was selected
   };
 
   // Load classes on component mount
@@ -237,10 +315,8 @@ const ClassManagement: React.FC = () => {
   };
 
   const handleEnrollmentSuccess = () => {
-    // Reload enrollment data for the selected class
-    if (selectedClass?._id) {
-      loadModuleData(selectedClass._id);
-    }
+    // Reload classes data to get updated enrollment information
+    loadClasses();
     setIsEnrollStudentModalOpen(false);
   };
 
@@ -253,10 +329,18 @@ const ClassManagement: React.FC = () => {
     setIsUploadMaterialModalOpen(true);
   };
 
-  const handleMaterialUploaded = () => {
-    // Reload material data for the selected class
+  const handleMaterialUploaded = async () => {
+    // Reload complete class data to get updated materials
     if (selectedClass?._id) {
-      loadModuleData(selectedClass._id);
+      try {
+        const updatedClassData = await classManagementApiService.getClassById(selectedClass._id);
+        if (updatedClassData) {
+          setSelectedClass(updatedClassData);
+          loadAllModuleData(updatedClassData, selectedClass._id);
+        }
+      } catch (error) {
+        console.error('Error reloading class data:', error);
+      }
     }
     setIsUploadMaterialModalOpen(false);
   };
@@ -270,10 +354,18 @@ const ClassManagement: React.FC = () => {
     setIsMarkAttendanceModalOpen(true);
   };
 
-  const handleAttendanceMarked = () => {
-    // Reload attendance data for the selected class
+  const handleAttendanceMarked = async () => {
+    // Reload complete class data to get updated attendance
     if (selectedClass?._id) {
-      loadModuleData(selectedClass._id);
+      try {
+        const updatedClassData = await classManagementApiService.getClassById(selectedClass._id);
+        if (updatedClassData) {
+          setSelectedClass(updatedClassData);
+          loadAllModuleData(updatedClassData, selectedClass._id);
+        }
+      } catch (error) {
+        console.error('Error reloading class data:', error);
+      }
     }
     setIsMarkAttendanceModalOpen(false);
   };
@@ -287,10 +379,18 @@ const ClassManagement: React.FC = () => {
     setIsCreateAssignmentModalOpen(true);
   };
 
-  const handleAssignmentCreated = () => {
-    // Reload assignment data for the selected class
+  const handleAssignmentCreated = async () => {
+    // Reload complete class data to get updated assignments
     if (selectedClass?._id) {
-      loadModuleData(selectedClass._id);
+      try {
+        const updatedClassData = await classManagementApiService.getClassById(selectedClass._id);
+        if (updatedClassData) {
+          setSelectedClass(updatedClassData);
+          loadAllModuleData(updatedClassData, selectedClass._id);
+        }
+      } catch (error) {
+        console.error('Error reloading class data:', error);
+      }
     }
     setIsCreateAssignmentModalOpen(false);
   };
@@ -304,10 +404,18 @@ const ClassManagement: React.FC = () => {
     setIsPostAnnouncementModalOpen(true);
   };
 
-  const handleAnnouncementPosted = () => {
-    // Reload announcement data for the selected class
+  const handleAnnouncementPosted = async () => {
+    // Reload complete class data to get updated announcements
     if (selectedClass?._id) {
-      loadModuleData(selectedClass._id);
+      try {
+        const updatedClassData = await classManagementApiService.getClassById(selectedClass._id);
+        if (updatedClassData) {
+          setSelectedClass(updatedClassData);
+          loadAllModuleData(updatedClassData, selectedClass._id);
+        }
+      } catch (error) {
+        console.error('Error reloading class data:', error);
+      }
     }
     setIsPostAnnouncementModalOpen(false);
   };
@@ -357,6 +465,17 @@ const ClassManagement: React.FC = () => {
   };
 
   // Utility functions
+  const getEnrollmentCount = (classItem: Class) => {
+    // Use currentEnrollments if available, otherwise count enrolled students
+    if (classItem.currentEnrollments !== undefined) {
+      return classItem.currentEnrollments;
+    }
+    if (classItem.enrolledStudents) {
+      return classItem.enrolledStudents.filter(student => student.status === 'enrolled').length;
+    }
+    return 0;
+  };
+
   const formatPrice = (price: number, currency: string = 'INR') => {
     if (price === 0) return 'Free';
     return `${currency === 'INR' ? '₹' : currency}${price}`;
@@ -423,9 +542,14 @@ const ClassManagement: React.FC = () => {
   }
 
   // Tab configuration
+  const getEnrollmentTabCount = () => {
+    if (selectedClass?.enrolledStudents) return selectedClass.enrolledStudents.length;
+    return 0;
+  };
+
   const tabs = [
     { id: 'classes' as const, label: 'Classes', icon: BookOpen, count: classes.length },
-    { id: 'enrollments' as const, label: 'Enrollments', icon: UserCheck, count: enrollments.length },
+    { id: 'enrollments' as const, label: 'Enrollments', icon: UserCheck, count: getEnrollmentTabCount() },
     { id: 'materials' as const, label: 'Materials', icon: FileText, count: materials.length },
     { id: 'attendance' as const, label: 'Attendance', icon: ClipboardCheck, count: attendance.length },
     { id: 'assignments' as const, label: 'Assignments', icon: PenTool, count: assignments.length },
@@ -498,11 +622,35 @@ const ClassManagement: React.FC = () => {
               <label className="text-sm font-medium text-gray-700">Select Class:</label>
               <select
                 value={selectedClass?._id || ''}
-                onChange={(e) => {
-                  const classItem = classes.find(c => c._id === e.target.value);
-                  setSelectedClass(classItem || null);
-                  if (classItem) {
-                    loadModuleData(classItem._id);
+                onChange={async (e) => {
+                  const classId = e.target.value;
+                  if (classId) {
+                    try {
+                      // Load complete class data with embedded modules using the single API call
+                      const classWithEmbeddedData = await classManagementApiService.getClassById(classId);
+                      if (classWithEmbeddedData) {
+                        setSelectedClass(classWithEmbeddedData);
+                        // Load all module data using the utility function
+                        loadAllModuleData(classWithEmbeddedData, classId);
+                      }
+                    } catch (error) {
+                      console.error('Error loading class data:', error);
+                      // Fallback to basic class selection
+                      const classItem = classes.find(c => c._id === classId);
+                      setSelectedClass(classItem || null);
+                      // Clear module data on error
+                      setMaterials([]);
+                      setAttendance([]);
+                      setAssignments([]);
+                      setAnnouncements([]);
+                    }
+                  } else {
+                    setSelectedClass(null);
+                    // Clear all module data when no class is selected
+                    setMaterials([]);
+                    setAttendance([]);
+                    setAssignments([]);
+                    setAnnouncements([]);
                   }
                 }}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -728,11 +876,11 @@ const ClassManagement: React.FC = () => {
                         </div>
                         <div className="text-sm text-gray-500 flex items-center mt-1">
                           <BookOpen className="h-3 w-3 mr-1" />
-                          {classItem.courseId.category}
+                          {classItem.courseName || 'Course'}
                         </div>
                         <div className="text-sm text-gray-500 flex items-center mt-1">
                           <User className="h-3 w-3 mr-1" />
-                          {classItem.instructorId.firstName}
+                          {classItem.instructorName || 'Instructor'}
                         </div>
                       </div>
                     </div>
@@ -768,7 +916,7 @@ const ClassManagement: React.FC = () => {
                     <div className="flex items-center mt-1">
                       <Users className="h-4 w-4 text-gray-400 mr-2" />
                       <span className="text-sm text-gray-500">
-                        {classItem.currentEnrollments || 0}/{classItem.capacity}
+                        {getEnrollmentCount(classItem)}/{classItem.capacity}
                       </span>
                     </div>
                   </td>
@@ -886,34 +1034,39 @@ const ClassManagement: React.FC = () => {
                 </Button>
               </div>
               
-              {enrollments.length === 0 ? (
+              {/* Display enrolled students from class data */}
+              {!selectedClass.enrolledStudents || selectedClass.enrolledStudents.length === 0 ? (
                 <div className="text-center py-8">
                   <UserCheck className="mx-auto h-8 w-8 text-gray-400" />
                   <p className="mt-2 text-sm text-gray-500">No enrollments found for this class.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {enrollments.map((enrollment) => (
-                    <div key={enrollment._id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{enrollment.studentName}</p>
-                          <p className="text-sm text-gray-500">{enrollment.studentEmail}</p>
-                        </div>
-                        <div className="text-right">
-                          <BadgeComponent 
-                            variant={enrollment.status === 'enrolled' ? 'default' : 'secondary'}
-                            className="mb-2"
-                          >
-                            {enrollment.status}
-                          </BadgeComponent>
-                          <p className="text-sm text-gray-500">
-                            Payment: {enrollment.paymentStatus}
-                          </p>
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-4">Enrolled Students ({selectedClass.enrolledStudents.length})</h4>
+                  <div className="space-y-4">
+                    {selectedClass.enrolledStudents.map((enrollment) => (
+                      <div key={enrollment._id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">
+                              {enrollment.studentId.firstName} {enrollment.studentId.lastName}
+                            </p>
+                            <p className="text-sm text-gray-500">{enrollment.studentId.email}</p>
+                            <p className="text-xs text-gray-400">
+                              Enrolled: {formatDate(enrollment.enrollmentDate.split('T')[0])}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <BadgeComponent 
+                              variant={enrollment.status === 'enrolled' ? 'default' : 'secondary'}
+                            >
+                              {enrollment.status}
+                            </BadgeComponent>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
