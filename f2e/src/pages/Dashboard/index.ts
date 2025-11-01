@@ -8,3 +8,4 @@ export { default as StudentManagement } from './StudentManagement';
 export { default as TrainerManagement } from './TrainerManagement';
 export { default as CourseManagement } from './CourseManagement';
 export { default as SalaryManagement } from './SalaryManagement';
+export { default as ClassManagement } from './ClassManagement';

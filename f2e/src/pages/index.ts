@@ -14,9 +14,9 @@ export {
   StudentManagement,
   TrainerManagement,
   CourseManagement,
-  SalaryManagement 
+  SalaryManagement, 
+  ClassManagement
 } from './Dashboard';
-export { default as ClassManagement } from './ClassManagement';
 export { Login } from './Login';
 export { Register } from './Register';
 export { ForgotPassword } from './ForgotPassword';

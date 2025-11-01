@@ -1,6 +1,7 @@
 // Class Management API Service
 // This service handles all API operations for class scheduling and management
 
+
 export interface Address {
   street: string;
   city: string;
@@ -98,6 +99,18 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message: string;
+}
+
+export interface InstructorUser {
+  _id?: string;
+  id?: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  email?: string;
+  role?: string;
+  isActive?: boolean;
 }
 
 // Mock data for development - replace with actual API calls
@@ -593,16 +606,68 @@ class ClassManagementApiService {
     ];
   }
 
-  // Get available instructors for dropdown
+  // Get available instructors from API endpoint
   async getInstructors(): Promise<Array<{ _id: string; name: string }>> {
-    await this.delay(200);
-    return [
-      { _id: '507f1f77bcf86cd799439012', name: 'Priya Sharma' },
-      { _id: '507f1f77bcf86cd799439015', name: 'Dr. Rajesh Kumar' },
-      { _id: '507f1f77bcf86cd799439019', name: 'Sarah Johnson' },
-      { _id: '507f1f77bcf86cd799439020', name: 'Alex Chen' },
-      { _id: '507f1f77bcf86cd799439021', name: 'Michael Brown' }
-    ];
+    try {
+      const apiUrl = 'http://localhost:5000/api/users?role=trainer&isActive=true';
+      
+      console.log('Making instructors API call:', {
+        url: apiUrl,
+        method: 'GET'
+      });
+
+      // Call the real API endpoint
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use the text
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(`Failed to fetch instructors: ${errorMessage}`);
+      }
+      const trainersInfo = await response.json();
+      const instructorsData: InstructorUser[] = trainersInfo.data;
+      console.log('Instructors API response:', instructorsData);
+      
+      // Transform the API response to match our expected format
+      // Assuming the API returns an array of user objects with _id and name properties
+      // or it might have firstName/lastName that need to be combined
+      const instructors = instructorsData.map((instructor: InstructorUser) => ({
+        _id: instructor._id || instructor.id || '',
+        name: instructor.name || `${instructor.firstName || ''} ${instructor.lastName || ''}`.trim() || instructor.username || 'Unknown Instructor'
+      }));
+
+      return instructors;
+      
+    } catch (error) {
+      console.error('Error fetching instructors:', error);
+      
+      // Handle network errors specifically
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('Unable to connect to the instructors service. Using fallback data.');
+        // Fallback to mock data if API is not available
+        return [
+          { _id: '507f1f77bcf86cd799439012', name: 'Priya Sharma' },
+          { _id: '507f1f77bcf86cd799439015', name: 'Dr. Rajesh Kumar' },
+          { _id: '507f1f77bcf86cd799439019', name: 'Sarah Johnson' },
+          { _id: '507f1f77bcf86cd799439020', name: 'Alex Chen' },
+          { _id: '507f1f77bcf86cd799439021', name: 'Michael Brown' }
+        ];
+      }
+      
+      throw error;
+    }
   }
 
   // ===============================
