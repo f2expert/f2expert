@@ -515,6 +515,9 @@ const ClassManagement: React.FC = () => {
                       const classDetails = await classManagementApiService.getClassById(classId);
                       if (classDetails) {
                         console.log('Loaded class with embedded data:', classDetails);
+                        console.log('Enrolled students structure:', classDetails.enrolledStudents);
+                        console.log('Sample enrolled student:', classDetails.enrolledStudents?.[0]);
+                        console.log('Sample student ID:', classDetails.enrolledStudents?.[0]?.studentId);
                         setSelectedClass(classDetails);                       
                       }
                     } catch (error) {
@@ -911,25 +914,25 @@ const ClassManagement: React.FC = () => {
               </div>
               
               {/* Display enrolled students from class data */}
-              {!selectedClass.enrolledStudents || selectedClass.enrolledStudents.length === 0 ? (
+              {!selectedClass?.enrolledStudents || selectedClass.enrolledStudents.length === 0 ? (
                 <div className="text-center py-8">
                   <UserCheck className="mx-auto h-8 w-8 text-gray-400" />
                   <p className="mt-2 text-sm text-gray-500">No enrollments found for this class.</p>
                 </div>
               ) : (
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-4">Enrolled Students ({selectedClass.enrolledStudents.length})</h4>
+                  <h4 className="font-medium text-gray-900 mb-4">Enrolled Students ({selectedClass.enrolledStudents?.length || 0})</h4>
                   <div className="space-y-4">
                     {selectedClass.enrolledStudents.map((enrollment) => (
                       <div key={enrollment._id} className="border rounded-lg p-4">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-medium">
-                              {enrollment.studentId.firstName} {enrollment.studentId.lastName}
+                              {enrollment.studentId?.firstName || 'N/A'} {enrollment.studentId?.lastName || ''}
                             </p>
-                            <p className="text-sm text-gray-500">{enrollment.studentId.email}</p>
+                            <p className="text-sm text-gray-500">{enrollment.studentId?.email || 'No email'}</p>
                             <p className="text-xs text-gray-400">
-                              Enrolled: {formatDate(enrollment.enrollmentDate.split('T')[0])}
+                              Enrolled: {formatDate(enrollment.enrollmentDate?.split?.('T')?.[0] || enrollment.enrollmentDate)}
                             </p>
                           </div>
                           <div className="text-right">
@@ -1059,13 +1062,15 @@ const ClassManagement: React.FC = () => {
                     <div key={`attendance-${index}`} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-4">
                         <div>
-                          <h4 className="font-medium">Student: {record.studentId}</h4>
+                          <h4 className="font-medium">
+                            Student: {typeof record.studentId === 'string' ? record.studentId : 'Student ID'}
+                          </h4>
                           <p className="text-sm text-gray-500">
                             Status: <span className={`font-medium ${
                               record.status === 'present' ? 'text-green-600' : 
                               record.status === 'late' ? 'text-yellow-600' : 'text-red-600'
                             }`}>
-                              {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                              {record.status?.charAt(0).toUpperCase() + record.status?.slice(1)}
                             </span>
                           </p>
                         </div>
@@ -1248,8 +1253,8 @@ const ClassManagement: React.FC = () => {
                       )}
                       
                       <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>Posted: {formatDate(announcement.createdAt.split('T')[0])}</span>
-                        <span>Read by: {announcement.readBy.length} students</span>
+                        <span>Posted: {formatDate(announcement.createdAt?.split?.('T')?.[0] || announcement.createdAt)}</span>
+                        <span>Read by: {announcement.readBy?.length || 0} students</span>
                       </div>
                     </div>
                   ))}
