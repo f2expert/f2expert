@@ -81,3 +81,23 @@ export {
   type ApiAnnouncement,
   ApiResponseTransformer
 } from './classManagementApiService';
+export {
+  salaryApiService,
+  trainerSalaryApiService,
+  mapSalaryForLegacy,
+  type SalaryStructure,
+  type TrainerSalary, // Backward compatibility alias
+  type EmployeeInfo,
+  type PayPeriod,
+  type Allowances,
+  type Deductions,
+  type ClassInfo,
+  type PaymentInfo,
+  type CreatedBy,
+  type CreateSalaryData,
+  type UpdateSalaryData,
+  type SalaryFilters,
+  type SalaryStats,
+  type SalariesResponse,
+  type Pagination
+} from './salaryApi';

@@ -465,7 +465,7 @@ export const markBulkAttendance = async (classId: string, attendanceRecords: Att
   }
 
   // Clear existing attendance
-  scheduleClass.attendance = []
+  //scheduleClass.attendance = []
 
   // Add all attendance records
   for (const record of attendanceRecords) {

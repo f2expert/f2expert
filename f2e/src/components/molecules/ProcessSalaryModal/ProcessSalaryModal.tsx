@@ -15,7 +15,7 @@ import {
   Clock,
   FileText
 } from 'lucide-react';
-import { trainerSalaryApiService, type TrainerSalary } from '../../../services/trainerSalaryApi';
+import { trainerSalaryApiService, type SalaryStructure } from '../../../services/salaryApi';
 
 interface ProcessSalaryRequest {
   action: 'process' | 'pay' | 'cancel';
@@ -27,7 +27,7 @@ interface ProcessSalaryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  salary: TrainerSalary;
+  salary: SalaryStructure;
 }
 
 export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
@@ -81,7 +81,7 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
       
       // For now, just use the action type as processedBy until API is updated
       const processedBy = `System - ${processData.action}`;
-      await trainerSalaryApiService.processSalary(salary._id, processedBy);
+      await trainerSalaryApiService.processSalary(salary._id || salary.id, processedBy);
       onSuccess();
     } catch (err) {
       console.error('Failed to process salary:', err);
@@ -167,7 +167,7 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
                 <Calendar className="h-4 w-4 text-gray-400" />
                 <div>
                   <p className="font-medium text-gray-900">{formatPayPeriod(salary.payPeriod)}</p>
-                  <p className="text-gray-600">{getPaymentModeDisplay(salary.paymentMode)}</p>
+                  <p className="text-gray-600">{getPaymentModeDisplay(salary.paymentMode || salary.paymentInfo?.method || 'cash')}</p>
                 </div>
               </div>
               

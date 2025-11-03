@@ -20,7 +20,7 @@ import { trainerApiService, type Trainer } from '../../../services/trainerApi';
 import { 
   trainerSalaryApiService, 
   type CreateSalaryData 
-} from '../../../services/trainerSalaryApi';
+} from '../../../services/salaryApi';
 
 interface AddSalaryModalProps {
   isOpen: boolean;
@@ -35,7 +35,7 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
 }) => {
   // Form states
   const [formData, setFormData] = useState<CreateSalaryData>({
-    trainerId: '',
+    employeeId: '',
     payPeriod: {
       month: new Date().getMonth() + 1,
       year: new Date().getFullYear()
@@ -53,7 +53,8 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
       esi: 0,
       tax: 0,
       advance: 0,
-      other: 0
+      other: 0,
+      loan: 0,
     },
     paymentMode: 'bank_transfer'
   });
@@ -94,7 +95,7 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
   const resetForm = () => {
     const currentDate = new Date();
     setFormData({
-      trainerId: '',
+      employeeId: '',
       payPeriod: {
         month: currentDate.getMonth() + 1,
         year: currentDate.getFullYear()
@@ -112,7 +113,8 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
         esi: 0,
         tax: 0,
         advance: 0,
-        other: 0
+        other: 0,
+        loan: 0
       },
       paymentMode: 'bank_transfer'
     });
@@ -126,7 +128,7 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
     setSelectedTrainer(trainer);
     setFormData((prev: CreateSalaryData) => ({
       ...prev,
-      trainerId: trainer._id
+      employeeId: trainer._id
     }));
   };
 
@@ -168,8 +170,8 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.trainerId || !formData.basicSalary) {
-      setError('Please fill in all required fields');
+    if (!formData.employeeId || !formData.basicSalary) {
+      setError('Please select a trainer and enter basic salary');
       return;
     }
 
@@ -177,6 +179,7 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
       setLoading(true);
       setError(null);
       
+      console.log('Submitting salary data:', formData);
       await trainerSalaryApiService.createSalary(formData);
       onSuccess();
     } catch (err) {
@@ -499,6 +502,17 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
                       placeholder="Enter other deductions"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Loan</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="100"
+                      value={formData.deductions.loan || ''}
+                      onChange={(e) => updateDeduction('loan', parseFloat(e.target.value) || 0)}
+                      placeholder="Enter loan deduction"
+                    />
+                  </div>
                 </div>
               </Card>
 
@@ -542,7 +556,7 @@ export const AddSalaryModal: React.FC<AddSalaryModalProps> = ({
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || !formData.trainerId || !formData.basicSalary}
+              disabled={loading || !formData.employeeId || !formData.basicSalary}
             >
               {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Generate Salary

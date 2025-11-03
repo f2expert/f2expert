@@ -35,12 +35,10 @@ import { Input } from '../../components/atoms/Input';
 // Import Trainer Salary API Service
 import { 
   trainerSalaryApiService, 
-  type TrainerSalary, 
-  type SalaryFilters, 
+  type SalaryStructure, 
+  type SalaryFilters,
   type SalaryStats 
-} from '../../services/trainerSalaryApi';
-
-// Import Modal Components
+} from '../../services/salaryApi';// Import Modal Components
 import { 
   AddSalaryModal,
   EditSalaryModal, 
@@ -51,7 +49,7 @@ import {
 
 const SalaryManagement: React.FC = () => {
   // State for salary data
-  const [salaries, setSalaries] = useState<TrainerSalary[]>([]);
+  const [salaries, setSalaries] = useState<SalaryStructure[]>([]);
   const [stats, setStats] = useState<SalaryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,12 +60,12 @@ const SalaryManagement: React.FC = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
-  const [selectedSalary, setSelectedSalary] = useState<TrainerSalary | null>(null);
+  const [selectedSalary, setSelectedSalary] = useState<SalaryStructure | null>(null);
 
   // Filter states
   const [filters, setFilters] = useState<SalaryFilters>({
     status: '',
-    trainerId: '',
+    employeeId: '',
     month: undefined,
     year: undefined,
     paymentMode: '',
@@ -88,10 +86,17 @@ const SalaryManagement: React.FC = () => {
       setLoading(true);
       setError(null);
       const result = await trainerSalaryApiService.getSalaries(filters);
-      setSalaries(result.salaries);
+      console.log('API Result:', result);
+      
+      // Ensure salaries is always an array
+      const salariesArray = Array.isArray(result?.salaries) ? result.salaries : [];
+      console.log('Setting salaries:', salariesArray);
+      setSalaries(salariesArray);
     } catch (err) {
       console.error('Failed to load salaries:', err);
       setError(err instanceof Error ? err.message : 'Failed to load salaries');
+      // Set empty array on error to prevent filter issues
+      setSalaries([]);
     } finally {
       setLoading(false);
     }
@@ -129,12 +134,16 @@ const SalaryManagement: React.FC = () => {
 
   // Filter and search salaries
   const filteredSalaries = useMemo(() => {
-    const filtered = salaries.filter((salary) => {
+    // Ensure salaries is always an array
+    const salariesArray = Array.isArray(salaries) ? salaries : [];
+    const filtered = salariesArray.filter((salary) => {
       // Status filter
-      if (filters.status && salary.status !== filters.status) return false;
+      const salaryStatus = salary.status || salary.paymentInfo?.status || 'pending';
+      if (filters.status && salaryStatus !== filters.status) return false;
 
-      // Trainer filter
-      if (filters.trainerId && salary.trainerId !== filters.trainerId) return false;
+      // Employee filter
+      const employeeId = typeof salary.employeeId === 'string' ? salary.employeeId : salary.employeeId?.id;
+      if (filters.employeeId && employeeId !== filters.employeeId) return false;
 
       // Month filter
       if (filters.month && salary.payPeriod.month !== filters.month) return false;
@@ -143,15 +152,20 @@ const SalaryManagement: React.FC = () => {
       if (filters.year && salary.payPeriod.year !== filters.year) return false;
 
       // Payment mode filter
-      if (filters.paymentMode && salary.paymentMode !== filters.paymentMode) return false;
+      const paymentMode = salary.paymentMode || salary.paymentInfo?.method;
+      if (filters.paymentMode && paymentMode !== filters.paymentMode) return false;
 
       // Search filter
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
+        const trainerName = salary.trainerName || salary.employeeId?.fullName || '';
+        const trainerEmail = salary.trainerEmail || salary.employeeId?.email || '';
+        const trainerId = salary.trainerId || salary.employeeId?.employeeCode || '';
+        
         return (
-          salary.trainerName.toLowerCase().includes(searchTerm) ||
-          salary.trainerEmail.toLowerCase().includes(searchTerm) ||
-          salary.trainerId.toLowerCase().includes(searchTerm)
+          trainerName.toLowerCase().includes(searchTerm) ||
+          trainerEmail.toLowerCase().includes(searchTerm) ||
+          trainerId.toLowerCase().includes(searchTerm)
         );
       }
 
@@ -165,8 +179,8 @@ const SalaryManagement: React.FC = () => {
 
       switch (sortBy) {
         case 'trainerName':
-          aValue = a.trainerName.toLowerCase();
-          bValue = b.trainerName.toLowerCase();
+          aValue = (a.trainerName || a.employeeId?.fullName || '').toLowerCase();
+          bValue = (b.trainerName || b.employeeId?.fullName || '').toLowerCase();
           break;
         case 'payPeriod':
           aValue = `${a.payPeriod.year}-${a.payPeriod.month.toString().padStart(2, '0')}`;
@@ -177,8 +191,8 @@ const SalaryManagement: React.FC = () => {
           bValue = b.netSalary;
           break;
         case 'status':
-          aValue = a.status;
-          bValue = b.status;
+          aValue = a.status || a.paymentInfo?.status || 'pending';
+          bValue = b.status || b.paymentInfo?.status || 'pending';
           break;
         default:
           return 0;
@@ -202,7 +216,7 @@ const SalaryManagement: React.FC = () => {
   const clearFilters = () => {
     setFilters({
       status: '',
-      trainerId: '',
+      employeeId: '',
       month: undefined,
       year: undefined,
       paymentMode: '',
@@ -224,7 +238,7 @@ const SalaryManagement: React.FC = () => {
     if (selectedSalaries.length === filteredSalaries.length) {
       setSelectedSalaries([]);
     } else {
-      setSelectedSalaries(filteredSalaries.map(s => s._id));
+      setSelectedSalaries(filteredSalaries.map(s => s._id || s.id).filter(Boolean));
     }
   };
 
@@ -232,7 +246,7 @@ const SalaryManagement: React.FC = () => {
   const openAddModal = () => setIsAddModalOpen(true);
   const closeAddModal = () => setIsAddModalOpen(false);
 
-  const openEditModal = (salary: TrainerSalary) => {
+  const openEditModal = (salary: SalaryStructure) => {
     setSelectedSalary(salary);
     setIsEditModalOpen(true);
   };
@@ -241,7 +255,7 @@ const SalaryManagement: React.FC = () => {
     setIsEditModalOpen(false);
   };
 
-  const openViewModal = (salary: TrainerSalary) => {
+  const openViewModal = (salary: SalaryStructure) => {
     setSelectedSalary(salary);
     setIsViewModalOpen(true);
   };
@@ -250,7 +264,7 @@ const SalaryManagement: React.FC = () => {
     setIsViewModalOpen(false);
   };
 
-  const openDeleteModal = (salary: TrainerSalary) => {
+  const openDeleteModal = (salary: SalaryStructure) => {
     setSelectedSalary(salary);
     setIsDeleteModalOpen(true);
   };
@@ -259,7 +273,7 @@ const SalaryManagement: React.FC = () => {
     setIsDeleteModalOpen(false);
   };
 
-  const openProcessModal = (salary: TrainerSalary) => {
+  const openProcessModal = (salary: SalaryStructure) => {
     setSelectedSalary(salary);
     setIsProcessModalOpen(true);
   };
@@ -290,9 +304,9 @@ const SalaryManagement: React.FC = () => {
   };
 
   // Generate payslip
-  const handleGeneratePayslip = async (salary: TrainerSalary) => {
+  const handleGeneratePayslip = async (salary: SalaryStructure) => {
     try {
-      const blob = await trainerSalaryApiService.generatePayslip(salary._id);
+      const blob = await trainerSalaryApiService.generatePayslip(salary._id || salary.id);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -386,7 +400,7 @@ const SalaryManagement: React.FC = () => {
         <div className="mb-8 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Salary Management</h1>
-            <p className="text-gray-600">Manage trainer salaries, payroll, and compensation</p>
+            <p className="text-gray-600">Manage salaries, payroll, and compensation</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" onClick={refreshData}>
@@ -633,12 +647,12 @@ const SalaryManagement: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredSalaries.map((salary) => (
-                  <tr key={salary._id} className="hover:bg-gray-50">
+                  <tr key={salary._id || salary.id} className="hover:bg-gray-50">
                     <td className="px-3 py-4">
                       <input
                         type="checkbox"
-                        checked={selectedSalaries.includes(salary._id)}
-                        onChange={() => handleSelectSalary(salary._id)}
+                        checked={selectedSalaries.includes(salary._id || salary.id)}
+                        onChange={() => handleSelectSalary(salary._id || salary.id)}
                         className="rounded border-gray-300"
                       />
                     </td>
@@ -665,7 +679,7 @@ const SalaryManagement: React.FC = () => {
                       {formatCurrency(salary.netSalary)}
                     </td>
                     <td className="px-4 py-4">
-                      {getStatusBadge(salary.status)}
+                      {getStatusBadge(salary.status || salary.paymentInfo?.status || 'pending')}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2"> 

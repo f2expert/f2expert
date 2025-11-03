@@ -1,21 +1,41 @@
 import { Schema, model, Document, Types } from "mongoose"
 
-export interface ITrainerSalary extends Document {
+export interface ISalary extends Document {
   // Basic Information
-  trainerId: Types.ObjectId
+  employeeId: Types.ObjectId
   
-  // Salary Period
-  salaryMonth: number  // 1-12
-  salaryYear: number
+  // Salary Period (supporting both formats)
+  payPeriod?: {
+    month: number
+    year: number
+    startDate?: Date
+    endDate?: Date
+  }
+  salaryMonth?: number  // 1-12 (for backward compatibility)
+  salaryYear?: number   // for backward compatibility
   
-  // Salary Components
-  baseSalary: number
+  // Salary Components (supporting both formats)
+  basicSalary?: number  // New format
+  baseSalary?: number   // Old format (for backward compatibility)
+  
+  // Allowances (new structured format)
+  allowances?: {
+    hra?: number        // House Rent Allowance
+    transport?: number  // Transport Allowance
+    medical?: number    // Medical Allowance
+    performance?: number // Performance Allowance
+    other?: number      // Other Allowances
+  }
+  
+  // Individual allowances (old format for backward compatibility)
   performanceBonus?: number
   housingAllowance?: number
   transportAllowance?: number
   mealAllowance?: number
   specialAllowance?: number
   overtimeAmount?: number
+  
+  // Deductions (supporting structured format)
   deductions: {
     tax?: number
     pf?: number  // Provident Fund
@@ -30,16 +50,18 @@ export interface ITrainerSalary extends Document {
   totalDeductions: number // Sum of all deductions
   netSalary: number       // Gross - Deductions
   
-  // Class-based Earnings
+  // Class-based Earnings (for trainers)
   classesAssigned: number
   classesCompleted: number
   hourlyRate: number
   totalHours: number
   classBasedEarnings: number
   
-  // Payment Information
-  paymentStatus: "pending" | "processing" | "paid" | "cancelled"
-  paymentMethod?: "bank_transfer" | "cash" | "cheque" | "upi"
+  // Payment Information (supporting both formats)
+  status?: "pending" | "processing" | "paid" | "cancelled"  // New format
+  paymentStatus?: "pending" | "processing" | "paid" | "cancelled"  // Old format
+  paymentMode?: "bank_transfer" | "cash" | "cheque" | "upi"  // New format
+  paymentMethod?: "bank_transfer" | "cash" | "cheque" | "upi"  // Old format
   paymentDate?: Date
   paymentReference?: string
   
@@ -55,35 +77,53 @@ export interface ITrainerSalary extends Document {
   updatedAt: Date
 }
 
-const trainerSalarySchema = new Schema<ITrainerSalary>(
+const salarySchema = new Schema<ISalary>(
   {
     // Basic Information
-    trainerId: { 
+    employeeId: { 
       type: Schema.Types.ObjectId, 
       ref: "User", 
       required: true 
     },
     
-    // Salary Period
+    // Salary Period (supporting both formats)
+    payPeriod: {
+      month: { type: Number, min: 1, max: 12 },
+      year: { type: Number, min: 2020, max: 2030 },
+      startDate: { type: Date },
+      endDate: { type: Date }
+    },
     salaryMonth: { 
       type: Number, 
-      required: true, 
       min: 1, 
       max: 12 
     },
     salaryYear: { 
-      type: Number, 
-      required: true,
+      type: Number,
       min: 2020,
       max: 2030
     },
     
-    // Salary Components
-    baseSalary: { 
+    // Salary Components (supporting both formats)
+    basicSalary: { 
       type: Number, 
-      required: true, 
       min: 0 
     },
+    baseSalary: { 
+      type: Number, 
+      min: 0 
+    },
+    
+    // Allowances (new structured format)
+    allowances: {
+      hra: { type: Number, default: 0, min: 0 },
+      transport: { type: Number, default: 0, min: 0 },
+      medical: { type: Number, default: 0, min: 0 },
+      performance: { type: Number, default: 0, min: 0 },
+      other: { type: Number, default: 0, min: 0 }
+    },
+    
+    // Individual allowances (old format for backward compatibility)
     performanceBonus: { 
       type: Number, 
       default: 0, 
@@ -142,7 +182,7 @@ const trainerSalarySchema = new Schema<ITrainerSalary>(
       min: 0 
     },
     
-    // Class-based Earnings
+    // Class-based Earnings (primarily for trainers)
     classesAssigned: { 
       type: Number, 
       default: 0, 
@@ -169,11 +209,19 @@ const trainerSalarySchema = new Schema<ITrainerSalary>(
       min: 0 
     },
     
-    // Payment Information
-    paymentStatus: { 
+    // Payment Information (supporting both formats)
+    status: { 
       type: String, 
       enum: ["pending", "processing", "paid", "cancelled"], 
       default: "pending" 
+    },
+    paymentStatus: { 
+      type: String, 
+      enum: ["pending", "processing", "paid", "cancelled"] 
+    },
+    paymentMode: { 
+      type: String, 
+      enum: ["bank_transfer", "cash", "cheque", "upi"] 
     },
     paymentMethod: { 
       type: String, 
@@ -211,21 +259,21 @@ const trainerSalarySchema = new Schema<ITrainerSalary>(
   }
 )
 
-// Compound index for unique salary per trainer per month/year
-trainerSalarySchema.index(
-  { trainerId: 1, salaryMonth: 1, salaryYear: 1 }, 
+// Compound index for unique salary per employee per month/year
+salarySchema.index(
+  { employeeId: 1, salaryMonth: 1, salaryYear: 1 }, 
   { unique: true }
 )
 
 // Additional indexes for performance
-trainerSalarySchema.index({ trainerId: 1, createdAt: -1 })
-trainerSalarySchema.index({ paymentStatus: 1 })
-trainerSalarySchema.index({ salaryYear: 1, salaryMonth: 1 })
-trainerSalarySchema.index({ approvedBy: 1 })
-trainerSalarySchema.index({ createdAt: -1 })
+salarySchema.index({ employeeId: 1, createdAt: -1 })
+salarySchema.index({ paymentStatus: 1 })
+salarySchema.index({ salaryYear: 1, salaryMonth: 1 })
+salarySchema.index({ approvedBy: 1 })
+salarySchema.index({ createdAt: -1 })
 
 // Pre-save middleware to calculate totals
-trainerSalarySchema.pre('save', function(next) {
+salarySchema.pre('save', function(next) {
   // Calculate gross salary
   this.grossSalary = 
     this.baseSalary + 
@@ -252,16 +300,16 @@ trainerSalarySchema.pre('save', function(next) {
   next()
 })
 
-// Virtual for trainer details (populated)
-trainerSalarySchema.virtual('trainer', {
+// Virtual for employee details (populated)
+salarySchema.virtual('employee', {
   ref: 'User',
-  localField: 'trainerId',
+  localField: 'employeeId',
   foreignField: '_id',
   justOne: true
 })
 
 // Virtual for creator details (populated)
-trainerSalarySchema.virtual('creator', {
+salarySchema.virtual('creator', {
   ref: 'User',
   localField: 'createdBy',
   foreignField: '_id',
@@ -269,7 +317,7 @@ trainerSalarySchema.virtual('creator', {
 })
 
 // Virtual for approver details (populated)
-trainerSalarySchema.virtual('approver', {
+salarySchema.virtual('approver', {
   ref: 'User',
   localField: 'approvedBy',
   foreignField: '_id',
@@ -277,7 +325,7 @@ trainerSalarySchema.virtual('approver', {
 })
 
 // Virtual for salary period display
-trainerSalarySchema.virtual('salaryPeriod').get(function() {
+salarySchema.virtual('salaryPeriod').get(function() {
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -286,13 +334,13 @@ trainerSalarySchema.virtual('salaryPeriod').get(function() {
 })
 
 // Virtual for completion percentage
-trainerSalarySchema.virtual('completionPercentage').get(function() {
+salarySchema.virtual('completionPercentage').get(function() {
   if (this.classesAssigned === 0) return 0
   return Math.round((this.classesCompleted / this.classesAssigned) * 100)
 })
 
 // Virtual for payment status display
-trainerSalarySchema.virtual('paymentStatusDisplay').get(function() {
+salarySchema.virtual('paymentStatusDisplay').get(function() {
   const statusMap: { [key: string]: string } = {
     pending: 'Pending',
     processing: 'Processing',
@@ -302,6 +350,5 @@ trainerSalarySchema.virtual('paymentStatusDisplay').get(function() {
   return statusMap[this.paymentStatus] || this.paymentStatus
 })
 
-
-
-export const TrainerSalaryModel = model<ITrainerSalary>("TrainerSalary", trainerSalarySchema)
+export const SalaryModel = model<ISalary>("Salary", salarySchema)
+export type SalaryDocument = ISalary

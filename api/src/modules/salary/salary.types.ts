@@ -1,16 +1,39 @@
 import { Types } from "mongoose"
 
-export interface TrainerSalaryDTO {
-  trainerId: string
-  salaryMonth: number
-  salaryYear: number
-  baseSalary: number
+export interface SalaryDTO {
+  employeeId: string
+  
+  // Salary Period (supporting both formats)
+  payPeriod?: {
+    month: number
+    year: number
+    startDate?: string | Date
+    endDate?: string | Date
+  }
+  salaryMonth?: number  // For backward compatibility
+  salaryYear?: number   // For backward compatibility
+  
+  // Salary Components (supporting both formats)
+  basicSalary?: number  // New format
+  baseSalary?: number   // Old format
+  
+  // Allowances (new structured format)
+  allowances?: {
+    hra?: number        // House Rent Allowance
+    transport?: number  // Transport Allowance
+    medical?: number    // Medical Allowance
+    performance?: number // Performance Allowance
+    other?: number      // Other Allowances
+  }
+  
+  // Individual allowances (old format for backward compatibility)
   performanceBonus?: number
   housingAllowance?: number
   transportAllowance?: number
   mealAllowance?: number
   specialAllowance?: number
   overtimeAmount?: number
+  
   deductions?: {
     tax?: number
     pf?: number
@@ -19,15 +42,26 @@ export interface TrainerSalaryDTO {
     loan?: number
     other?: number
   }
+  
+  // Calculated fields
+  grossSalary?: number
+  totalDeductions?: number
+  netSalary?: number
+  
+  // Class-based fields (for trainers)
   classesAssigned?: number
   classesCompleted?: number
   hourlyRate?: number
   totalHours?: number
-  paymentMethod?: "bank_transfer" | "cash" | "cheque" | "upi"
+  
+  // Payment information (supporting both formats)
+  status?: "pending" | "processing" | "paid" | "cancelled"  // New format
+  paymentMode?: "bank_transfer" | "cash" | "cheque" | "upi"  // New format
+  paymentMethod?: "bank_transfer" | "cash" | "cheque" | "upi"  // Old format
   remarks?: string
 }
 
-export interface UpdateTrainerSalaryDTO {
+export interface UpdateSalaryDTO {
   baseSalary?: number
   performanceBonus?: number
   housingAllowance?: number
@@ -66,8 +100,8 @@ export interface SalaryApprovalDTO {
 export interface BulkSalaryCreationDTO {
   salaryMonth: number
   salaryYear: number
-  trainers: Array<{
-    trainerId: string
+  employees: Array<{
+    employeeId: string
     baseSalary: number
     performanceBonus?: number
     housingAllowance?: number
@@ -94,7 +128,7 @@ export interface BulkSalaryCreationDTO {
 export interface SalaryQueryParams {
   page?: number
   limit?: number
-  trainerId?: string
+  employeeId?: string
   salaryMonth?: number
   salaryYear?: number
   paymentStatus?: "pending" | "processing" | "paid" | "cancelled"
@@ -107,23 +141,23 @@ export interface SalaryReportParams {
   endMonth?: number
   startYear?: number
   endYear?: number
-  trainerId?: string
+  employeeId?: string
   departmentFilter?: string
   paymentStatus?: "pending" | "processing" | "paid" | "cancelled"
-  reportType?: "summary" | "detailed" | "trainer_wise" | "department_wise"
+  reportType?: "summary" | "detailed" | "employee_wise" | "department_wise"
 }
 
 export interface SalaryCalculationParams {
-  trainerId: string
+  employeeId: string
   salaryMonth: number
   salaryYear: number
   includeClassBasedEarnings?: boolean
   includePerformanceBonus?: boolean
 }
 
-export interface TrainerSalaryResponse {
+export interface SalaryResponse {
   _id: string
-  trainerId: {
+  employeeId: {
     _id: string
     firstName: string
     lastName: string
@@ -182,7 +216,7 @@ export interface TrainerSalaryResponse {
 }
 
 export interface PaginatedSalaryResponse {
-  salaries: TrainerSalaryResponse[]
+  salaries: SalaryResponse[]
   pagination: {
     currentPage: number
     totalPages: number
@@ -203,9 +237,9 @@ export interface SalarySummary {
   paidPayments: number
 }
 
-export interface TrainerWiseSalaryReport {
+export interface EmployeeWiseSalaryReport {
   _id: string
-  trainerName: string
+  employeeName: string
   employeeId: string
   department: string
   totalSalaries: number
@@ -218,7 +252,7 @@ export interface TrainerWiseSalaryReport {
 export interface DepartmentWiseSalaryReport {
   _id: string
   department: string
-  trainerCount: number
+  employeeCount: number
   totalSalaries: number
   totalGrossSalary: number
   totalNetSalary: number
@@ -226,9 +260,9 @@ export interface DepartmentWiseSalaryReport {
 }
 
 export interface DetailedSalaryReport {
-  trainerId: string
-  trainerName: string
   employeeId: string
+  employeeName: string
+  employeeIdNumber: string
   department: string
   salaryMonth: number
   salaryYear: number
@@ -243,6 +277,6 @@ export interface DetailedSalaryReport {
 
 export type SalaryReportData = 
   | SalarySummary[]
-  | TrainerWiseSalaryReport[]
+  | EmployeeWiseSalaryReport[]
   | DepartmentWiseSalaryReport[]
   | DetailedSalaryReport[]

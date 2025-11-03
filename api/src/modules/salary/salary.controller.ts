@@ -2,24 +2,24 @@ import { Request, Response } from "express"
 import { MESSAGES } from "../../app/constants/message.constant"
 import { HTTP_STATUS } from "../../app/constants/http-status.constant"
 import { sendError, sendResponse } from "../../app/utils/response.util"
-import * as TrainerSalaryService from "./trainer-salary.service"
+import * as SalaryService from "./salary.service"
 import { ApiResponse } from "../../app/types/ApiResponse.interface"
 import {
-  TrainerSalaryDTO,
-  UpdateTrainerSalaryDTO,
+  SalaryDTO,
+  UpdateSalaryDTO,
   PaymentStatusUpdateDTO,
   SalaryApprovalDTO,
   BulkSalaryCreationDTO,
   SalaryQueryParams,
   SalaryReportParams,
   SalaryCalculationParams
-} from "./trainer-salary.types"
+} from "./salary.types"
 
 /**
  * @openapi
  * components:
  *   schemas:
- *     TrainerSalaryDeductions:
+ *     SalaryDeductions:
  *       type: object
  *       properties:
  *         tax:
@@ -47,18 +47,18 @@ import {
  *           minimum: 0
  *           description: Other deductions
  *
- *     CreateTrainerSalaryRequest:
+ *     CreateSalaryRequest:
  *       type: object
  *       required:
- *         - trainerId
+ *         - employeeId
  *         - salaryMonth
  *         - salaryYear
  *         - baseSalary
  *       properties:
- *         trainerId:
+ *         employeeId:
  *           type: string
  *           pattern: "^[0-9a-fA-F]{24}$"
- *           description: Valid ObjectId of the trainer
+ *           description: Valid ObjectId of the employee
  *         salaryMonth:
  *           type: integer
  *           minimum: 1
@@ -98,19 +98,19 @@ import {
  *           minimum: 0
  *           description: Overtime compensation
  *         deductions:
- *           $ref: '#/components/schemas/TrainerSalaryDeductions'
+ *           $ref: '#/components/schemas/SalaryDeductions'
  *         classesAssigned:
  *           type: integer
  *           minimum: 0
- *           description: Number of classes assigned
+ *           description: Number of classes assigned (primarily for trainers)
  *         classesCompleted:
  *           type: integer
  *           minimum: 0
- *           description: Number of classes completed
+ *           description: Number of classes completed (primarily for trainers)
  *         hourlyRate:
  *           type: number
  *           minimum: 0
- *           description: Hourly rate for classes
+ *           description: Hourly rate for classes (primarily for trainers)
  *         totalHours:
  *           type: number
  *           minimum: 0
@@ -124,7 +124,7 @@ import {
  *           maxLength: 1000
  *           description: Additional remarks or notes
  *
- *     UpdateTrainerSalaryRequest:
+ *     UpdateSalaryRequest:
  *       type: object
  *       properties:
  *         baseSalary:
@@ -149,7 +149,7 @@ import {
  *           type: number
  *           minimum: 0
  *         deductions:
- *           $ref: '#/components/schemas/TrainerSalaryDeductions'
+ *           $ref: '#/components/schemas/SalaryDeductions'
  *         classesAssigned:
  *           type: integer
  *           minimum: 0
@@ -208,7 +208,7 @@ import {
  *       required:
  *         - salaryMonth
  *         - salaryYear
- *         - trainers
+ *         - employees
  *       properties:
  *         salaryMonth:
  *           type: integer
@@ -218,16 +218,16 @@ import {
  *           type: integer
  *           minimum: 2020
  *           maximum: 2030
- *         trainers:
+ *         employees:
  *           type: array
  *           minItems: 1
  *           items:
  *             type: object
  *             required:
- *               - trainerId
+ *               - employeeId
  *               - baseSalary
  *             properties:
- *               trainerId:
+ *               employeeId:
  *                 type: string
  *                 pattern: "^[0-9a-fA-F]{24}$"
  *               baseSalary:
@@ -252,7 +252,7 @@ import {
  *                 type: number
  *                 minimum: 0
  *               deductions:
- *                 $ref: '#/components/schemas/TrainerSalaryDeductions'
+ *                 $ref: '#/components/schemas/SalaryDeductions'
  *               classesAssigned:
  *                 type: integer
  *                 minimum: 0
@@ -269,13 +269,13 @@ import {
  *                 type: string
  *                 maxLength: 1000
  *
- *     TrainerSalaryResponse:
+ *     SalaryResponse:
  *       type: object
  *       properties:
  *         _id:
  *           type: string
  *           description: Salary record ID
- *         trainerId:
+ *         employeeId:
  *           type: object
  *           properties:
  *             _id:
@@ -315,7 +315,7 @@ import {
  *         overtimeAmount:
  *           type: number
  *         deductions:
- *           $ref: '#/components/schemas/TrainerSalaryDeductions'
+ *           $ref: '#/components/schemas/SalaryDeductions'
  *         grossSalary:
  *           type: number
  *           description: Total salary before deductions
@@ -331,7 +331,7 @@ import {
  *           type: integer
  *         completionPercentage:
  *           type: number
- *           description: Class completion percentage
+ *           description: Class completion percentage (primarily for trainers)
  *         hourlyRate:
  *           type: number
  *         totalHours:
@@ -388,7 +388,7 @@ import {
  *         salaries:
  *           type: array
  *           items:
- *             $ref: '#/components/schemas/TrainerSalaryResponse'
+ *             $ref: '#/components/schemas/SalaryResponse'
  *         pagination:
  *           type: object
  *           properties:
@@ -426,10 +426,10 @@ import {
 
 /**
  * @openapi
- * /api/trainer-salary:
+ * /api/salary:
  *   get:
- *     summary: Get all trainer salaries with filtering and pagination
- *     tags: [Trainer Salary]
+ *     summary: Get all employee salaries with filtering and pagination
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -449,11 +449,11 @@ import {
  *           default: 10
  *         description: Number of items per page
  *       - in: query
- *         name: trainerId
+ *         name: employeeId
  *         schema:
  *           type: string
  *           pattern: "^[0-9a-fA-F]{24}$"
- *         description: Filter by trainer ID
+ *         description: Filter by employee ID
  *       - in: query
  *         name: salaryMonth
  *         schema:
@@ -490,7 +490,7 @@ import {
  *         description: Sort order
  *     responses:
  *       200:
- *         description: Successfully retrieved trainer salaries
+ *         description: Successfully retrieved employee salaries
  *         content:
  *           application/json:
  *             schema:
@@ -509,12 +509,12 @@ import {
  *       500:
  *         description: Internal server error
  */
-export const getAllTrainerSalaries = async (req: Request, res: Response): Promise<void> => {
+export const getAllSalaries = async (req: Request, res: Response): Promise<void> => {
   try {
     const queryParams: SalaryQueryParams = {
       page: parseInt(req.query.page as string) || 1,
       limit: parseInt(req.query.limit as string) || 10,
-      trainerId: req.query.trainerId as string,
+      employeeId: req.query.employeeId as string,
       salaryMonth: req.query.salaryMonth ? parseInt(req.query.salaryMonth as string) : undefined,
       salaryYear: req.query.salaryYear ? parseInt(req.query.salaryYear as string) : undefined,
       paymentStatus: req.query.paymentStatus as any,
@@ -522,27 +522,21 @@ export const getAllTrainerSalaries = async (req: Request, res: Response): Promis
       sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'desc'
     }
 
-    const result = await TrainerSalaryService.getAllTrainerSalaries(queryParams)
+    const result = await SalaryService.getAllSalaries(queryParams)
 
-    const response: ApiResponse<typeof result> = {
-      success: true,
-      message: MESSAGES.SUCCESS,
-      data: result
-    }
-
-    sendResponse(res, HTTP_STATUS.OK, response)
+    sendResponse(res, HTTP_STATUS.OK, result, MESSAGES.SUCCESS)
   } catch (error) {
-    console.error('Error fetching trainer salaries:', error)
+    console.error('Error fetching employee salaries:', error)
     sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.FAILURE)
   }
 }
 
 /**
  * @openapi
- * /api/trainer-salary/{id}:
+ * /api/salary/{id}:
  *   get:
- *     summary: Get trainer salary by ID
- *     tags: [Trainer Salary]
+ *     summary: Get employee salary by ID
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -552,10 +546,10 @@ export const getAllTrainerSalaries = async (req: Request, res: Response): Promis
  *         schema:
  *           type: string
  *           pattern: "^[0-9a-fA-F]{24}$"
- *         description: Trainer salary ID
+ *         description: Employee salary ID
  *     responses:
  *       200:
- *         description: Successfully retrieved trainer salary
+ *         description: Successfully retrieved employee salary
  *         content:
  *           application/json:
  *             schema:
@@ -566,17 +560,17 @@ export const getAllTrainerSalaries = async (req: Request, res: Response): Promis
  *                 message:
  *                   type: string
  *                 data:
- *                   $ref: '#/components/schemas/TrainerSalaryResponse'
+ *                   $ref: '#/components/schemas/SalaryResponse'
  *       404:
- *         description: Trainer salary not found
+ *         description: Employee salary not found
  *       500:
  *         description: Internal server error
  */
-export const getTrainerSalaryById = async (req: Request, res: Response): Promise<void> => {
+export const getSalaryById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params
 
-    const salary = await TrainerSalaryService.getTrainerSalaryById(id)
+    const salary = await SalaryService.getSalaryById(id)
 
     if (!salary) {
       sendError(res, HTTP_STATUS.NOT_FOUND, MESSAGES.NOT_FOUND)
@@ -591,27 +585,27 @@ export const getTrainerSalaryById = async (req: Request, res: Response): Promise
 
     sendResponse(res, HTTP_STATUS.OK, response)
   } catch (error) {
-    console.error('Error fetching trainer salary by ID:', error)
+    console.error('Error fetching employee salary by ID:', error)
     sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.FAILURE)
   }
 }
 
 /**
  * @openapi
- * /api/trainer-salary/trainer/{trainerId}/period/{month}/{year}:
+ * /api/salary/employee/{employeeId}/period/{month}/{year}:
  *   get:
- *     summary: Get trainer salary for specific month and year
- *     tags: [Trainer Salary]
+ *     summary: Get employee salary for specific month and year
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: trainerId
+ *         name: employeeId
  *         required: true
  *         schema:
  *           type: string
  *           pattern: "^[0-9a-fA-F]{24}$"
- *         description: Trainer ID
+ *         description: Employee ID
  *       - in: path
  *         name: month
  *         required: true
@@ -630,7 +624,7 @@ export const getTrainerSalaryById = async (req: Request, res: Response): Promise
  *         description: Salary year
  *     responses:
  *       200:
- *         description: Successfully retrieved trainer salary
+ *         description: Successfully retrieved employee salary
  *         content:
  *           application/json:
  *             schema:
@@ -641,18 +635,18 @@ export const getTrainerSalaryById = async (req: Request, res: Response): Promise
  *                 message:
  *                   type: string
  *                 data:
- *                   $ref: '#/components/schemas/TrainerSalaryResponse'
+ *                   $ref: '#/components/schemas/SalaryResponse'
  *       404:
- *         description: Trainer salary not found for specified period
+ *         description: Employee salary not found for specified period
  *       500:
  *         description: Internal server error
  */
-export const getTrainerSalaryByPeriod = async (req: Request, res: Response): Promise<void> => {
+export const getSalaryByPeriod = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { trainerId, month, year } = req.params
+    const { employeeId, month, year } = req.params
 
-    const salary = await TrainerSalaryService.getTrainerSalaryByPeriod(
-      trainerId,
+    const salary = await SalaryService.getSalaryByPeriod(
+      employeeId,
       parseInt(month),
       parseInt(year)
     )
@@ -670,17 +664,17 @@ export const getTrainerSalaryByPeriod = async (req: Request, res: Response): Pro
 
     sendResponse(res, HTTP_STATUS.OK, response)
   } catch (error) {
-    console.error('Error fetching trainer salary by period:', error)
+    console.error('Error fetching employee salary by period:', error)
     sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.FAILURE)
   }
 }
 
 /**
  * @openapi
- * /api/trainer-salary:
+ * /api/salary:
  *   post:
- *     summary: Create new trainer salary
- *     tags: [Trainer Salary]
+ *     summary: Create new employee salary
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -688,12 +682,12 @@ export const getTrainerSalaryByPeriod = async (req: Request, res: Response): Pro
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateTrainerSalaryRequest'
+ *             $ref: '#/components/schemas/CreateSalaryRequest'
  *           examples:
  *             basic_salary:
  *               summary: Basic salary creation
  *               value:
- *                 trainerId: "674efb123456789abcdef123"
+ *                 employeeId: "674efb123456789abcdef123"
  *                 salaryMonth: 1
  *                 salaryYear: 2024
  *                 baseSalary: 50000
@@ -702,10 +696,10 @@ export const getTrainerSalaryByPeriod = async (req: Request, res: Response): Pro
  *                 deductions:
  *                   tax: 5000
  *                   pf: 2000
- *             class_based_salary:
- *               summary: Class-based salary with hours
+ *             employee_with_classes:
+ *               summary: Employee salary with class-based earnings (e.g., trainers)
  *               value:
- *                 trainerId: "674efb123456789abcdef123"
+ *                 employeeId: "674efb123456789abcdef123"
  *                 salaryMonth: 1
  *                 salaryYear: 2024
  *                 baseSalary: 40000
@@ -720,7 +714,7 @@ export const getTrainerSalaryByPeriod = async (req: Request, res: Response): Pro
  *                 remarks: "Excellent performance with 90% completion rate"
  *     responses:
  *       201:
- *         description: Trainer salary created successfully
+ *         description: Employee salary created successfully
  *         content:
  *           application/json:
  *             schema:
@@ -731,19 +725,19 @@ export const getTrainerSalaryByPeriod = async (req: Request, res: Response): Pro
  *                 message:
  *                   type: string
  *                 data:
- *                   $ref: '#/components/schemas/TrainerSalaryResponse'
+ *                   $ref: '#/components/schemas/SalaryResponse'
  *       400:
  *         description: Invalid input data or salary already exists for the period
  *       401:
  *         description: Unauthorized access
  *       404:
- *         description: Trainer not found
+ *         description: Employee not found
  *       500:
  *         description: Internal server error
  */
-export const createTrainerSalary = async (req: Request, res: Response): Promise<void> => {
+export const createSalary = async (req: Request, res: Response): Promise<void> => {
   try {
-    const payload: TrainerSalaryDTO = req.body
+    const payload: SalaryDTO = req.body
     const userId = (req as any).user?.id
 
     const salaryData = {
@@ -751,17 +745,17 @@ export const createTrainerSalary = async (req: Request, res: Response): Promise<
       createdBy: userId
     }
 
-    const salary = await TrainerSalaryService.createTrainerSalary(salaryData)
+    const salary = await SalaryService.createSalary(salaryData)
 
     const response: ApiResponse<typeof salary> = {
       success: true,
-      message: "Trainer salary created successfully",
+      message: "Employee salary created successfully",
       data: salary
     }
 
     sendResponse(res, HTTP_STATUS.CREATED, response)
   } catch (error: any) {
-    console.error('Error creating trainer salary:', error)
+    console.error('Error creating employee salary:', error)
     
     if (error.message.includes('already exists') || error.message.includes('not found')) {
       sendError(res, HTTP_STATUS.BAD_REQUEST, error.message)
@@ -773,10 +767,10 @@ export const createTrainerSalary = async (req: Request, res: Response): Promise<
 
 /**
  * @openapi
- * /api/trainer-salary/{id}:
+ * /api/salary/{id}:
  *   put:
- *     summary: Update trainer salary
- *     tags: [Trainer Salary]
+ *     summary: Update employee salary
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -786,13 +780,13 @@ export const createTrainerSalary = async (req: Request, res: Response): Promise<
  *         schema:
  *           type: string
  *           pattern: "^[0-9a-fA-F]{24}$"
- *         description: Trainer salary ID
+ *         description: Employee salary ID
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/UpdateTrainerSalaryRequest'
+ *             $ref: '#/components/schemas/UpdateSalaryRequest'
  *           examples:
  *             update_salary_components:
  *               summary: Update salary components
@@ -804,14 +798,14 @@ export const createTrainerSalary = async (req: Request, res: Response): Promise<
  *                   tax: 5500
  *                   pf: 2200
  *             update_class_info:
- *               summary: Update class-related information
+ *               summary: Update class-related information (for trainers)
  *               value:
  *                 classesCompleted: 20
  *                 totalHours: 65
  *                 remarks: "Updated after final class completion"
  *     responses:
  *       200:
- *         description: Trainer salary updated successfully
+ *         description: Employee salary updated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -822,18 +816,18 @@ export const createTrainerSalary = async (req: Request, res: Response): Promise<
  *                 message:
  *                   type: string
  *                 data:
- *                   $ref: '#/components/schemas/TrainerSalaryResponse'
+ *                   $ref: '#/components/schemas/SalaryResponse'
  *       400:
  *         description: Invalid input data or cannot update paid salary
  *       404:
- *         description: Trainer salary not found
+ *         description: Employee salary not found
  *       500:
  *         description: Internal server error
  */
-export const updateTrainerSalary = async (req: Request, res: Response): Promise<void> => {
+export const updateSalary = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params
-    const payload: UpdateTrainerSalaryDTO = req.body
+    const payload: UpdateSalaryDTO = req.body
     const userId = (req as any).user?.id
 
     const updateData = {
@@ -841,17 +835,17 @@ export const updateTrainerSalary = async (req: Request, res: Response): Promise<
       updatedBy: userId
     }
 
-    const salary = await TrainerSalaryService.updateTrainerSalary(id, updateData)
+    const salary = await SalaryService.updateSalary(id, updateData)
 
     const response: ApiResponse<typeof salary> = {
       success: true,
-      message: "Trainer salary updated successfully",
+      message: "Employee salary updated successfully",
       data: salary
     }
 
     sendResponse(res, HTTP_STATUS.OK, response)
   } catch (error: any) {
-    console.error('Error updating trainer salary:', error)
+    console.error('Error updating employee salary:', error)
     
     if (error.message.includes('not found')) {
       sendError(res, HTTP_STATUS.NOT_FOUND, error.message)
@@ -865,10 +859,10 @@ export const updateTrainerSalary = async (req: Request, res: Response): Promise<
 
 /**
  * @openapi
- * /api/trainer-salary/{id}/payment-status:
+ * /api/salary/{id}/payment-status:
  *   patch:
- *     summary: Update payment status of trainer salary
- *     tags: [Trainer Salary]
+ *     summary: Update payment status of employee salary
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -878,7 +872,7 @@ export const updateTrainerSalary = async (req: Request, res: Response): Promise<
  *         schema:
  *           type: string
  *           pattern: "^[0-9a-fA-F]{24}$"
- *         description: Trainer salary ID
+ *         description: Employee salary ID
  *     requestBody:
  *       required: true
  *       content:
@@ -912,11 +906,11 @@ export const updateTrainerSalary = async (req: Request, res: Response): Promise<
  *                 message:
  *                   type: string
  *                 data:
- *                   $ref: '#/components/schemas/TrainerSalaryResponse'
+ *                   $ref: '#/components/schemas/SalaryResponse'
  *       400:
  *         description: Invalid payment status update
  *       404:
- *         description: Trainer salary not found
+ *         description: Employee salary not found
  *       500:
  *         description: Internal server error
  */
@@ -932,7 +926,7 @@ export const updatePaymentStatus = async (req: Request, res: Response): Promise<
       remarks
     }
 
-    const salary = await TrainerSalaryService.updatePaymentStatus(
+    const salary = await SalaryService.updatePaymentStatus(
       id,
       paymentStatus,
       paymentDetails,
@@ -959,10 +953,10 @@ export const updatePaymentStatus = async (req: Request, res: Response): Promise<
 
 /**
  * @openapi
- * /api/trainer-salary/{id}/approve:
+ * /api/salary/{id}/approve:
  *   patch:
- *     summary: Approve or reject trainer salary
- *     tags: [Trainer Salary]
+ *     summary: Approve or reject employee salary
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -972,7 +966,7 @@ export const updatePaymentStatus = async (req: Request, res: Response): Promise<
  *         schema:
  *           type: string
  *           pattern: "^[0-9a-fA-F]{24}$"
- *         description: Trainer salary ID
+ *         description: Employee salary ID
  *     requestBody:
  *       required: true
  *       content:
@@ -1003,11 +997,11 @@ export const updatePaymentStatus = async (req: Request, res: Response): Promise<
  *                 message:
  *                   type: string
  *                 data:
- *                   $ref: '#/components/schemas/TrainerSalaryResponse'
+ *                   $ref: '#/components/schemas/SalaryResponse'
  *       400:
  *         description: Salary already processed for approval
  *       404:
- *         description: Trainer salary not found
+ *         description: Employee salary not found
  *       500:
  *         description: Internal server error
  */
@@ -1017,7 +1011,7 @@ export const approveSalary = async (req: Request, res: Response): Promise<void> 
     const { approved, remarks }: SalaryApprovalDTO = req.body
     const userId = (req as any).user?.id
 
-    const salary = await TrainerSalaryService.approveSalary(id, approved, userId, remarks)
+    const salary = await SalaryService.approveSalary(id, approved, userId, remarks)
 
     const message = approved ? 'Salary approved successfully' : 'Salary rejected successfully'
 
@@ -1043,10 +1037,10 @@ export const approveSalary = async (req: Request, res: Response): Promise<void> 
 
 /**
  * @openapi
- * /api/trainer-salary/{id}:
+ * /api/salary/{id}:
  *   delete:
- *     summary: Delete trainer salary
- *     tags: [Trainer Salary]
+ *     summary: Delete employee salary
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -1056,10 +1050,10 @@ export const approveSalary = async (req: Request, res: Response): Promise<void> 
  *         schema:
  *           type: string
  *           pattern: "^[0-9a-fA-F]{24}$"
- *         description: Trainer salary ID
+ *         description: Employee salary ID
  *     responses:
  *       200:
- *         description: Trainer salary deleted successfully
+ *         description: Employee salary deleted successfully
  *         content:
  *           application/json:
  *             schema:
@@ -1072,25 +1066,25 @@ export const approveSalary = async (req: Request, res: Response): Promise<void> 
  *       400:
  *         description: Cannot delete paid salary
  *       404:
- *         description: Trainer salary not found
+ *         description: Employee salary not found
  *       500:
  *         description: Internal server error
  */
-export const deleteTrainerSalary = async (req: Request, res: Response): Promise<void> => {
+export const deleteSalary = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params
 
-    await TrainerSalaryService.deleteTrainerSalary(id)
+    await SalaryService.deleteSalary(id)
 
     const response: ApiResponse<null> = {
       success: true,
-      message: "Trainer salary deleted successfully",
+      message: "Employee salary deleted successfully",
       data: null
     }
 
     sendResponse(res, HTTP_STATUS.OK, response)
   } catch (error: any) {
-    console.error('Error deleting trainer salary:', error)
+    console.error('Error deleting employee salary:', error)
     
     if (error.message.includes('not found')) {
       sendError(res, HTTP_STATUS.NOT_FOUND, error.message)
@@ -1104,10 +1098,10 @@ export const deleteTrainerSalary = async (req: Request, res: Response): Promise<
 
 /**
  * @openapi
- * /api/trainer-salary/bulk:
+ * /api/salary/bulk:
  *   post:
- *     summary: Create salaries for multiple trainers
- *     tags: [Trainer Salary]
+ *     summary: Create salaries for multiple employees
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -1118,19 +1112,19 @@ export const deleteTrainerSalary = async (req: Request, res: Response): Promise<
  *             $ref: '#/components/schemas/BulkSalaryCreation'
  *           examples:
  *             bulk_creation:
- *               summary: Create salaries for multiple trainers
+ *               summary: Create salaries for multiple employees
  *               value:
  *                 salaryMonth: 1
  *                 salaryYear: 2024
- *                 trainers:
- *                   - trainerId: "674efb123456789abcdef123"
+ *                 employees:
+ *                   - employeeId: "674efb123456789abcdef123"
  *                     baseSalary: 50000
  *                     housingAllowance: 10000
  *                     transportAllowance: 5000
  *                     deductions:
  *                       tax: 5000
  *                       pf: 2000
- *                   - trainerId: "674efb123456789abcdef124"
+ *                   - employeeId: "674efb123456789abcdef124"
  *                     baseSalary: 55000
  *                     performanceBonus: 5000
  *                     housingAllowance: 12000
@@ -1152,9 +1146,9 @@ export const deleteTrainerSalary = async (req: Request, res: Response): Promise<
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/TrainerSalaryResponse'
+ *                     $ref: '#/components/schemas/SalaryResponse'
  *       400:
- *         description: Invalid input data or salaries already exist for some trainers
+ *         description: Invalid input data or salaries already exist for some employees
  *       500:
  *         description: Internal server error
  */
@@ -1168,11 +1162,11 @@ export const bulkCreateSalaries = async (req: Request, res: Response): Promise<v
       createdBy: userId
     }
 
-    const salaries = await TrainerSalaryService.bulkCreateSalaries(bulkData)
+    const salaries = await SalaryService.bulkCreateSalaries(bulkData)
 
     const response: ApiResponse<typeof salaries> = {
       success: true,
-      message: `Successfully created ${salaries.length} trainer salaries`,
+      message: `Successfully created ${salaries.length} employee salaries`,
       data: salaries
     }
 
@@ -1190,10 +1184,10 @@ export const bulkCreateSalaries = async (req: Request, res: Response): Promise<v
 
 /**
  * @openapi
- * /api/trainer-salary/summary:
+ * /api/salary/summary:
  *   get:
  *     summary: Get salary summary for a period
- *     tags: [Trainer Salary]
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -1233,7 +1227,7 @@ export const getSalarySummary = async (req: Request, res: Response): Promise<voi
     const month = req.query.month ? parseInt(req.query.month as string) : undefined
     const year = req.query.year ? parseInt(req.query.year as string) : undefined
 
-    const summary = await TrainerSalaryService.getSalarySummary(month, year)
+    const summary = await SalaryService.getSalarySummary(month, year)
 
     const response: ApiResponse<typeof summary> = {
       success: true,
@@ -1250,10 +1244,10 @@ export const getSalarySummary = async (req: Request, res: Response): Promise<voi
 
 /**
  * @openapi
- * /api/trainer-salary/calculate:
+ * /api/salary/calculate:
  *   post:
- *     summary: Calculate automatic salary based on classes
- *     tags: [Trainer Salary]
+ *     summary: Calculate automatic salary based on classes (primarily for trainers)
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -1263,11 +1257,11 @@ export const getSalarySummary = async (req: Request, res: Response): Promise<voi
  *           schema:
  *             type: object
  *             required:
- *               - trainerId
+ *               - employeeId
  *               - salaryMonth
  *               - salaryYear
  *             properties:
- *               trainerId:
+ *               employeeId:
  *                 type: string
  *                 pattern: "^[0-9a-fA-F]{24}$"
  *               salaryMonth:
@@ -1288,7 +1282,7 @@ export const getSalarySummary = async (req: Request, res: Response): Promise<voi
  *             calculate_salary:
  *               summary: Calculate salary with all components
  *               value:
- *                 trainerId: "674efb123456789abcdef123"
+ *                 employeeId: "674efb123456789abcdef123"
  *                 salaryMonth: 1
  *                 salaryYear: 2024
  *                 includeClassBasedEarnings: true
@@ -1308,7 +1302,7 @@ export const getSalarySummary = async (req: Request, res: Response): Promise<voi
  *                 data:
  *                   type: object
  *                   properties:
- *                     trainerId:
+ *                     employeeId:
  *                       type: string
  *                     baseSalary:
  *                       type: number
@@ -1325,16 +1319,16 @@ export const getSalarySummary = async (req: Request, res: Response): Promise<voi
  *                     performanceBonus:
  *                       type: number
  *       404:
- *         description: Trainer not found
+ *         description: Employee not found
  *       500:
  *         description: Internal server error
  */
 export const calculateAutomaticSalary = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { trainerId, salaryMonth, salaryYear, includeClassBasedEarnings, includePerformanceBonus }: SalaryCalculationParams = req.body
+    const { employeeId, salaryMonth, salaryYear, includeClassBasedEarnings, includePerformanceBonus }: SalaryCalculationParams = req.body
 
-    const calculatedData = await TrainerSalaryService.calculateAutomaticSalary(
-      trainerId,
+    const calculatedData = await SalaryService.calculateAutomaticSalary(
+      employeeId,
       salaryMonth,
       salaryYear,
       includeClassBasedEarnings,
@@ -1361,20 +1355,20 @@ export const calculateAutomaticSalary = async (req: Request, res: Response): Pro
 
 /**
  * @openapi
- * /api/trainer-salary/trainer/{trainerId}/history:
+ * /api/salary/employee/{employeeId}/history:
  *   get:
- *     summary: Get trainer salary history
- *     tags: [Trainer Salary]
+ *     summary: Get employee salary history
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: trainerId
+ *         name: employeeId
  *         required: true
  *         schema:
  *           type: string
  *           pattern: "^[0-9a-fA-F]{24}$"
- *         description: Trainer ID
+ *         description: Employee ID
  *       - in: query
  *         name: page
  *         schema:
@@ -1392,7 +1386,7 @@ export const calculateAutomaticSalary = async (req: Request, res: Response): Pro
  *         description: Items per page
  *     responses:
  *       200:
- *         description: Successfully retrieved trainer salary history
+ *         description: Successfully retrieved employee salary history
  *         content:
  *           application/json:
  *             schema:
@@ -1407,13 +1401,13 @@ export const calculateAutomaticSalary = async (req: Request, res: Response): Pro
  *       500:
  *         description: Internal server error
  */
-export const getTrainerSalaryHistory = async (req: Request, res: Response): Promise<void> => {
+export const getEmployeeSalaryHistory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { trainerId } = req.params
+    const { employeeId } = req.params
     const page = parseInt(req.query.page as string) || 1
     const limit = parseInt(req.query.limit as string) || 10
 
-    const result = await TrainerSalaryService.getTrainerSalaryHistory(trainerId, page, limit)
+    const result = await SalaryService.getEmployeeSalaryHistory(employeeId, page, limit)
 
     const response: ApiResponse<typeof result> = {
       success: true,
@@ -1423,17 +1417,17 @@ export const getTrainerSalaryHistory = async (req: Request, res: Response): Prom
 
     sendResponse(res, HTTP_STATUS.OK, response)
   } catch (error) {
-    console.error('Error fetching trainer salary history:', error)
+    console.error('Error fetching employee salary history:', error)
     sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, MESSAGES.FAILURE)
   }
 }
 
 /**
  * @openapi
- * /api/trainer-salary/pending-payments:
+ * /api/salary/pending-payments:
  *   get:
  *     summary: Get all pending payments
- *     tags: [Trainer Salary]
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -1451,13 +1445,13 @@ export const getTrainerSalaryHistory = async (req: Request, res: Response): Prom
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/TrainerSalaryResponse'
+ *                     $ref: '#/components/schemas/SalaryResponse'
  *       500:
  *         description: Internal server error
  */
 export const getPendingPayments = async (req: Request, res: Response): Promise<void> => {
   try {
-    const pendingPayments = await TrainerSalaryService.getPendingPayments()
+    const pendingPayments = await SalaryService.getPendingPayments()
 
     const response: ApiResponse<typeof pendingPayments> = {
       success: true,
@@ -1474,10 +1468,10 @@ export const getPendingPayments = async (req: Request, res: Response): Promise<v
 
 /**
  * @openapi
- * /api/trainer-salary/reports:
+ * /api/salary/reports:
  *   get:
  *     summary: Generate salary reports
- *     tags: [Trainer Salary]
+ *     tags: [Salary Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -1510,11 +1504,11 @@ export const getPendingPayments = async (req: Request, res: Response): Promise<v
  *           maximum: 2030
  *         description: End year for report period
  *       - in: query
- *         name: trainerId
+ *         name: employeeId
  *         schema:
  *           type: string
  *           pattern: "^[0-9a-fA-F]{24}$"
- *         description: Filter by specific trainer
+ *         description: Filter by specific employee
  *       - in: query
  *         name: departmentFilter
  *         schema:
@@ -1530,7 +1524,7 @@ export const getPendingPayments = async (req: Request, res: Response): Promise<v
  *         name: reportType
  *         schema:
  *           type: string
- *           enum: [summary, detailed, trainer_wise, department_wise]
+ *           enum: [summary, detailed, employee_wise, department_wise]
  *           default: summary
  *         description: Type of report to generate
  *     responses:
@@ -1563,18 +1557,18 @@ export const generateSalaryReport = async (req: Request, res: Response): Promise
       endMonth,
       startYear,
       endYear,
-      trainerId,
+      employeeId,
       departmentFilter,
       paymentStatus,
       reportType = 'summary'
     }: SalaryReportParams = req.query as any
 
-    const reportData = await TrainerSalaryService.generateSalaryReport(
+    const reportData = await SalaryService.generateSalaryReport(
       startMonth ? parseInt(startMonth as any) : undefined,
       endMonth ? parseInt(endMonth as any) : undefined,
       startYear ? parseInt(startYear as any) : undefined,
       endYear ? parseInt(endYear as any) : undefined,
-      trainerId,
+      employeeId,
       departmentFilter,
       paymentStatus,
       reportType

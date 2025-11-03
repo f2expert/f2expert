@@ -10,13 +10,13 @@ import {
   DollarSign,
   User
 } from 'lucide-react';
-import { trainerSalaryApiService, type TrainerSalary } from '../../../services/trainerSalaryApi';
+import { trainerSalaryApiService, type SalaryStructure } from '../../../services/salaryApi';
 
 interface DeleteSalaryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  salary: TrainerSalary;
+  salary: SalaryStructure;
 }
 
 export const DeleteSalaryModal: React.FC<DeleteSalaryModalProps> = ({
@@ -45,7 +45,7 @@ export const DeleteSalaryModal: React.FC<DeleteSalaryModalProps> = ({
       setLoading(true);
       setError(null);
       
-      await trainerSalaryApiService.deleteSalary(salary._id);
+      await trainerSalaryApiService.deleteSalary(salary._id || salary.id);
       onSuccess();
     } catch (err) {
       console.error('Failed to delete salary:', err);

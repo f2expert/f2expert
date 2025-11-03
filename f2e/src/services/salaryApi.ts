@@ -1,85 +1,97 @@
-// Trainer Salary Management API Service
+// Salary Management API Service
 
 // API Base URL
 const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5000/api';
 
 // Salary interfaces
-export interface TrainerSalary {
-  _id: string;
-  trainerId: string;
-  trainerName: string;
-  trainerEmail: string;
-  employeeId?: string;
-  payPeriod: {
-    startDate: string;
-    endDate: string;
-    month: number;
-    year: number;
-  };
+export interface EmployeeInfo {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  employeeCode: string;
+}
+
+export interface PayPeriod {
+  month: number;
+  year: number;
+  startDate: string;
+  endDate: string;
+}
+
+export interface Allowances {
+  hra: number;
+  transport: number;
+  medical: number;
+  performance: number;
+  other: number;
+}
+
+export interface Deductions {
+  tax: number;
+  pf: number;
+  esi: number;
+  advance: number;
+  other: number;
+  loan: number;
+}
+
+export interface ClassInfo {
+  assigned: number;
+  completed: number;
+  hourlyRate: number;
+  totalHours: number;
+  earnings: number;
+  completionRate: number;
+}
+
+export interface PaymentInfo {
+  status: 'pending' | 'processed' | 'paid' | 'cancelled';
+  method: 'bank_transfer' | 'cash' | 'cheque' | 'upi';
+}
+
+export interface CreatedBy {
+  id: string;
+  name: string;
+}
+
+export interface SalaryStructure {
+  id: string;
+  employeeId: EmployeeInfo;
+  payPeriod: PayPeriod;
   basicSalary: number;
-  allowances: {
-    hra: number;
-    transport: number;
-    medical: number;
-    performance: number;
-    other: number;
-  };
-  deductions: {
-    pf: number;
-    esi: number;
-    tax: number;
-    advance: number;
-    other: number;
-  };
+  allowances: Allowances;
+  deductions: Deductions;
   grossSalary: number;
   totalDeductions: number;
   netSalary: number;
-  status: 'pending' | 'processed' | 'paid' | 'cancelled';
-  paymentMode: 'bank_transfer' | 'cash' | 'cheque' | 'upi';
+  classInfo: ClassInfo;
+  paymentInfo: PaymentInfo;
+  approvedBy?: CreatedBy | null;
+  createdBy: CreatedBy;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Legacy fields for backward compatibility
+  _id?: string;
+  trainerId?: string;
+  trainerName?: string;
+  trainerEmail?: string;
+  status?: 'pending' | 'processed' | 'paid' | 'cancelled';
+  paymentMode?: 'bank_transfer' | 'cash' | 'cheque' | 'upi';
   paymentDetails?: {
     bankAccount?: string;
     transactionId?: string;
     paymentDate?: string;
     reference?: string;
   };
-  approvedBy?: string;
   processedBy?: string;
   remarks?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SalaryStructure {
-  _id: string;
-  trainerId: string;
-  trainerName: string;
-  designation: string;
-  department: string;
-  joinDate: string;
-  basicSalary: number;
-  allowances: {
-    hra: number;
-    transport: number;
-    medical: number;
-    performance: number;
-    other: number;
-  };
-  deductions: {
-    pf: number;
-    esi: number;
-    tax: number;
-    advance: number;
-    other: number;
-  };
-  ctc: number;
-  effectiveFrom: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface SalaryFilters {
-  trainerId?: string;
+  employeeId?: string;
   month?: number;
   year?: number;
   status?: string;
@@ -88,26 +100,14 @@ export interface SalaryFilters {
 }
 
 export interface CreateSalaryData {
-  trainerId: string;
+  employeeId: string;
   payPeriod: {
     month: number;
     year: number;
   };
   basicSalary: number;
-  allowances: {
-    hra: number;
-    transport: number;
-    medical: number;
-    performance: number;
-    other: number;
-  };
-  deductions: {
-    pf: number;
-    esi: number;
-    tax: number;
-    advance: number;
-    other: number;
-  };
+  allowances: Allowances;
+  deductions: Deductions;
   paymentMode: 'bank_transfer' | 'cash' | 'cheque' | 'upi';
   remarks?: string;
 }
@@ -133,12 +133,29 @@ export interface SalaryStats {
   averageSalary: number;
 }
 
-class TrainerSalaryApiService {
-  private baseUrl = '/trainer-salaries';
+export interface Pagination {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface SalariesResponse {
+  success: boolean;
+  message: string;
+  data: {
+    salaries: SalaryStructure[];
+    pagination: Pagination;
+  };
+}
+
+class SalaryApiService {
+  private baseUrl = '/salary';
 
   private async makeRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
-    console.log('Trainer Salary API Request URL:', url);
+    console.log('Salary API Request URL:', url);
     
     try {
       // Get auth token from localStorage
@@ -168,7 +185,7 @@ class TrainerSalaryApiService {
   }
 
   // Calculate salary totals
-  private calculateSalaryTotals(basicSalary: number, allowances: Record<string, number>, deductions: Record<string, number>) {
+  private calculateSalaryTotals(basicSalary: number, allowances: Allowances, deductions: Deductions) {
     const totalAllowances = Object.values(allowances).reduce((sum: number, val: number) => sum + (val || 0), 0);
     const totalDeductions = Object.values(deductions).reduce((sum: number, val: number) => sum + (val || 0), 0);
     const grossSalary = basicSalary + totalAllowances;
@@ -183,13 +200,13 @@ class TrainerSalaryApiService {
 
   // Get all salaries with filtering
   async getSalaries(filters?: SalaryFilters): Promise<{
-    salaries: TrainerSalary[];
+    salaries: SalaryStructure[];
     totalCount: number;
   }> {
     try {
       const params = new URLSearchParams();
-      
-      if (filters?.trainerId) params.append('trainerId', filters.trainerId);
+
+      if (filters?.employeeId) params.append('employeeId', filters.employeeId);
       if (filters?.month) params.append('month', filters.month.toString());
       if (filters?.year) params.append('year', filters.year.toString());
       if (filters?.status) params.append('status', filters.status);
@@ -199,15 +216,11 @@ class TrainerSalaryApiService {
       const queryString = params.toString();
       const endpoint = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;
 
-      const result = await this.makeRequest<{
-        success: boolean;
-        data: TrainerSalary[];
-        totalCount: number;
-      }>(endpoint);
+      const result = await this.makeRequest<SalariesResponse>(endpoint);
       
       return {
-        salaries: result.data || [],
-        totalCount: result.totalCount || 0
+        salaries: (result.data?.salaries || []).map(mapSalaryForLegacy),
+        totalCount: result.data?.pagination?.totalCount || 0
       };
     } catch (error) {
       console.error('Failed to fetch salaries from API:', error);
@@ -217,11 +230,11 @@ class TrainerSalaryApiService {
   }
 
   // Get salary by ID
-  async getSalaryById(salaryId: string): Promise<TrainerSalary> {
+  async getSalaryById(salaryId: string): Promise<SalaryStructure> {
     try {
       const result = await this.makeRequest<{
         success: boolean;
-        data: TrainerSalary;
+        data: SalaryStructure;
       }>(`${this.baseUrl}/${salaryId}`);
       
       return result.data;
@@ -232,7 +245,7 @@ class TrainerSalaryApiService {
   }
 
   // Create new salary record
-  async createSalary(salaryData: CreateSalaryData): Promise<TrainerSalary> {
+  async createSalary(salaryData: CreateSalaryData): Promise<SalaryStructure> {
     try {
       // Calculate totals before sending
       const totals = this.calculateSalaryTotals(
@@ -254,7 +267,7 @@ class TrainerSalaryApiService {
 
       const result = await this.makeRequest<{
         success: boolean;
-        data: TrainerSalary;
+        data: SalaryStructure;
       }>(this.baseUrl, {
         method: 'POST',
         body: JSON.stringify(fullSalaryData),
@@ -268,7 +281,7 @@ class TrainerSalaryApiService {
   }
 
   // Update salary record
-  async updateSalary(salaryId: string, updateData: UpdateSalaryData): Promise<TrainerSalary> {
+  async updateSalary(salaryId: string, updateData: UpdateSalaryData): Promise<SalaryStructure> {
     try {
       // Recalculate totals if salary components changed
       let calculatedData = { ...updateData };
@@ -284,7 +297,7 @@ class TrainerSalaryApiService {
 
       const result = await this.makeRequest<{
         success: boolean;
-        data: TrainerSalary;
+        data: SalaryStructure;
       }>(`${this.baseUrl}/${salaryId}`, {
         method: 'PUT',
         body: JSON.stringify(calculatedData),
@@ -343,11 +356,11 @@ class TrainerSalaryApiService {
   }
 
   // Process salary (approve and generate payslip)
-  async processSalary(salaryId: string, processedBy: string): Promise<TrainerSalary> {
+  async processSalary(salaryId: string, processedBy: string): Promise<SalaryStructure> {
     try {
       const result = await this.makeRequest<{
         success: boolean;
-        data: TrainerSalary;
+        data: SalaryStructure;
       }>(`${this.baseUrl}/${salaryId}/process`, {
         method: 'POST',
         body: JSON.stringify({ processedBy }),
@@ -361,11 +374,11 @@ class TrainerSalaryApiService {
   }
 
   // Mark salary as paid
-  async markSalaryAsPaid(salaryId: string, paymentDetails: Record<string, string>): Promise<TrainerSalary> {
+  async markSalaryAsPaid(salaryId: string, paymentDetails: Record<string, string>): Promise<SalaryStructure> {
     try {
       const result = await this.makeRequest<{
         success: boolean;
-        data: TrainerSalary;
+        data: SalaryStructure;
       }>(`${this.baseUrl}/${salaryId}/pay`, {
         method: 'POST',
         body: JSON.stringify({
@@ -406,21 +419,25 @@ class TrainerSalaryApiService {
 
   // Mock data for fallback
   private getMockSalaries(filters?: SalaryFilters): Promise<{
-    salaries: TrainerSalary[];
+    salaries: SalaryStructure[];
     totalCount: number;
   }> {
-    const mockSalaries: TrainerSalary[] = [
+    const mockSalaries: SalaryStructure[] = [
       {
-        _id: '1',
-        trainerId: 'TR001',
-        trainerName: 'John Smith',
-        trainerEmail: 'john.smith@example.com',
-        employeeId: 'EMP001',
+        id: '1',
+        employeeId: {
+          id: 'EMP001',
+          firstName: 'John',
+          lastName: 'Smith',
+          fullName: 'John Smith',
+          email: 'john.smith@example.com',
+          employeeCode: 'TR001'
+        },
         payPeriod: {
-          startDate: '2024-10-01',
-          endDate: '2024-10-31',
           month: 10,
-          year: 2024
+          year: 2024,
+          startDate: '2024-10-01T00:00:00.000Z',
+          endDate: '2024-10-31T23:59:59.000Z'
         },
         basicSalary: 50000,
         allowances: {
@@ -431,15 +448,43 @@ class TrainerSalaryApiService {
           other: 1000
         },
         deductions: {
+          tax: 8000,
           pf: 6000,
           esi: 750,
-          tax: 8000,
           advance: 2000,
-          other: 500
+          other: 500,
+          loan: 0
         },
         grossSalary: 76000,
         totalDeductions: 17250,
         netSalary: 58750,
+        classInfo: {
+          assigned: 5,
+          completed: 4,
+          hourlyRate: 500,
+          totalHours: 20,
+          earnings: 10000,
+          completionRate: 80
+        },
+        paymentInfo: {
+          status: 'processed',
+          method: 'bank_transfer'
+        },
+        approvedBy: {
+          id: 'HR001',
+          name: 'HR Manager'
+        },
+        createdBy: {
+          id: 'ADM001',
+          name: 'Payroll Admin'
+        },
+        createdAt: '2024-10-25T10:00:00.000Z',
+        updatedAt: '2024-10-26T14:30:00.000Z',
+        // Legacy fields for backward compatibility
+        _id: '1',
+        trainerId: 'TR001',
+        trainerName: 'John Smith',
+        trainerEmail: 'john.smith@example.com',
         status: 'processed',
         paymentMode: 'bank_transfer',
         paymentDetails: {
@@ -447,23 +492,24 @@ class TrainerSalaryApiService {
           transactionId: 'TXN001234567',
           reference: 'SAL-OCT-2024-001'
         },
-        approvedBy: 'HR Manager',
         processedBy: 'Payroll Admin',
-        remarks: 'Regular monthly salary',
-        createdAt: '2024-10-25T10:00:00Z',
-        updatedAt: '2024-10-26T14:30:00Z'
+        remarks: 'Regular monthly salary'
       },
       {
-        _id: '2',
-        trainerId: 'TR002',
-        trainerName: 'Sarah Johnson',
-        trainerEmail: 'sarah.johnson@example.com',
-        employeeId: 'EMP002',
+        id: '2',
+        employeeId: {
+          id: 'EMP002',
+          firstName: 'Sarah',
+          lastName: 'Johnson',
+          fullName: 'Sarah Johnson',
+          email: 'sarah.johnson@example.com',
+          employeeCode: 'TR002'
+        },
         payPeriod: {
-          startDate: '2024-10-01',
-          endDate: '2024-10-31',
           month: 10,
-          year: 2024
+          year: 2024,
+          startDate: '2024-10-01T00:00:00.000Z',
+          endDate: '2024-10-31T23:59:59.000Z'
         },
         basicSalary: 55000,
         allowances: {
@@ -474,37 +520,63 @@ class TrainerSalaryApiService {
           other: 1000
         },
         deductions: {
+          tax: 9000,
           pf: 6600,
           esi: 825,
-          tax: 9000,
           advance: 0,
-          other: 0
+          other: 0,
+          loan: 0
         },
         grossSalary: 85000,
         totalDeductions: 16425,
         netSalary: 68575,
+        classInfo: {
+          assigned: 8,
+          completed: 7,
+          hourlyRate: 600,
+          totalHours: 35,
+          earnings: 21000,
+          completionRate: 87.5
+        },
+        paymentInfo: {
+          status: 'pending',
+          method: 'bank_transfer'
+        },
+        approvedBy: null,
+        createdBy: {
+          id: 'ADM001',
+          name: 'Payroll Admin'
+        },
+        createdAt: '2024-10-25T11:00:00.000Z',
+        updatedAt: '2024-10-25T11:00:00.000Z',
+        // Legacy fields for backward compatibility
+        _id: '2',
+        trainerId: 'TR002',
+        trainerName: 'Sarah Johnson',
+        trainerEmail: 'sarah.johnson@example.com',
         status: 'pending',
         paymentMode: 'bank_transfer',
-        remarks: 'Performance bonus included',
-        createdAt: '2024-10-25T11:00:00Z',
-        updatedAt: '2024-10-25T11:00:00Z'
+        remarks: 'Performance bonus included'
       }
     ];
 
     // Apply filters
     let filtered = mockSalaries;
     if (filters?.status) {
-      filtered = filtered.filter(s => s.status === filters.status);
+      filtered = filtered.filter(s => s.paymentInfo.status === filters.status);
     }
-    if (filters?.trainerId) {
-      filtered = filtered.filter(s => s.trainerId === filters.trainerId);
+    if (filters?.employeeId) {
+      filtered = filtered.filter(s => s.employeeId.id === filters.employeeId);
     }
     if (filters?.search) {
       const search = filters.search.toLowerCase();
       filtered = filtered.filter(s => 
-        s.trainerName.toLowerCase().includes(search) ||
-        s.trainerEmail.toLowerCase().includes(search) ||
-        s.trainerId.toLowerCase().includes(search)
+        s.employeeId.fullName.toLowerCase().includes(search) ||
+        s.employeeId.email.toLowerCase().includes(search) ||
+        s.employeeId.employeeCode.toLowerCase().includes(search) ||
+        (s.trainerName && s.trainerName.toLowerCase().includes(search)) ||
+        (s.trainerEmail && s.trainerEmail.toLowerCase().includes(search)) ||
+        (s.trainerId && s.trainerId.toLowerCase().includes(search))
       );
     }
 
@@ -528,12 +600,21 @@ class TrainerSalaryApiService {
   private getMockSalaryStructures(): SalaryStructure[] {
     return [
       {
-        _id: '1',
-        trainerId: 'TR001',
-        trainerName: 'John Smith',
-        designation: 'Senior Trainer',
-        department: 'Technology',
-        joinDate: '2023-01-15',
+        id: '1',
+        employeeId: {
+          id: 'EMP001',
+          firstName: 'John',
+          lastName: 'Smith',
+          fullName: 'John Smith',
+          email: 'john.smith@example.com',
+          employeeCode: 'TR001'
+        },
+        payPeriod: {
+          month: 1,
+          year: 2024,
+          startDate: '2024-01-01T00:00:00.000Z',
+          endDate: '2024-01-31T23:59:59.000Z'
+        },
         basicSalary: 50000,
         allowances: {
           hra: 15000,
@@ -543,20 +624,66 @@ class TrainerSalaryApiService {
           other: 1000
         },
         deductions: {
+          tax: 8000,
           pf: 6000,
           esi: 750,
-          tax: 8000,
           advance: 0,
-          other: 0
+          other: 0,
+          loan: 0
         },
-        ctc: 76000,
-        effectiveFrom: '2024-01-01',
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
+        grossSalary: 76000,
+        totalDeductions: 14750,
+        netSalary: 61250,
+        classInfo: {
+          assigned: 3,
+          completed: 3,
+          hourlyRate: 500,
+          totalHours: 15,
+          earnings: 7500,
+          completionRate: 100
+        },
+        paymentInfo: {
+          status: 'processed',
+          method: 'bank_transfer'
+        },
+        approvedBy: {
+          id: 'HR001',
+          name: 'HR Manager'
+        },
+        createdBy: {
+          id: 'ADM001',
+          name: 'System Admin'
+        },
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+        // Legacy fields for backward compatibility
+        _id: '1',
+        trainerId: 'TR001',
+        trainerName: 'John Smith',
+        trainerEmail: 'john.smith@example.com',
+        status: 'processed',
+        paymentMode: 'bank_transfer'
       }
     ];
   }
 }
 
-export const trainerSalaryApiService = new TrainerSalaryApiService();
+// Type alias for backward compatibility
+export type TrainerSalary = SalaryStructure;
+
+// Utility function to ensure backward compatibility
+export const mapSalaryForLegacy = (salary: SalaryStructure): SalaryStructure => {
+  return {
+    ...salary,
+    // Ensure legacy fields are available
+    _id: salary._id || salary.id,
+    trainerId: salary.trainerId || salary.employeeId.employeeCode,
+    trainerName: salary.trainerName || salary.employeeId.fullName,
+    trainerEmail: salary.trainerEmail || salary.employeeId.email,
+    status: salary.status || salary.paymentInfo.status,
+    paymentMode: salary.paymentMode || salary.paymentInfo.method,
+  };
+};
+
+export const salaryApiService = new SalaryApiService();
+export const trainerSalaryApiService = new SalaryApiService(); // Legacy export for backward compatibility

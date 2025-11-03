@@ -20,7 +20,6 @@ import {
   Package,
   Tag,
   Repeat,
-  X
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
@@ -123,9 +122,6 @@ const ViewClassModal: React.FC<ViewClassModalProps> = ({
                 )}
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 

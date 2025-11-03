@@ -15,12 +15,12 @@ import {
   Plus,
   Minus
 } from 'lucide-react';
-import { type TrainerSalary } from '../../../services/trainerSalaryApi';
+import { type SalaryStructure } from '../../../services/salaryApi';
 
 interface ViewSalaryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  salary: TrainerSalary;
+  salary: SalaryStructure;
 }
 
 export const ViewSalaryModal: React.FC<ViewSalaryModalProps> = ({
@@ -120,14 +120,14 @@ export const ViewSalaryModal: React.FC<ViewSalaryModalProps> = ({
 
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Status</p>
-                {getStatusBadge(salary.status)}
+                {getStatusBadge(salary.status || salary.paymentInfo?.status || 'pending')}
               </div>
 
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Payment Mode</p>
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-gray-400" />
-                  <p className="font-semibold text-gray-900">{getPaymentModeDisplay(salary.paymentMode)}</p>
+                  <p className="font-semibold text-gray-900">{getPaymentModeDisplay(salary.paymentMode || salary.paymentInfo?.method || 'cash')}</p>
                 </div>
               </div>
             </div>
@@ -302,7 +302,7 @@ export const ViewSalaryModal: React.FC<ViewSalaryModalProps> = ({
                     <div className="grid grid-cols-1 gap-4">
                       <div>
                         <p className="text-gray-500">Approved By</p>
-                        <p className="font-medium">{salary.approvedBy}</p>
+                        <p className="font-medium">{typeof salary.approvedBy === 'string' ? salary.approvedBy : salary.approvedBy?.name || 'Not assigned'}</p>
                       </div>
                     </div>
                   )}

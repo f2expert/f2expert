@@ -14,13 +14,13 @@ import {
   Minus,
   Edit3
 } from 'lucide-react';
-import { trainerSalaryApiService, type TrainerSalary, type UpdateSalaryData } from '../../../services/trainerSalaryApi';
+import { trainerSalaryApiService, type SalaryStructure, type UpdateSalaryData } from '../../../services/salaryApi';
 
 interface EditSalaryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  salary: TrainerSalary;
+  salary: SalaryStructure;
 }
 
 export const EditSalaryModal: React.FC<EditSalaryModalProps> = ({
@@ -44,7 +44,8 @@ export const EditSalaryModal: React.FC<EditSalaryModalProps> = ({
       esi: 0,
       tax: 0,
       advance: 0,
-      other: 0
+      other: 0,
+      loan: 0
     },
     paymentMode: 'bank_transfer'
   });
@@ -92,6 +93,7 @@ export const EditSalaryModal: React.FC<EditSalaryModalProps> = ({
         tax: 0,
         advance: 0,
         other: 0,
+        loan: 0,
         ...prev.deductions,
         [field]: value
       }
@@ -116,7 +118,7 @@ export const EditSalaryModal: React.FC<EditSalaryModalProps> = ({
       setLoading(true);
       setError(null);
       
-      await trainerSalaryApiService.updateSalary(salary._id, formData);
+      await trainerSalaryApiService.updateSalary(salary._id || salary.id, formData);
       onSuccess();
     } catch (err) {
       console.error('Failed to update salary:', err);
@@ -182,7 +184,7 @@ export const EditSalaryModal: React.FC<EditSalaryModalProps> = ({
                     salary.status === 'paid' ? 'default' : 'destructive'
                   }
                 >
-                  {salary.status.charAt(0).toUpperCase() + salary.status.slice(1)}
+                  {(salary.status || salary.paymentInfo?.status || 'pending').charAt(0).toUpperCase() + (salary.status || salary.paymentInfo?.status || 'pending').slice(1)}
                 </Badge>
               </div>
             </div>

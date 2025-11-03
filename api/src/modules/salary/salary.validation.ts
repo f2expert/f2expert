@@ -1,19 +1,28 @@
 import Joi from "joi"
 
-// Validation schema for creating trainer salary
-export const createTrainerSalarySchema = Joi.object({
-  trainerId: Joi.string()
+// Validation schema for creating salary
+export const createSalarySchema = Joi.object({
+  employeeId: Joi.string()
     .required()
     .pattern(/^[0-9a-fA-F]{24}$/)
     .messages({
-      'string.pattern.base': 'Trainer ID must be a valid ObjectId'
+      'string.pattern.base': 'Employee ID must be a valid ObjectId'
     }),
   
+  // Pay Period (new format)
+  payPeriod: Joi.object({
+    month: Joi.number().integer().min(1).max(12).required(),
+    year: Joi.number().integer().min(2020).max(2030).required(),
+    startDate: Joi.date().iso(),
+    endDate: Joi.date().iso()
+  }).optional(),
+  
+  // Individual month/year (old format for backward compatibility)
   salaryMonth: Joi.number()
     .integer()
     .min(1)
     .max(12)
-    .required()
+    .optional()
     .messages({
       'number.min': 'Salary month must be between 1 and 12',
       'number.max': 'Salary month must be between 1 and 12'
@@ -23,19 +32,40 @@ export const createTrainerSalarySchema = Joi.object({
     .integer()
     .min(2020)
     .max(2030)
-    .required()
+    .optional()
     .messages({
       'number.min': 'Salary year must be between 2020 and 2030',
       'number.max': 'Salary year must be between 2020 and 2030'
     }),
   
-  // Salary Components
+  // Salary Components (supporting both formats)
+  basicSalary: Joi.number()
+    .min(0)
+    .optional()
+    .messages({
+      'number.min': 'Basic salary cannot be negative'
+    }),
+    
   baseSalary: Joi.number()
     .min(0)
-    .required()
+    .optional()
     .messages({
       'number.min': 'Base salary cannot be negative'
     }),
+  
+  // Allowances (new structured format)
+  allowances: Joi.object({
+    hra: Joi.number().min(0).optional(),
+    transport: Joi.number().min(0).optional(),
+    medical: Joi.number().min(0).optional(),
+    performance: Joi.number().min(0).optional(),
+    other: Joi.number().min(0).optional()
+  }).optional(),
+  
+  // Calculated fields (can be provided or auto-calculated)
+  grossSalary: Joi.number().min(0).optional(),
+  totalDeductions: Joi.number().min(0).optional(),
+  netSalary: Joi.number().min(0).optional(),
   
   performanceBonus: Joi.number()
     .min(0)
@@ -89,7 +119,7 @@ export const createTrainerSalarySchema = Joi.object({
     other: Joi.number().min(0).optional()
   }).optional(),
   
-  // Class-based Earnings
+  // Class-based Earnings (primarily for trainers)
   classesAssigned: Joi.number()
     .integer()
     .min(0)
@@ -120,7 +150,15 @@ export const createTrainerSalarySchema = Joi.object({
       'number.min': 'Total hours cannot be negative'
     }),
   
-  // Payment Information
+  // Payment Information (supporting both formats)
+  status: Joi.string()
+    .valid("pending", "processing", "paid", "cancelled")
+    .optional(),
+    
+  paymentMode: Joi.string()
+    .valid("bank_transfer", "cash", "cheque", "upi")
+    .optional(),
+    
   paymentMethod: Joi.string()
     .valid("bank_transfer", "cash", "cheque", "upi")
     .optional(),
@@ -131,10 +169,28 @@ export const createTrainerSalarySchema = Joi.object({
     .messages({
       'string.max': 'Remarks cannot exceed 1000 characters'
     })
+}).custom((value, helpers) => {
+  // Ensure either payPeriod or salaryMonth/salaryYear is provided
+  const hasPayPeriod = value.payPeriod && value.payPeriod.month && value.payPeriod.year
+  const hasOldFormat = value.salaryMonth && value.salaryYear
+  
+  if (!hasPayPeriod && !hasOldFormat) {
+    return helpers.error('custom.missingPeriod')
+  }
+  
+  // Ensure either basicSalary or baseSalary is provided
+  if (!value.basicSalary && !value.baseSalary) {
+    return helpers.error('custom.missingSalary')
+  }
+  
+  return value
+}).messages({
+  'custom.missingPeriod': 'Either payPeriod or salaryMonth/salaryYear must be provided',
+  'custom.missingSalary': 'Either basicSalary or baseSalary must be provided'
 })
 
-// Validation schema for updating trainer salary
-export const updateTrainerSalarySchema = Joi.object({
+// Validation schema for updating salary
+export const updateSalarySchema = Joi.object({
   // Allow updating salary components
   baseSalary: Joi.number()
     .min(0)
@@ -257,10 +313,10 @@ export const bulkCreateSalarySchema = Joi.object({
     .max(2030)
     .required(),
   
-  trainers: Joi.array()
+  employees: Joi.array()
     .items(
       Joi.object({
-        trainerId: Joi.string()
+        employeeId: Joi.string()
           .required()
           .pattern(/^[0-9a-fA-F]{24}$/),
         baseSalary: Joi.number().min(0).required(),
@@ -288,7 +344,7 @@ export const bulkCreateSalarySchema = Joi.object({
     .min(1)
     .required()
     .messages({
-      'array.min': 'At least one trainer salary data is required'
+      'array.min': 'At least one employee salary data is required'
     })
 })
 
@@ -296,7 +352,7 @@ export const bulkCreateSalarySchema = Joi.object({
 export const getSalaryQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
-  trainerId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+  employeeId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
   salaryMonth: Joi.number().integer().min(1).max(12).optional(),
   salaryYear: Joi.number().integer().min(2020).max(2030).optional(),
   paymentStatus: Joi.string()
@@ -315,19 +371,19 @@ export const getSalaryReportQuerySchema = Joi.object({
   endMonth: Joi.number().integer().min(1).max(12).optional(),
   startYear: Joi.number().integer().min(2020).max(2030).optional(),
   endYear: Joi.number().integer().min(2020).max(2030).optional(),
-  trainerId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+  employeeId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
   departmentFilter: Joi.string().optional(),
   paymentStatus: Joi.string()
     .valid("pending", "processing", "paid", "cancelled")
     .optional(),
   reportType: Joi.string()
-    .valid("summary", "detailed", "trainer_wise", "department_wise")
+    .valid("summary", "detailed", "employee_wise", "department_wise")
     .default("summary")
 })
 
 // Validation for salary calculation parameters
 export const calculateSalarySchema = Joi.object({
-  trainerId: Joi.string()
+  employeeId: Joi.string()
     .required()
     .pattern(/^[0-9a-fA-F]{24}$/),
   

@@ -1063,7 +1063,7 @@ const ClassManagement: React.FC = () => {
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <h4 className="font-medium">
-                            Student: {typeof record.studentId === 'string' ? record.studentId : 'Student ID'}
+                            Student: {typeof record.studentId === 'object' ? record.studentId['fullName'] : 'Student ID'}
                           </h4>
                           <p className="text-sm text-gray-500">
                             Status: <span className={`font-medium ${
