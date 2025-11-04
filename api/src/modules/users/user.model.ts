@@ -146,7 +146,7 @@ const userSchema = new Schema<IUser>(
     
     // Role-specific Information
     studentInfo: {
-      studentId: { type: String, unique: true, sparse: true },
+      studentId: { type: String, sparse: true },
       enrollmentDate: { type: Date, default: Date.now },
       educationLevel: { 
         type: String, 
@@ -157,7 +157,7 @@ const userSchema = new Schema<IUser>(
     },
     
     trainerInfo: {
-      employeeId: { type: String, unique: true, sparse: true },
+      employeeId: { type: String, sparse: true },
       department: { type: String },
       specializations: [{ type: String }],
       experience: { type: Number, min: 0 }, // years
@@ -174,7 +174,7 @@ const userSchema = new Schema<IUser>(
     },
     
     adminInfo: {
-      employeeId: { type: String, unique: true, sparse: true },
+      employeeId: { type: String, sparse: true },
       department: { type: String },
       permissions: [{ type: String }],
       accessLevel: { 
@@ -218,9 +218,9 @@ const userSchema = new Schema<IUser>(
 // Indexes for better performance
 userSchema.index({ email: 1 })
 userSchema.index({ role: 1 })
-userSchema.index({ "studentInfo.studentId": 1 })
-userSchema.index({ "trainerInfo.employeeId": 1 })
-userSchema.index({ "adminInfo.employeeId": 1 })
+userSchema.index({ "studentInfo.studentId": 1 }, { unique: true, sparse: true })
+userSchema.index({ "trainerInfo.employeeId": 1 }, { unique: true, sparse: true })
+userSchema.index({ "adminInfo.employeeId": 1 }, { unique: true, sparse: true })
 userSchema.index({ isActive: 1 })
 userSchema.index({ createdAt: -1 })
 

@@ -134,15 +134,16 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             {getActionIcon()}
             {getActionTitle()} - {salary.trainerName}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex-1 overflow-y-auto pr-2">
+          <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
               <AlertCircle className="h-4 w-4 text-red-600" />
@@ -317,30 +318,33 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
             </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit"
-              disabled={loading || (processData.action === 'pay' && !processData.paymentReference)}
-              className={
-                processData.action === 'cancel' ? 'bg-red-600 hover:bg-red-700' :
-                processData.action === 'pay' ? 'bg-green-600 hover:bg-green-700' :
-                'bg-blue-600 hover:bg-blue-700'
-              }
-            >
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {getActionTitle()}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </div>
+
+        {/* Actions - Fixed at bottom */}
+        <div className="flex-shrink-0 flex justify-end gap-3 pt-4 border-t mt-4">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onClose}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit"
+            disabled={loading || (processData.action === 'pay' && !processData.paymentReference)}
+            className={
+              processData.action === 'cancel' ? 'bg-red-600 hover:bg-red-700' :
+              processData.action === 'pay' ? 'bg-green-600 hover:bg-green-700' :
+              'bg-blue-600 hover:bg-blue-700'
+            }
+            onClick={handleSubmit}
+          >
+            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {getActionTitle()}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

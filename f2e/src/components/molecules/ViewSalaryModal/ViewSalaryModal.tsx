@@ -83,15 +83,16 @@ export const ViewSalaryModal: React.FC<ViewSalaryModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Eye className="h-5 w-5 text-blue-600" />
             Salary Details - {salary.trainerName}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto pr-2">
+          <div className="space-y-6">
           {/* Header Info */}
           <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -355,17 +356,19 @@ export const ViewSalaryModal: React.FC<ViewSalaryModalProps> = ({
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-            {(salary.status === 'processed' || salary.status === 'paid') && (
-              <Button variant="outline">
-                Download Payslip
-              </Button>
-            )}
           </div>
+        </div>
+
+        {/* Actions - Fixed at bottom */}
+        <div className="flex-shrink-0 flex justify-end gap-3 pt-4 border-t mt-4">
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+          {(salary.status === 'processed' || salary.status === 'paid') && (
+            <Button variant="outline">
+              Download Payslip
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

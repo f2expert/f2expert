@@ -265,30 +265,40 @@ export const updateSalarySchema = Joi.object({
     .optional()
 })
 
-// Validation schema for updating payment status
+// Validation schema for updating payment status (supporting both formats)
 export const updatePaymentStatusSchema = Joi.object({
+  // New format
+  status: Joi.string()
+    .valid("pending", "processing", "paid", "cancelled")
+    .optional(),
+    
+  paymentMode: Joi.string()
+    .valid("bank_transfer", "cash", "cheque", "upi")
+    .optional(),
+  
+  // Old format (for backward compatibility)
   paymentStatus: Joi.string()
     .valid("pending", "processing", "paid", "cancelled")
-    .required(),
+    .optional(),
   
   paymentMethod: Joi.string()
     .valid("bank_transfer", "cash", "cheque", "upi")
-    .when('paymentStatus', {
-      is: Joi.valid('processing', 'paid'),
-      then: Joi.required(),
-      otherwise: Joi.optional()
-    }),
+    .optional(),
   
   paymentReference: Joi.string()
-    .when('paymentStatus', {
-      is: 'paid',
-      then: Joi.required(),
-      otherwise: Joi.optional()
-    }),
+    .optional(),
   
   remarks: Joi.string()
     .max(1000)
     .optional()
+}).custom((value, helpers) => {
+  // Ensure either status or paymentStatus is provided
+  if (!value.status && !value.paymentStatus) {
+    return helpers.error('custom.missingStatus')
+  }
+  return value
+}).messages({
+  'custom.missingStatus': 'Either status or paymentStatus must be provided'
 })
 
 // Validation schema for salary approval

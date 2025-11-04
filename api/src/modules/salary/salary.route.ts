@@ -15,6 +15,12 @@ import {
 
 const router = Router()
 
+// Add logging middleware for debugging
+router.use((req, res, next) => {
+  console.log(`[SALARY ROUTES] ${req.method} ${req.path} - Full URL: ${req.originalUrl}`)
+  next()
+})
+
 // Apply authentication middleware to all routes
 router.use(authMiddleware)
 
@@ -65,49 +71,55 @@ router.post(
   SalaryController.createSalary
 )
 
-// Get employee salary by ID
+// Get employee salary for specific period (must be before /:id)
 router.get(
-  "/:id",
-  SalaryController.getSalaryById
+  "/employee/:employeeId/period/:month/:year",
+  SalaryController.getSalaryByPeriod
 )
 
-// Update employee salary
-router.put(
-  "/:id",
-  validateBody(updateSalarySchema),
-  SalaryController.updateSalary
+// Get employee salary history (must be before /:id)
+router.get(
+  "/employee/:employeeId/history",
+  SalaryController.getEmployeeSalaryHistory
 )
 
-// Update payment status
+// Update payment status (must be before /:id routes)
 router.patch(
   "/:id/payment-status",
   validateBody(updatePaymentStatusSchema),
   SalaryController.updatePaymentStatus
 )
 
-// Approve or reject salary
+router.post(
+  "/:id/payment-status",
+  validateBody(updatePaymentStatusSchema),
+  SalaryController.updatePaymentStatus
+)
+
+// Approve or reject salary (must be before /:id routes)
 router.patch(
   "/:id/approve",
   validateBody(approveSalarySchema),
   SalaryController.approveSalary
 )
 
-// Delete employee salary
+// Get employee salary by ID (must be after all specific routes)
+router.get(
+  "/:id",
+  SalaryController.getSalaryById
+)
+
+// Update employee salary (must be after all specific routes)
+router.put(
+  "/:id",
+  validateBody(updateSalarySchema),
+  SalaryController.updateSalary
+)
+
+// Delete employee salary (must be after all specific routes)
 router.delete(
   "/:id",
   SalaryController.deleteSalary
-)
-
-// Get employee salary for specific period
-router.get(
-  "/employee/:employeeId/period/:month/:year",
-  SalaryController.getSalaryByPeriod
-)
-
-// Get employee salary history
-router.get(
-  "/employee/:employeeId/history",
-  SalaryController.getEmployeeSalaryHistory
 )
 
 export default router

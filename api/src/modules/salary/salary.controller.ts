@@ -917,8 +917,14 @@ export const updateSalary = async (req: Request, res: Response): Promise<void> =
 export const updatePaymentStatus = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params
-    const { paymentStatus, paymentMethod, paymentReference, remarks }: PaymentStatusUpdateDTO = req.body
+    const body = req.body
     const userId = (req as any).user?.id
+
+    // Support both new and old formats
+    const paymentStatus = body.status || body.paymentStatus
+    const paymentMethod = body.paymentMode || body.paymentMethod
+    const paymentReference = body.paymentReference
+    const remarks = body.remarks
 
     const paymentDetails = {
       paymentMethod,
@@ -933,13 +939,7 @@ export const updatePaymentStatus = async (req: Request, res: Response): Promise<
       userId
     )
 
-    const response: ApiResponse<typeof salary> = {
-      success: true,
-      message: 'Payment status updated successfully',
-      data: salary
-    }
-
-    sendResponse(res, HTTP_STATUS.OK, response)
+    sendResponse(res, HTTP_STATUS.OK, salary, 'Payment status updated successfully')
   } catch (error: any) {
     console.error('Error updating payment status:', error)
     

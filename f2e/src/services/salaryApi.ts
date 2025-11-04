@@ -361,9 +361,14 @@ class SalaryApiService {
       const result = await this.makeRequest<{
         success: boolean;
         data: SalaryStructure;
-      }>(`${this.baseUrl}/${salaryId}/process`, {
+      }>(`${this.baseUrl}/${salaryId}/payment-status`, {
         method: 'POST',
-        body: JSON.stringify({ processedBy }),
+        body: JSON.stringify({
+          paymentStatus: "paid",
+          paymentMethod: "bank_transfer",
+          paymentReference: "TXN123456789",
+          remarks: "Salary paid via NEFT transfer"
+        }),
       });
       
       return result.data;

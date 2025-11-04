@@ -144,15 +144,16 @@ export const EditSalaryModal: React.FC<EditSalaryModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Edit3 className="h-5 w-5 text-blue-600" />
             Edit Salary - {salary.trainerName}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex-1 overflow-y-auto pr-2">
+          <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
               <AlertCircle className="h-4 w-4 text-red-600" />
@@ -424,20 +425,23 @@ export const EditSalaryModal: React.FC<EditSalaryModalProps> = ({
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={loading || !formData.basicSalary || formData.basicSalary <= 0}
-            >
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Update Salary
-            </Button>
-          </div>
-        </form>
+          </form>
+        </div>
+
+        {/* Actions - Fixed at bottom */}
+        <div className="flex-shrink-0 flex justify-end gap-3 pt-4 border-t mt-4">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={loading || !formData.basicSalary || formData.basicSalary <= 0}
+            onClick={handleSubmit}
+          >
+            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Update Salary
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -455,7 +455,13 @@ export const updatePaymentStatus = async (
 
   const updateData: any = {
     paymentStatus,
+    status: paymentStatus, // Also update the new format field
     ...paymentDetails
+  }
+  
+  // Handle both payment method formats
+  if (paymentDetails?.paymentMethod) {
+    updateData.paymentMode = paymentDetails.paymentMethod
   }
 
   if (paymentStatus === 'paid') {
@@ -470,9 +476,11 @@ export const updatePaymentStatus = async (
     id,
     updateData,
     { new: true, runValidators: true }
-  ).populate('employeeId', 'firstName lastName email')
+  ).populate('employeeId', 'firstName lastName email trainerInfo.employeeId')
+    .populate('createdBy', 'firstName lastName')
+    .populate('approvedBy', 'firstName lastName')
 
-  return updatedSalary
+  return updatedSalary ? transformResponseData(updatedSalary) : null
 }
 
 // Approve salary

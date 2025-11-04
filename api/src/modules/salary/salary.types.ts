@@ -86,8 +86,14 @@ export interface UpdateSalaryDTO {
 }
 
 export interface PaymentStatusUpdateDTO {
-  paymentStatus: "pending" | "processing" | "paid" | "cancelled"
+  // New format
+  status?: "pending" | "processing" | "paid" | "cancelled"
+  paymentMode?: "bank_transfer" | "cash" | "cheque" | "upi"
+  
+  // Old format (for backward compatibility)
+  paymentStatus?: "pending" | "processing" | "paid" | "cancelled"
   paymentMethod?: "bank_transfer" | "cash" | "cheque" | "upi"
+  
   paymentReference?: string
   remarks?: string
 }

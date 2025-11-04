@@ -50,9 +50,6 @@ app.use(morgan("dev"))
 // Use logger before routes
 app.use(loggerMiddleware)
 
-// Global Error Handler (must be after routes)
-app.use(errorMiddleware)
-
 // Swagger docs route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
@@ -72,6 +69,18 @@ app.use("/api", routes)
 app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "OK", timestamp: new Date() })
 })
+
+// 🔹 404 Handler - must be after all routes
+app.use((req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.method} ${req.originalUrl} not found`,
+    error: "Not Found"
+  })
+})
+
+// Global Error Handler (must be after all routes and 404 handler)
+app.use(errorMiddleware)
 
 // 🔹 Global Error Handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
