@@ -653,13 +653,15 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center text-xl font-semibold">
             <Edit3 className="mr-2 h-5 w-5" />
             Edit Course
           </DialogTitle>
         </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto pr-2">
 
         {/* Progress Steps */}
         <div className="flex items-center justify-between mb-6">
@@ -699,27 +701,35 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
           {currentStep === 'pricing' && renderPricing()}
           {currentStep === 'preview' && renderPreview()}
         </div>
+        </div>
 
-        {/* Footer Navigation */}
-        <div className="flex justify-between items-center p-6 border-t bg-gray-50 mt-6">
-          <Button 
-            variant="outline" 
-            onClick={handlePrevious} 
+        {/* Fixed Footer - Always visible at bottom */}
+        <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t mt-4">
+          <Button
+            onClick={handlePrevious}
             disabled={currentStepIndex === 0}
+            variant="outline"
             className="flex items-center gap-2"
           >
             <ChevronLeft className="h-4 w-4" />
             Previous
           </Button>
 
+          <div className="text-sm text-gray-500">
+            Step {currentStepIndex + 1} of {steps.length}
+          </div>
+
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose}>
+            <Button 
+              onClick={handleClose}
+              variant="outline"
+            >
               Cancel
             </Button>
             {currentStep === 'preview' ? (
               <Button 
-                onClick={handleSubmit} 
-                disabled={isSubmitting} 
+                onClick={handleSubmit}
+                disabled={isSubmitting}
                 className="flex items-center gap-2"
               >
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit3 className="h-4 w-4" />}

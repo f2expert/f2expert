@@ -107,15 +107,16 @@ const ViewCourseModal: React.FC<ViewCourseModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center text-xl font-semibold">
             <Eye className="mr-2 h-5 w-5" />
             Course Details
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto pr-2">
+          <div className="space-y-6">
           {/* Header Section with Status */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border">
             <div className="flex items-start justify-between mb-4">
@@ -577,9 +578,10 @@ const ViewCourseModal: React.FC<ViewCourseModalProps> = ({
             </div>
           </div>
         </div>
+        </div>
 
-        {/* Footer */}
-        <div className="flex justify-end pt-6 border-t">
+        {/* Fixed Footer - Always visible at bottom */}
+        <div className="flex-shrink-0 flex justify-end pt-4 border-t mt-4">
           <Button onClick={onClose} variant="outline">
             Close
           </Button>

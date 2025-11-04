@@ -632,22 +632,16 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-semibold">
               Add New Student - {getStepTitle()}
             </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="h-6 w-6 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto pr-2">
 
         {/* API Error Display */}
         {apiError && (
@@ -695,8 +689,9 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
           {renderStepIndicator()}
           {renderCurrentStep()}
         </div>
+        </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
           <div className="flex justify-between w-full">
             <Button
               variant="outline"

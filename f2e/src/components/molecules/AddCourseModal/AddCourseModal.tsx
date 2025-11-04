@@ -1533,13 +1533,16 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center text-xl font-semibold">
             <BookOpen className="mr-2 h-5 w-5" />
             Create New Course
           </DialogTitle>
         </DialogHeader>
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto pr-2">
 
         {/* Progress Steps */}
         <div className="flex items-center justify-between mb-6">
@@ -1579,9 +1582,10 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
           {currentStep === 'pricing' && renderPricing()}
           {currentStep === 'preview' && renderPreview()}
         </div>
+        </div>
 
-        {/* Footer Navigation */}
-        <div className="flex justify-between items-center p-6 border-t bg-gray-50 mt-6">
+        {/* Fixed Footer - Always visible at bottom */}
+        <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t mt-4">
           <Button 
             variant="outline" 
             onClick={handlePrev} 

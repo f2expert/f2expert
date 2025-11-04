@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../atoms/Dialog';
 import { Button } from '../../atoms/Button';
 import { Input } from '../../atoms/Input';
-import { X, Save, User, Phone, MapPin, Users, AlertCircle } from 'lucide-react';
+import { Save, User, Phone, MapPin, Users, AlertCircle } from 'lucide-react';
 import type { Student, UpdateStudentData } from '../../../services';
 
 interface EditStudentModalProps {
@@ -716,32 +716,28 @@ export const EditStudentModal: React.FC<EditStudentModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-semibold">
               Edit Student - {getStepTitle()}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="h-6 w-6 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            </DialogTitle>            
           </div>
           <div className="text-sm text-gray-600">
             Editing: {student.firstName} {student.lastName} (ID: {student.studentId})
           </div>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto pr-2">
+
         <div className="py-6">
           {renderStepIndicator()}
           {renderCurrentStep()}
         </div>
 
-        <DialogFooter>
+        </div>
+
+        <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
           <div className="flex justify-between w-full">
             <Button
               variant="outline"
