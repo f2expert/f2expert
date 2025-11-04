@@ -18,9 +18,10 @@ import {
 import { trainerSalaryApiService, type SalaryStructure } from '../../../services/salaryApi';
 
 interface ProcessSalaryRequest {
-  action: 'process' | 'pay' | 'cancel';
+  paymentStatus: 'pending' | 'processing' | 'paid' | 'cancelled';
+  paymentMethod?: 'bank_transfer' | 'cash' | 'cheque' | 'upi';
   paymentReference?: string;
-  notes?: string;
+  remarks?: string;
 }
 
 interface ProcessSalaryModalProps {
@@ -37,9 +38,9 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
   salary
 }) => {
   const [processData, setProcessData] = useState<ProcessSalaryRequest>({
-    action: 'process',
+    paymentStatus: 'processing',
     paymentReference: '',
-    notes: ''
+    remarks: ''
   });
   
   const [loading, setLoading] = useState(false);
@@ -70,7 +71,7 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (processData.action === 'pay' && !processData.paymentReference) {
+    if (processData.paymentStatus === 'paid' && !processData.paymentReference) {
       setError('Payment reference is required when marking as paid');
       return;
     }
@@ -79,9 +80,7 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
       setLoading(true);
       setError(null);
       
-      // For now, just use the action type as processedBy until API is updated
-      const processedBy = `System - ${processData.action}`;
-      await trainerSalaryApiService.processSalary(salary._id || salary.id, processedBy);
+      await trainerSalaryApiService.processSalary(salary._id || salary.id, processData);
       onSuccess();
     } catch (err) {
       console.error('Failed to process salary:', err);
@@ -92,12 +91,12 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
   };
 
   const getActionTitle = () => {
-    switch (processData.action) {
-      case 'process':
+    switch (processData.paymentStatus) {
+      case 'processing':
         return 'Process Salary';
-      case 'pay':
+      case 'paid':
         return 'Mark as Paid';
-      case 'cancel':
+      case 'cancelled':
         return 'Cancel Salary';
       default:
         return 'Process Salary';
@@ -105,12 +104,12 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
   };
 
   const getActionIcon = () => {
-    switch (processData.action) {
-      case 'process':
+    switch (processData.paymentStatus) {
+      case 'processing':
         return <Clock className="h-5 w-5 text-blue-600" />;
-      case 'pay':
+      case 'paid':
         return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case 'cancel':
+      case 'cancelled':
         return <AlertCircle className="h-5 w-5 text-red-600" />;
       default:
         return <Clock className="h-5 w-5 text-blue-600" />;
@@ -118,12 +117,12 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
   };
 
   const getActionDescription = () => {
-    switch (processData.action) {
-      case 'process':
-        return 'Mark this salary as processed and ready for payment. This will change the status from pending to processed.';
-      case 'pay':
+    switch (processData.paymentStatus) {
+      case 'processing':
+        return 'Mark this salary as processing and ready for payment. This will change the status from pending to processing.';
+      case 'paid':
         return 'Mark this salary as paid after the payment has been completed. This will finalize the salary record.';
-      case 'cancel':
+      case 'cancelled':
         return 'Cancel this salary record. This action should only be used if the salary was created in error.';
       default:
         return '';
@@ -193,9 +192,9 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
                     <input
                       type="radio"
                       name="action"
-                      value="process"
-                      checked={processData.action === 'process'}
-                      onChange={(e) => setProcessData((prev: ProcessSalaryRequest) => ({ ...prev, action: e.target.value as 'process' | 'pay' | 'cancel' }))}
+                      value="processing"
+                      checked={processData.paymentStatus === 'processing'}
+                      onChange={(e) => setProcessData((prev: ProcessSalaryRequest) => ({ ...prev, paymentStatus: e.target.value as 'processing' | 'paid' | 'cancelled' }))}
                       className="mt-1"
                     />
                     <div>
@@ -212,9 +211,9 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
                     <input
                       type="radio"
                       name="action"
-                      value="pay"
-                      checked={processData.action === 'pay'}
-                      onChange={(e) => setProcessData((prev: ProcessSalaryRequest) => ({ ...prev, action: e.target.value as 'process' | 'pay' | 'cancel' }))}
+                      value="paid"
+                      checked={processData.paymentStatus === 'paid'}
+                      onChange={(e) => setProcessData((prev: ProcessSalaryRequest) => ({ ...prev, paymentStatus: e.target.value as 'processing' | 'paid' | 'cancelled' }))}
                       className="mt-1"
                     />
                     <div>
@@ -233,9 +232,9 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
                   <input
                     type="radio"
                     name="action"
-                    value="pay"
-                    checked={processData.action === 'pay'}
-                    onChange={(e) => setProcessData((prev: ProcessSalaryRequest) => ({ ...prev, action: e.target.value as 'process' | 'pay' | 'cancel' }))}
+                    value="paid"
+                    checked={processData.paymentStatus === 'paid'}
+                    onChange={(e) => setProcessData((prev: ProcessSalaryRequest) => ({ ...prev, paymentStatus: e.target.value as 'processing' | 'paid' | 'cancelled' }))}
                     className="mt-1"
                   />
                   <div>
@@ -254,8 +253,8 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
                   type="radio"
                   name="action"
                   value="cancel"
-                  checked={processData.action === 'cancel'}
-                  onChange={(e) => setProcessData((prev: ProcessSalaryRequest) => ({ ...prev, action: e.target.value as 'process' | 'pay' | 'cancel' }))}
+                  checked={processData.paymentStatus === 'cancelled'}
+                  onChange={(e) => setProcessData((prev: ProcessSalaryRequest) => ({ ...prev, paymentStatus: e.target.value as 'processing' | 'paid' | 'cancelled' }))}
                   className="mt-1"
                 />
                 <div>
@@ -270,7 +269,7 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
           </Card>
 
           {/* Payment Reference (for paid action) */}
-          {processData.action === 'pay' && (
+          {processData.paymentStatus === 'paid' && (
             <Card className="p-4">
               <h3 className="font-semibold mb-3 text-gray-900 flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
@@ -295,17 +294,17 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
             </Card>
           )}
 
-          {/* Notes */}
+          {/* remarks */}
           <Card className="p-4">
             <h3 className="font-semibold mb-3 text-gray-900 flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Notes (Optional)
+              remarks (Optional)
             </h3>
             
             <textarea
-              value={processData.notes}
-              onChange={(e) => setProcessData((prev: ProcessSalaryRequest) => ({ ...prev, notes: e.target.value }))}
-              placeholder="Add any additional notes or comments..."
+              value={processData.remarks}
+              onChange={(e) => setProcessData((prev: ProcessSalaryRequest) => ({ ...prev, remarks: e.target.value }))}
+              placeholder="Add any additional remarks or comments..."
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
@@ -333,10 +332,10 @@ export const ProcessSalaryModal: React.FC<ProcessSalaryModalProps> = ({
           </Button>
           <Button 
             type="submit"
-            disabled={loading || (processData.action === 'pay' && !processData.paymentReference)}
+            disabled={loading || (processData.paymentStatus === 'paid' && !processData.paymentReference)}
             className={
-              processData.action === 'cancel' ? 'bg-red-600 hover:bg-red-700' :
-              processData.action === 'pay' ? 'bg-green-600 hover:bg-green-700' :
+              processData.paymentStatus === 'cancelled' ? 'bg-red-600 hover:bg-red-700' :
+              processData.paymentStatus === 'paid' ? 'bg-green-600 hover:bg-green-700' :
               'bg-blue-600 hover:bg-blue-700'
             }
             onClick={handleSubmit}

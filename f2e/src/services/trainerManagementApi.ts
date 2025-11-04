@@ -36,7 +36,7 @@ interface ApiUser {
     specializations: string[];
     qualifications: string[];
     expertise: string[];
-    certifications: string[];
+    certifications: CertificationObject[] | string[];
     experience: number;
     joinedDate: string;
   };
@@ -61,6 +61,13 @@ interface ApiResponse {
   success: boolean;
   message: string;
   data: ApiUser[];
+}
+
+export interface CertificationObject {
+  name: string;
+  issuedBy: string;
+  issuedDate: string;
+  expiryDate: string;
 }
 
 export interface Trainer {
@@ -171,6 +178,9 @@ class TrainerManagementApiService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('API Error Response:', errorData);
+        console.error('Request URL:', url);
+        console.error('Request Body:', options?.body);
         throw new Error(errorData.message || `HTTP Error: ${response.status}`);
       }
 
@@ -209,7 +219,9 @@ class TrainerManagementApiService {
       specializations: apiUser.trainerInfo?.specializations || [],
       qualifications: apiUser.trainerInfo?.qualifications || [],
       expertise: apiUser.trainerInfo?.expertise || [],
-      certifications: apiUser.trainerInfo?.certifications || [],
+      certifications: (apiUser.trainerInfo?.certifications || []).map(cert => 
+        typeof cert === 'string' ? cert : cert.name
+      ),
       experience: apiUser.trainerInfo?.experience || 0,
       emergencyContact: {
         name: apiUser.emergencyContact?.name || '',
@@ -277,13 +289,34 @@ class TrainerManagementApiService {
   // Create new trainer
   async createTrainer(trainerData: CreateTrainerData): Promise<Trainer> {
     try {
-      // Ensure the role is set to 'trainer' for consistency
-      const trainerWithRole = {
-        ...trainerData,
-        role: 'trainer'
+      // Transform certifications from strings to objects if needed
+      const transformedCertifications = trainerData.certifications.map(cert => 
+        typeof cert === 'string' ? { name: cert, issuedBy: '', issuedDate: '', expiryDate: '' } : cert
+      );
+
+      // Prepare the trainer data in the format expected by the API
+      const apiTrainerData = {
+        firstName: trainerData.firstName,
+        lastName: trainerData.lastName,
+        email: trainerData.email,
+        password: trainerData.password,
+        phone: trainerData.phone,
+        dateOfBirth: trainerData.dateOfBirth,
+        gender: trainerData.gender.toLowerCase(),
+        role: 'trainer',
+        address: trainerData.address,
+        emergencyContact: trainerData.emergencyContact,
+        bio: trainerData.bio || '',
+        specializations: trainerData.specializations,
+        qualifications: trainerData.qualifications,
+        expertise: trainerData.expertise,
+        certifications: transformedCertifications,
+        experience: trainerData.experience,
       };
 
       console.log('Creating trainer at:', `${API_BASE_URL}${this.baseUrl}`);
+      console.log('Transformed trainer data:', JSON.stringify(apiTrainerData, null, 2));
+      console.log('Certifications in API payload:', apiTrainerData.certifications);
 
       const result = await this.makeRequest<{
         success: boolean;
@@ -291,7 +324,7 @@ class TrainerManagementApiService {
         data: ApiUser;
       }>(this.baseUrl, {
         method: 'POST',
-        body: JSON.stringify(trainerWithRole),
+        body: JSON.stringify(apiTrainerData),
       });
       
       // Map the created user to Trainer interface

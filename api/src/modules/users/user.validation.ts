@@ -94,6 +94,13 @@ export const createUserSchema = Joi.object({
       'string.uri': 'Photo must be a valid URL'
     }),
   
+  bio: Joi.string()
+    .max(500)
+    .optional()
+    .messages({
+      'string.max': 'Bio cannot exceed 500 characters'
+    }),
+  
   emergencyContact: emergencyContactSchema.optional(),
   
   role: Joi.string()
@@ -102,7 +109,70 @@ export const createUserSchema = Joi.object({
     .messages({
       'any.only': 'Role must be one of: admin, trainer, student',
       'string.empty': 'Role is required'
-    })
+    }),
+  
+  // Student specific fields (optional, only validated when role is student)
+  educationLevel: Joi.string()
+    .valid('high_school', 'bachelor', 'master', 'phd', 'other')
+    .optional(),
+  previousExperience: Joi.string().max(1000).optional(),
+  careerGoals: Joi.string().max(1000).optional(),
+  
+  // Trainer specific fields (optional, only validated when role is trainer)
+  department: Joi.string().max(100).optional(),
+  specializations: Joi.array().items(Joi.string().max(100)).optional(),
+  experience: Joi.number().min(0).max(50).optional(),
+  qualifications: Joi.array().items(Joi.string().max(200)).optional(),
+  certifications: Joi.array().items(certificationSchema).optional(),
+  expertise: Joi.array().items(Joi.string().max(100)).optional(),
+  hourlyRate: Joi.number().min(0).max(10000).optional(),
+  
+  // Admin specific fields (optional, only validated when role is admin)
+  permissions: Joi.array().items(Joi.string()).optional(),
+  accessLevel: Joi.string()
+    .valid('super_admin', 'admin', 'manager')
+    .optional()
+}).custom((value, helpers) => {
+  // Custom validation to ensure role-specific fields are only provided for the correct role
+  const { role } = value
+
+  // Check for student-specific fields when role is not student
+  if (role !== 'student') {
+    const studentFields = ['educationLevel', 'previousExperience', 'careerGoals']
+    for (const field of studentFields) {
+      if (value[field] !== undefined) {
+        return helpers.error('any.invalid', { 
+          message: `Field "${field}" is only allowed when role is "student"` 
+        })
+      }
+    }
+  }
+
+  // Check for trainer-specific fields when role is not trainer
+  if (role !== 'trainer') {
+    const trainerFields = ['department', 'specializations', 'experience', 'qualifications', 'certifications', 'expertise', 'hourlyRate']
+    for (const field of trainerFields) {
+      if (value[field] !== undefined) {
+        return helpers.error('any.invalid', { 
+          message: `Field "${field}" is only allowed when role is "trainer"` 
+        })
+      }
+    }
+  }
+
+  // Check for admin-specific fields when role is not admin
+  if (role !== 'admin') {
+    const adminFields = ['permissions', 'accessLevel']
+    for (const field of adminFields) {
+      if (value[field] !== undefined) {
+        return helpers.error('any.invalid', { 
+          message: `Field "${field}" is only allowed when role is "admin"` 
+        })
+      }
+    }
+  }
+
+  return value
 })
 
 // Update User Schema

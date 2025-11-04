@@ -138,10 +138,16 @@ const AddTrainerModal: React.FC<AddTrainerModalProps> = ({
     setError(null);
 
     try {
+      console.log('Submitting trainer data:', JSON.stringify(formData, null, 2));
+      console.log('Certifications type check:', formData.certifications.map((cert, index) => 
+        `[${index}]: ${typeof cert} - ${cert}`
+      ));
+      
       await trainerManagementApiService.createTrainer(formData);
       onTrainerAdded();
       handleClose();
     } catch (err) {
+      console.error('Create trainer error:', err);
       setError(err instanceof Error ? err.message : 'Failed to add trainer');
     } finally {
       setLoading(false);

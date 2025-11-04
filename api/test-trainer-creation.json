@@ -1,0 +1,14 @@
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "email": "john.smith@example.com",
+  "password": "Password123",
+  "phone": "+1234567890",
+  "role": "trainer",
+  "department": "Computer Science",
+  "specializations": ["Web Development", "Database Design"],
+  "experience": 5,
+  "qualifications": ["Masters in Computer Science", "AWS Certified"],
+  "expertise": ["JavaScript", "Node.js", "MongoDB"],
+  "hourlyRate": 75
+}

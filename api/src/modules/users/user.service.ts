@@ -52,18 +52,45 @@ export const createUser = async (payload: ICreateUserRequest) => {
   if (payload.role === 'student') {
     userData.studentInfo = {
       studentId: await generateStudentId(),
-      enrollmentDate: new Date()
+      enrollmentDate: new Date(),
+      // Include student-specific fields from payload
+      ...(payload.educationLevel && { educationLevel: payload.educationLevel }),
+      ...(payload.previousExperience && { previousExperience: payload.previousExperience }),
+      ...(payload.careerGoals && { careerGoals: payload.careerGoals }),
+      ...(payload.emergencyContact && { emergencyContact: payload.emergencyContact })
     }
   } else if (payload.role === 'trainer') {
     userData.trainerInfo = {
-      employeeId: await generateEmployeeId('TR')
+      employeeId: await generateEmployeeId('TR'),
+      // Include trainer-specific fields from payload
+      ...(payload.department && { department: payload.department }),
+      ...(payload.specializations && { specializations: payload.specializations }),
+      ...(payload.experience && { experience: payload.experience }),
+      ...(payload.qualifications && { qualifications: payload.qualifications }),
+      ...(payload.certifications && { certifications: payload.certifications }),
+      ...(payload.expertise && { expertise: payload.expertise }),
+      ...(payload.hourlyRate && { hourlyRate: payload.hourlyRate })
     }
   } else if (payload.role === 'admin') {
     userData.adminInfo = {
       employeeId: await generateEmployeeId('AD'),
-      accessLevel: 'admin'
+      accessLevel: payload.accessLevel || 'admin',
+      // Include admin-specific fields from payload
+      ...(payload.department && { department: payload.department }),
+      ...(payload.permissions && { permissions: payload.permissions })
     }
   }
+
+  // Remove role-specific fields from the root level before creating user
+  const roleSpecificFields = [
+    'educationLevel', 'previousExperience', 'careerGoals',
+    'department', 'specializations', 'experience', 'qualifications', 
+    'certifications', 'expertise', 'hourlyRate', 'permissions', 'accessLevel'
+  ]
+  
+  roleSpecificFields.forEach(field => {
+    delete userData[field]
+  })
 
   const user = await UserModel.create(userData)
   return user.toObject()

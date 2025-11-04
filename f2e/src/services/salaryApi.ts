@@ -51,6 +51,13 @@ export interface PaymentInfo {
   method: 'bank_transfer' | 'cash' | 'cheque' | 'upi';
 }
 
+interface ProcessSalaryRequest {
+  paymentStatus: 'pending' | 'processing' | 'paid' | 'cancelled';
+  paymentMethod?: 'bank_transfer' | 'cash' | 'cheque' | 'upi';
+  paymentReference?: string;
+  remarks?: string;
+}
+
 export interface CreatedBy {
   id: string;
   name: string;
@@ -356,7 +363,7 @@ class SalaryApiService {
   }
 
   // Process salary (approve and generate payslip)
-  async processSalary(salaryId: string, processedBy: string): Promise<SalaryStructure> {
+  async processSalary(salaryId: string, processedBy: ProcessSalaryRequest): Promise<SalaryStructure> {
     try {
       const result = await this.makeRequest<{
         success: boolean;
@@ -364,10 +371,10 @@ class SalaryApiService {
       }>(`${this.baseUrl}/${salaryId}/payment-status`, {
         method: 'POST',
         body: JSON.stringify({
-          paymentStatus: "paid",
-          paymentMethod: "bank_transfer",
-          paymentReference: "TXN123456789",
-          remarks: "Salary paid via NEFT transfer"
+          paymentStatus: processedBy.paymentStatus,
+          paymentMethod: processedBy.paymentMethod,
+          paymentReference: processedBy.paymentReference,
+          remarks: processedBy.remarks
         }),
       });
       

@@ -99,6 +99,7 @@ export interface ICreateUserRequest {
   dateOfBirth?: Date
   gender?: "male" | "female" | "other"
   photo?: string // URL to user's profile photo
+  bio?: string
   address?: {
     street?: string
     city?: string
@@ -106,6 +107,36 @@ export interface ICreateUserRequest {
     country?: string
     zipCode?: string
   }
+  emergencyContact?: {
+    name?: string
+    phone?: string
+    relationship?: string
+    email?: string
+  }
+  
+  // Student specific fields (can be provided at root level)
+  educationLevel?: "high_school" | "bachelor" | "master" | "phd" | "other"
+  previousExperience?: string
+  careerGoals?: string
+  
+  // Trainer specific fields (can be provided at root level)
+  department?: string
+  specializations?: string[]
+  experience?: number
+  qualifications?: string[]
+  certifications?: {
+    name: string
+    issuedBy: string
+    issuedDate: Date
+    expiryDate?: Date
+    certificateUrl?: string
+  }[]
+  expertise?: string[]
+  hourlyRate?: number
+  
+  // Admin specific fields (can be provided at root level)
+  permissions?: string[]
+  accessLevel?: "super_admin" | "admin" | "manager"
 }
 
 // Update User Request Interface
