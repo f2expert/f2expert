@@ -4,6 +4,7 @@ import {
   validateBody,
   validateQuery 
 } from '../../app/middlewares/validation.middleware';
+import { authMiddleware, authorizeRoles } from '../../app/middlewares/auth.middleware';
 import { 
   createMenuValidation, 
   updateMenuValidation,
@@ -13,11 +14,25 @@ import {
 const router = Router();
 
 // Main CRUD operations
-router.post('/', validateBody(createMenuValidation), MenuController.createMenu);
+router.post('/', 
+  authMiddleware, 
+  authorizeRoles(['admin']), 
+  validateBody(createMenuValidation), 
+  MenuController.createMenu
+);
 router.get('/', validateQuery(menuQueryValidation), MenuController.getAllMenus);
 router.get('/:id', MenuController.getMenuById);
-router.put('/:id', validateBody(updateMenuValidation), MenuController.updateMenu);
-router.delete('/:id', MenuController.deleteMenu);
+router.put('/:id', 
+  authMiddleware, 
+  authorizeRoles(['admin']), 
+  validateBody(updateMenuValidation), 
+  MenuController.updateMenu
+);
+router.delete('/:id', 
+  authMiddleware, 
+  authorizeRoles(['admin']), 
+  MenuController.deleteMenu
+);
 
 // Additional utility endpoints
 router.get('/:id/children', MenuController.getChildMenus);

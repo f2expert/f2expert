@@ -259,3 +259,13 @@ export const loginSchema = Joi.object({
       'string.min': 'Password cannot be empty'
     })
 })
+
+// Refresh Token Schema
+export const refreshTokenSchema = Joi.object({
+  refreshToken: Joi.string()
+    .required()
+    .messages({
+      'string.empty': 'Refresh token is required',
+      'any.required': 'Refresh token is required'
+    })
+})

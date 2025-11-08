@@ -73,8 +73,10 @@ export interface IUser extends Document {
   // Security and Verification
   lastLogin?: Date
   passwordResetToken?: string
-  passwordResetExpires?: Date
+  passwordResetExpiresAt?: Date
   emailVerificationToken?: string
+  refreshTokens?: string[] // Array to store multiple refresh tokens
+  refreshTokenVersion?: number // For token invalidation
   emailVerificationExpires?: Date
   
   // Preferences
@@ -187,8 +189,10 @@ const userSchema = new Schema<IUser>(
     // Security and Verification
     lastLogin: { type: Date },
     passwordResetToken: { type: String },
-    passwordResetExpires: { type: Date },
+    passwordResetExpiresAt: { type: Date },
     emailVerificationToken: { type: String },
+    refreshTokens: [{ type: String }], // Array to store multiple refresh tokens
+    refreshTokenVersion: { type: Number, default: 0 }, // For token invalidation
     emailVerificationExpires: { type: Date },
     
     // Preferences
@@ -209,6 +213,8 @@ const userSchema = new Schema<IUser>(
         delete ret.password;
         delete ret.passwordResetToken;
         delete ret.emailVerificationToken;
+        delete ret.refreshTokens;
+        delete ret.refreshTokenVersion;
         return ret;
       }
     }
@@ -216,7 +222,6 @@ const userSchema = new Schema<IUser>(
 )
 
 // Indexes for better performance
-userSchema.index({ email: 1 })
 userSchema.index({ role: 1 })
 userSchema.index({ "studentInfo.studentId": 1 }, { unique: true, sparse: true })
 userSchema.index({ "trainerInfo.employeeId": 1 }, { unique: true, sparse: true })

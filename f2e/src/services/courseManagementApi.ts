@@ -1,5 +1,7 @@
 // Course Management API Service
 import type { CourseDetails } from './index';
+import { getAuthHeader } from '../utils/auth';
+import '../utils/authDebug'; // Import debug utility to make it available globally
 
 // Extended Course interface for management operations
 export interface Course extends CourseDetails {
@@ -81,17 +83,52 @@ class CourseManagementApiService {
   private async makeRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     
+    // Prepare headers with authentication
+    const defaultHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add authorization header if token is available
+    const authHeader = getAuthHeader();
+    console.log('🔍 CourseAPI - Debug: Getting auth header for request to:', endpoint);
+    console.log('🔍 CourseAPI - Auth header result:', authHeader);
+    
+    // Additional debugging - check localStorage directly
+    const tokensInStorage = localStorage.getItem('auth_tokens');
+    console.log('🔍 CourseAPI - Tokens in localStorage:', tokensInStorage);
+    
+    if (authHeader) {
+      defaultHeaders['Authorization'] = authHeader;
+      console.log('✅ CourseAPI - Authorization header added');
+    } else {
+      console.warn('❌ CourseAPI - No authorization header available');
+      
+      // Run quick diagnosis
+      if (typeof window !== 'undefined') {
+        const windowWithDebug = window as unknown as { authDebug?: { diagnoseAuthIssue: () => void } };
+        if (windowWithDebug.authDebug) {
+          console.log('🏥 CourseAPI - Running quick auth diagnosis...');
+          windowWithDebug.authDebug.diagnoseAuthIssue();
+        }
+      }
+    }
+
     try {
       const response = await fetch(url, {
         headers: {
-          'Content-Type': 'application/json',
-          // Add auth headers if needed
-          // 'Authorization': `Bearer ${getAuthToken()}`,
+          ...defaultHeaders,
+          ...(options?.headers as Record<string, string> || {}),
         },
         ...options,
       });
 
       if (!response.ok) {
+        // Handle authentication errors
+        if (response.status === 401) {
+          console.warn('Authentication failed - token may be expired');
+          // Could trigger logout or token refresh here
+        }
+        
         // If API call fails, fall back to mock data
         console.warn(`API call failed (${response.status}), using mock data`);
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -172,7 +209,7 @@ class CourseManagementApiService {
   // Get course statistics
   async getCourseStats(): Promise<CourseStats> {
     try {
-      const result = await this.makeRequest<CourseStats>('/admin/courses/stats');
+      const result = await this.makeRequest<CourseStats>('/courses/stats');
       return result;
     } catch (error) {
       console.warn('Course stats API failed:', error);
@@ -183,7 +220,7 @@ class CourseManagementApiService {
   // Create new course
   async createCourse(courseData: CreateCourseData): Promise<Course> {
     try {
-      const result = await this.makeRequest<Course>('/admin/courses', {
+      const result = await this.makeRequest<Course>('/courses', {
         method: 'POST',
         body: JSON.stringify(courseData),
       });
@@ -198,7 +235,7 @@ class CourseManagementApiService {
   // Update course
   async updateCourse(courseId: string, courseData: UpdateCourseData): Promise<Course> {
     try {
-      const result = await this.makeRequest<Course>(`/admin/courses/${courseId}`, {
+      const result = await this.makeRequest<Course>(`/courses/${courseId}`, {
         method: 'PUT',
         body: JSON.stringify(courseData),
       });

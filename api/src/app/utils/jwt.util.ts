@@ -7,6 +7,12 @@ export interface JwtPayload {
   role: string
 }
 
+export interface RefreshTokenPayload {
+  id: string
+  email: string
+  tokenVersion: number
+}
+
 /**
  * Generate a JWT token
  * @param payload user data (id, email, role, etc.)
@@ -17,6 +23,15 @@ export const generateToken = (payload: JwtPayload): string => {
 }
 
 /**
+ * Generate a refresh token
+ * @param payload user data for refresh token
+ * @returns signed refresh JWT token
+ */
+export const generateRefreshToken = (payload: RefreshTokenPayload): string => {
+  return jwt.sign(payload, envConfig.jwtRefreshSecret, { expiresIn: envConfig.jwtRefreshExpiresIn })
+}
+
+/**
  * Verify a JWT token
  * @param token JWT token string
  * @returns decoded payload or null if invalid
@@ -24,6 +39,19 @@ export const generateToken = (payload: JwtPayload): string => {
 export const verifyToken = (token: string): JwtPayload | null => {
   try {
     return jwt.verify(token, envConfig.jwtSecret) as JwtPayload
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Verify a refresh token
+ * @param token refresh token string
+ * @returns decoded payload or null if invalid
+ */
+export const verifyRefreshToken = (token: string): RefreshTokenPayload | null => {
+  try {
+    return jwt.verify(token, envConfig.jwtRefreshSecret) as RefreshTokenPayload
   } catch {
     return null
   }

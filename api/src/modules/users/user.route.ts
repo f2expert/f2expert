@@ -9,7 +9,8 @@ import {
   updateTrainerInfoSchema,
   updateAdminInfoSchema,
   changePasswordSchema,
-  loginSchema 
+  loginSchema,
+  refreshTokenSchema 
 } from "./user.validation"
 import Joi from "joi"
 
@@ -42,6 +43,16 @@ router.get("/:id",
 router.post("/login", 
   validateBody(loginSchema),
   UserController.loginUser
+)
+
+router.post("/refresh-token",
+  validateBody(refreshTokenSchema),
+  UserController.refreshToken
+)
+
+router.post("/logout",
+  validateBody(refreshTokenSchema),
+  UserController.logoutUser
 )
 
 router.post("/", 

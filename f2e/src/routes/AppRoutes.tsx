@@ -15,6 +15,7 @@ import { ForgotPassword } from '../pages/ForgotPassword';
 import Profile from '../pages/Profile';
 import { FeeDetails } from '../pages/FeeDetails';
 import { Notifications } from '../pages/Notifications';
+import AuthDebug from '../pages/AuthDebug';
 import { useAuth } from '../hooks/useAuth';
 import { Protected } from '../components';
 
@@ -74,6 +75,7 @@ export default function AppRoutes() {
         { path: "courses/:courseId", element: <CourseDetails /> },
         { path: "tutorial", element: <Tutorial /> },
         { path: "tutorials/:tutorialId", element: <TutorialWatch /> },
+        { path: "auth-debug", element: <AuthDebug /> },
       ],
     },
     {
@@ -110,7 +112,7 @@ export default function AppRoutes() {
         { path: "enrolled-courses", element: <EnrolledCourses /> },
         { path: "student-management", element: <StudentManagement /> },
         { path: "trainer-management", element: <TrainerManagement /> },
-        { path: "course-management", element: <CourseManagement /> },
+        { path: "course", element: <CourseManagement /> },
         { path: "class-management", element: <ClassManagement /> },
         { path: "salary-management", element: <SalaryManagement /> },
         { path: ":lang/", element: <Topic /> },

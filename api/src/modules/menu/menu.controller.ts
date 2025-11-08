@@ -1,6 +1,11 @@
 /**
  * @openapi
  * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
  *   schemas:
  *     MenuRequest:
  *       type: object
@@ -125,6 +130,16 @@
  *       - Menu
  *     summary: Create a new menu item
  *     description: Create a new menu item for the navigation system. Can be a parent menu or child menu by specifying parentId.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Bearer token for authentication
+ *         example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *     requestBody:
  *       required: true
  *       description: Menu item details
@@ -150,6 +165,18 @@
  *                   $ref: '#/components/schemas/MenuResponse'
  *       400:
  *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden - Admin role required
  *         content:
  *           application/json:
  *             schema:
@@ -237,7 +264,16 @@
  *       - Menu
  *     summary: Update menu item by ID
  *     description: Update an existing menu item. All fields are optional for updates.
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Bearer token for authentication
+ *         example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *       - in: path
  *         name: id
  *         required: true
@@ -294,6 +330,10 @@
  *                   $ref: '#/components/schemas/MenuResponse'
  *       400:
  *         description: Validation error
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       403:
+ *         description: Forbidden - Admin role required
  *       404:
  *         description: Menu item not found
  *       500:
@@ -304,7 +344,16 @@
  *       - Menu
  *     summary: Delete menu item by ID
  *     description: Delete a menu item. Note - deleting a parent menu will also delete all its children.
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Bearer token for authentication
+ *         example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *       - in: path
  *         name: id
  *         required: true
@@ -314,6 +363,10 @@
  *     responses:
  *       204:
  *         description: Menu deleted successfully
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       403:
+ *         description: Forbidden - Admin role required
  *       404:
  *         description: Menu item not found
  *         content:

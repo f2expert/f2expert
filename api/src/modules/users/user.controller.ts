@@ -6,7 +6,7 @@ import { HTTP_STATUS } from "../../app/constants/http-status.constant"
 import { ICreateUserRequest, IUpdateUserRequest } from "./user.types"
 import { IUser } from "./user.model"
 import { deletePhotoFile, getPhotoUrl } from "../../app/middlewares/upload.middleware"
-import { generateToken } from "../../app/utils/jwt.util"
+import { generateToken, generateRefreshToken, verifyRefreshToken } from "../../app/utils/jwt.util"
 import { comparePassword } from "../../app/utils/hash.util"
 import path from "path"
 
@@ -1105,6 +1105,9 @@ export const deleteUserPhoto = async (req: Request, res: Response) => {
  *                     token:
  *                       type: string
  *                       description: JWT authentication token
+ *                     refreshToken:
+ *                       type: string
+ *                       description: JWT refresh token for obtaining new access tokens
  *                     enrollments:
  *                       type: array
  *                       description: User's course enrollments (simplified)
@@ -1164,12 +1167,25 @@ export const loginUser = async (req: Request, res: Response) => {
       return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Invalid credentials")
     }
 
-    // Generate JWT token
+    // Generate JWT tokens
     const token = generateToken({ 
       id: (user._id as any).toString(), 
       email: user.email, 
       role: user.role 
     })
+
+    // Generate refresh token
+    const refreshToken = generateRefreshToken({
+      id: (user._id as any).toString(),
+      email: user.email,
+      tokenVersion: user.refreshTokenVersion || 0
+    })
+
+    // Store refresh token in user document
+    await UserService.addRefreshToken((user._id as any).toString(), refreshToken)
+
+    // Update last login
+    await UserService.updateLastLogin((user._id as any).toString())
 
     // Get user enrollments (simplified for login response)
     console.log("Fetching enrollments for user ID:", (user._id as any).toString())
@@ -1219,10 +1235,244 @@ export const loginUser = async (req: Request, res: Response) => {
     return sendResponse(res, HTTP_STATUS.OK, {
       user: userData,
       token,
+      refreshToken,
       enrollments: enrollments || []
     }, "Login successful")
 
   } catch (error: any) {
     return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Login failed")
+  }
+}
+
+/**
+ * @openapi
+ * /users/refresh-token:
+ *   post:
+ *     tags:
+ *       - User Management
+ *     summary: Refresh access token
+ *     description: Generate a new access token using a valid refresh token
+ *     requestBody:
+ *       required: true
+ *       description: Refresh token
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: Valid refresh token
+ *                 example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Token refreshed successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                       description: New access token
+ *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *                     refreshToken:
+ *                       type: string
+ *                       description: New refresh token
+ *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *       401:
+ *         description: Invalid or expired refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid or expired refresh token"
+ *                 data:
+ *                   type: null
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to refresh token"
+ *                 data:
+ *                   type: null
+ */
+export const refreshToken = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken: token } = req.body
+
+    if (!token) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Refresh token is required")
+    }
+
+    // Verify refresh token
+    const decoded = verifyRefreshToken(token)
+    if (!decoded) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Invalid or expired refresh token")
+    }
+
+    // Check if refresh token exists in user's stored tokens
+    const isValidToken = await UserService.validateRefreshToken(decoded.id, token)
+    if (!isValidToken) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Invalid refresh token")
+    }
+
+    // Get user details
+    const user = await UserService.getUserById(decoded.id)
+    if (!user) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "User not found")
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "User account is deactivated")
+    }
+
+    // Check token version
+    if (user.refreshTokenVersion !== decoded.tokenVersion) {
+      return sendError(res, HTTP_STATUS.UNAUTHORIZED, "Token version mismatch")
+    }
+
+    // Generate new access token
+    const newAccessToken = generateToken({
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role
+    })
+
+    // Generate new refresh token
+    const newRefreshToken = generateRefreshToken({
+      id: user._id.toString(),
+      email: user.email,
+      tokenVersion: user.refreshTokenVersion || 0
+    })
+
+    // Remove old refresh token and add new one
+    await UserService.removeRefreshToken(user._id.toString(), token)
+    await UserService.addRefreshToken(user._id.toString(), newRefreshToken)
+
+    return sendResponse(res, HTTP_STATUS.OK, {
+      token: newAccessToken,
+      refreshToken: newRefreshToken
+    }, "Token refreshed successfully")
+
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Failed to refresh token")
+  }
+}
+
+/**
+ * @openapi
+ * /users/logout:
+ *   post:
+ *     tags:
+ *       - User Management
+ *     summary: User logout
+ *     description: Logout user and invalidate refresh token
+ *     requestBody:
+ *       required: true
+ *       description: Refresh token to invalidate
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: Refresh token to invalidate
+ *                 example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Logout successful"
+ *                 data:
+ *                   type: null
+ *       400:
+ *         description: Invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Refresh token is required"
+ *                 data:
+ *                   type: null
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Logout failed"
+ *                 data:
+ *                   type: null
+ */
+export const logoutUser = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken: token } = req.body
+
+    if (!token) {
+      return sendError(res, HTTP_STATUS.BAD_REQUEST, "Refresh token is required")
+    }
+
+    // Verify and decode refresh token
+    const decoded = verifyRefreshToken(token)
+    if (decoded) {
+      // Remove the specific refresh token
+      await UserService.removeRefreshToken(decoded.id, token)
+    }
+
+    return sendResponse(res, HTTP_STATUS.OK, null, "Logout successful")
+
+  } catch (error: any) {
+    return sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || "Logout failed")
   }
 }

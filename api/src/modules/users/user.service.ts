@@ -308,3 +308,67 @@ async function generateEmployeeId(prefix: string): Promise<string> {
   
   return `${prefix}${year}${nextNumber.toString().padStart(3, '0')}`
 }
+
+// Refresh Token Management Functions
+export const addRefreshToken = async (userId: string, refreshToken: string) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user ID format')
+  }
+
+  await UserModel.findByIdAndUpdate(
+    userId,
+    { 
+      $push: { refreshTokens: refreshToken },
+      $currentDate: { lastLogin: true }
+    }
+  )
+}
+
+export const removeRefreshToken = async (userId: string, refreshToken: string) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user ID format')
+  }
+
+  await UserModel.findByIdAndUpdate(
+    userId,
+    { $pull: { refreshTokens: refreshToken } }
+  )
+}
+
+export const removeAllRefreshTokens = async (userId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user ID format')
+  }
+
+  await UserModel.findByIdAndUpdate(
+    userId,
+    { 
+      $set: { refreshTokens: [] },
+      $inc: { refreshTokenVersion: 1 }
+    }
+  )
+}
+
+export const updateLastLogin = async (userId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user ID format')
+  }
+
+  await UserModel.findByIdAndUpdate(
+    userId,
+    { $currentDate: { lastLogin: true } }
+  )
+}
+
+export const validateRefreshToken = async (userId: string, refreshToken: string): Promise<boolean> => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return false
+  }
+
+  const user = await UserModel.findById(userId)
+  if (!user || !user.refreshTokens) {
+    return false
+  }
+
+  return user.refreshTokens.includes(refreshToken)
+}
