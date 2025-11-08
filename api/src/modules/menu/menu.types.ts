@@ -5,4 +5,5 @@ export interface IMenuDTO {
   roles: string[];
   parentId?: string;
   order?: number;
+  menuType?: 'main' | 'submenu' | 'setting' | 'link' | 'action';
 }

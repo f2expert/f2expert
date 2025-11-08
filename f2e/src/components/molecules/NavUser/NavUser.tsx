@@ -1,16 +1,6 @@
 import {
-  Bell,
   ChevronsUpDown,
-  CreditCard,
-  User,
-  LogOut,
-  PlusCircle,
-  BookOpen,
-  Users,
-  UserCheck,
-  GraduationCap,
-  Calendar,
-  DollarSign,
+  LogOut,  
 } from "lucide-react"
 
 import {
@@ -34,6 +24,9 @@ import {
 } from "../Sidebar/sidebar"
 import { useSidebarRedux } from "../../../hooks/useSidebarRedux"
 import { Link } from "react-router-dom"
+import { useSidebarData } from "../../../hooks"
+import { iconMap, type IconName } from "../../../store/slices/sidebarDataSlice"
+
 
 export function NavUser({
   user,
@@ -43,11 +36,11 @@ export function NavUser({
     name: string
     email: string
     photo: string
-  }
+  },
   onLogout?: () => void
 }) {
-  const { isMobile } = useSidebarRedux()
-console.log('NavUser render: ',  user );
+  const { isMobile } = useSidebarRedux();
+  const { navMain } = useSidebarData();
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -88,50 +81,32 @@ console.log('NavUser render: ',  user );
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <User />
-                <Link to="/dashboard/profile">Profile</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <PlusCircle />
-                <Link to="/dashboard/create-course">Create Course</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <PlusCircle />
-                <Link to="/dashboard/create-tutorial">Create Tutorial</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem >
-                <CreditCard />
-                <Link to="/dashboard/fee-details">Fee Details</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem >
-                <BookOpen />
-                <Link to="/dashboard/enrolled-courses">Enrolled Courses</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem >
-                <Users />
-                <Link to="/dashboard/student-management">Student Management</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem >
-                <UserCheck />
-                <Link to="/dashboard/trainer-management">Trainer Management</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem >
-                <DollarSign />
-                <Link to="/dashboard/salary-management">Salary Management</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem >
-                <GraduationCap />
-                <Link to="/dashboard/course-management">Course Management</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem >
-                <Calendar />
-                <Link to="/dashboard/class-management">Class Management</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem >
-                <Bell />
-                <Link to="/dashboard/notifications">Notifications</Link>
-              </DropdownMenuItem>
+              {navMain
+                .filter((item) => item.menuType === "setting")
+                .map((item) => {
+                  const IconComponent = item.icon ? iconMap[item.icon as IconName] : null;
+                  
+                  // Debug logging for icon loading
+                  if (item.icon && !IconComponent) {
+                    console.warn(`NavUser: Icon "${item.icon}" not found in iconMap for item "${item.title}"`);
+                  } else if (IconComponent) {
+                    console.log(`NavUser: Successfully loaded icon "${item.icon}" for item "${item.title}"`);
+                  }
+                  
+                  return (
+                    <DropdownMenuItem key={item.title}>
+                      <Link to={item.path} className="flex items-center w-full">
+                        {IconComponent && <IconComponent className="size-3.5 mr-2" />}
+                        {item.title}
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+              {navMain.filter((item) => item.menuType === "setting").length === 0 && (
+                <DropdownMenuItem disabled>
+                  <span className="text-gray-500">No settings available</span>
+                </DropdownMenuItem>
+              )}              
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => {

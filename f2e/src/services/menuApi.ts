@@ -6,6 +6,7 @@ export interface MenuItem {
   path: string;
   icon?: string;
   isActive?: boolean;
+  menuType?: string; // Type of menu item (e.g., "setting", "main", "navigation")
   children?: {
     title: string;
     path: string;

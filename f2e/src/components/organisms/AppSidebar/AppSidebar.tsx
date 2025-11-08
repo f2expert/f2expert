@@ -17,7 +17,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   const { open, isMobile, openMobile, setOpenMobile, setIsMobile } = useSidebarRedux();
   const { user, teams, navMain } = useSidebarData();
   const { isLoading: menuLoading, error: menuError, refreshMenu } = useMenuApi();
-console.log('AppSidebar render: ', { user});
 
   // Handle mobile detection
   React.useEffect(() => {
@@ -79,7 +78,7 @@ console.log('AppSidebar render: ', { user});
               <Separator />
               <div className="p-4">
                 <NavUser 
-                  user={userData} 
+                  user={userData}
                   onLogout={onLogout}
                 />
               </div>

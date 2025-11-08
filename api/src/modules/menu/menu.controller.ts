@@ -42,6 +42,11 @@
  *           minimum: 0
  *           example: 1
  *           description: "Display order of the menu item (optional, defaults to 0)"
+ *         menuType:
+ *           type: string
+ *           enum: [main, submenu, setting, link, action]
+ *           example: "main"
+ *           description: "Type of menu item for UI rendering (optional, defaults to 'main')"
  *
  *     MenuResponse:
  *       type: object
@@ -69,6 +74,10 @@
  *         order:
  *           type: number
  *           example: 1
+ *         menuType:
+ *           type: string
+ *           enum: [main, submenu, setting, link, action]
+ *           example: "main"
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -263,6 +272,10 @@
  *               order:
  *                 type: number
  *                 example: 5
+ *               menuType:
+ *                 type: string
+ *                 enum: [main, submenu, setting, link, action]
+ *                 example: "submenu"
  *     responses:
  *       200:
  *         description: Menu updated successfully

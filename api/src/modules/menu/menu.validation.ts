@@ -57,6 +57,14 @@ export const createMenuValidation = Joi.object({
     .messages({
       'number.min': 'Order must be 0 or greater',
       'number.integer': 'Order must be an integer'
+    }),
+
+  menuType: Joi.string()
+    .valid('main', 'submenu', 'setting', 'link', 'action')
+    .optional()
+    .default('main')
+    .messages({
+      'any.only': 'Menu type must be one of: main, submenu, setting, link, action'
     })
 });
 
@@ -114,6 +122,13 @@ export const updateMenuValidation = Joi.object({
     .messages({
       'number.min': 'Order must be 0 or greater',
       'number.integer': 'Order must be an integer'
+    }),
+
+  menuType: Joi.string()
+    .valid('main', 'submenu', 'setting', 'link', 'action')
+    .optional()
+    .messages({
+      'any.only': 'Menu type must be one of: main, submenu, setting, link, action'
     })
 });
 

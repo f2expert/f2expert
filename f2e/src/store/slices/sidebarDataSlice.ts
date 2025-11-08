@@ -1,27 +1,94 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { FileText, Contact, FileStack, FileVideo2, Home, Users, UserCheck, Calendar, DollarSign, Settings } from "lucide-react";
-import { FaNodeJs, FaReact } from "react-icons/fa";
-import { TbFileTypeCss } from "react-icons/tb";
-import { GrHtml5 } from "react-icons/gr";
-import { PiDatabaseThin } from "react-icons/pi";
+import { 
+  FileText, Contact, FileStack, FileVideo2, PlusCircle, BookOpen, GraduationCap, 
+  Home, Users, UserCheck, User, Calendar, DollarSign, Settings, Code, Database, 
+  Monitor, Smartphone, Server, Cloud, Globe, Layers, Box, Briefcase,
+  Award, Book, Play, Video, Image, File, Folder, Archive, Download,
+  Upload, Share, Link, Mail, Phone, MapPin, Clock, Bell, Heart,
+  Star, Flag, Tag, Search, Filter, Edit, Trash, Plus, Minus,
+  Check, X, ChevronRight, ChevronLeft, ChevronUp, ChevronDown,
+  ArrowRight, ArrowLeft, ArrowUp, ArrowDown, ExternalLink, Eye,
+  EyeOff, Lock, Unlock, Key, Shield, AlertTriangle, Info, HelpCircle,
+  CreditCard, Wallet, Receipt, Banknote
+} from "lucide-react";
 
-// Icon mapping for serializable storage
+import { 
+  FaNodeJs, FaReact, FaVuejs, FaAngular, FaPython, FaPhp,
+  FaLaravel, FaSymfony, FaWordpress, FaAws, FaGoogle, 
+  FaMicrosoft, FaApple, FaLinux, FaWindows, FaGithub, 
+  FaGitlab, FaBitbucket, FaDocker, FaSlack, FaDiscord,
+  FaTrello, FaJira, FaConfluence, FaFigma, FaSketch
+} from "react-icons/fa";
+import { 
+  TbFileTypeCss, TbFileTypeHtml, TbFileTypeJs, TbFileTypeTs,
+  TbFileTypeSql, TbFileTypePhp, TbBrandCpp, TbBrandCSharp, 
+  TbFileTypeDoc, TbFileTypePdf, TbFileTypeXml, TbApi, 
+  TbDatabase, TbServer, TbCloud, TbBrandFirebase, 
+  TbBrandMongodb, TbBrandMysql
+} from "react-icons/tb";
+import { 
+  GrHtml5, GrCss3, GrJs, GrReactjs, GrNode, GrMysql,
+  GrWordpress, GrUbuntu, GrCentos, GrDebian, GrArchlinux
+} from "react-icons/gr";
+import { 
+  PiDatabaseThin, PiCloudThin, PiDeviceMobileThin, PiDesktopThin,
+  PiGlobeThin, PiCodeThin, PiTerminalWindowThin, PiBracketsCurlyThin,
+  PiFileThin, PiFolderThin, PiImageThin, PiVideoThin
+} from "react-icons/pi";
+import {
+  SiJavascript, SiTypescript, SiPython, SiCplusplus, SiPhp, 
+  SiRuby, SiGo, SiRust, SiSwift, SiKotlin, SiReact, 
+  SiVuedotjs, SiAngular, SiSvelte, SiNextdotjs, SiNuxtdotjs,
+  SiNodedotjs, SiExpress, SiNestjs, SiDjango, SiFlask, 
+  SiSpring, SiLaravel, SiSymfony, SiRubyonrails, SiMysql, 
+  SiPostgresql, SiMongodb, SiRedis, SiFirebase, SiSupabase,
+  SiVercel, SiNetlify, SiDocker, SiKubernetes, SiJenkins, 
+  SiGithubactions, SiGitlab, SiFigma, SiSketch, SiAdobe, 
+  SiCanva, SiBlender, SiUnity
+} from "react-icons/si";
+
+// Dynamic icon mapping with fallback system
 export const iconMap = {
-  Home,
-  FileText,
-  Contact,
-  FileStack,
-  FileVideo2,
-  FaNodeJs,
-  FaReact,
-  TbFileTypeCss,
-  GrHtml5,
-  PiDatabaseThin,
-  Users,
-  UserCheck,
-  Calendar,
-  DollarSign,
-  Settings,
+  // Lucide React Icons (UI/UX focused)
+  Home, FileText, Contact, FileStack, FileVideo2, PlusCircle, BookOpen, GraduationCap,
+  Users, UserCheck, User, Calendar, DollarSign, Settings, Code, Database, Monitor,
+  Smartphone, Server, Cloud, Globe, Layers, Box, Briefcase, Award, Book,
+  Play, Video, Image, File, Folder, Archive, Download, Upload, Share,
+  Link, Mail, Phone, MapPin, Clock, Bell, Heart, Star, Flag, Tag,
+  Search, Filter, Edit, Trash, Plus, Minus, Check, X, ChevronRight,
+  ChevronLeft, ChevronUp, ChevronDown, ArrowRight, ArrowLeft, ArrowUp,
+  ArrowDown, ExternalLink, Eye, EyeOff, Lock, Unlock, Key, Shield,
+  AlertTriangle, Info, HelpCircle, CreditCard, Wallet, Receipt, Banknote,
+
+  // React Icons - Font Awesome
+  FaNodeJs, FaReact, FaVuejs, FaAngular, FaPython, FaPhp, FaLaravel, 
+  FaSymfony, FaWordpress, FaAws, FaGoogle, FaMicrosoft, FaApple, 
+  FaLinux, FaWindows, FaGithub, FaGitlab, FaBitbucket, FaDocker, 
+  FaSlack, FaDiscord, FaTrello, FaJira, FaConfluence, FaFigma, FaSketch,
+
+  // Tabler Icons (File types and tech)
+  TbFileTypeCss, TbFileTypeHtml, TbFileTypeJs, TbFileTypeTs, TbFileTypeSql,
+  TbFileTypePhp, TbBrandCpp, TbBrandCSharp, TbFileTypeDoc, TbFileTypePdf, 
+  TbFileTypeXml, TbApi, TbDatabase, TbServer, TbCloud, TbBrandFirebase, 
+  TbBrandMongodb, TbBrandMysql,
+
+  // Grommet Icons
+  GrHtml5, GrCss3, GrJs, GrReactjs, GrNode, GrMysql, GrWordpress,
+  GrUbuntu, GrCentos, GrDebian, GrArchlinux,
+
+  // Phosphor Icons
+  PiDatabaseThin, PiCloudThin, PiDeviceMobileThin, PiDesktopThin, PiGlobeThin,
+  PiCodeThin, PiTerminalWindowThin, PiBracketsCurlyThin, PiFileThin,
+  PiFolderThin, PiImageThin, PiVideoThin,
+
+  // Simple Icons
+  SiJavascript, SiTypescript, SiPython, SiCplusplus, SiPhp, SiRuby, 
+  SiGo, SiRust, SiSwift, SiKotlin, SiReact, SiVuedotjs, SiAngular, 
+  SiSvelte, SiNextdotjs, SiNuxtdotjs, SiNodedotjs, SiExpress, SiNestjs, 
+  SiDjango, SiFlask, SiSpring, SiLaravel, SiSymfony, SiRubyonrails, 
+  SiMysql, SiPostgresql, SiMongodb, SiRedis, SiFirebase, SiSupabase,
+  SiVercel, SiNetlify, SiDocker, SiKubernetes, SiJenkins, SiGithubactions, 
+  SiGitlab, SiFigma, SiSketch, SiAdobe, SiCanva, SiBlender, SiUnity,
 } as const;
 
 export type IconName = keyof typeof iconMap;
@@ -37,14 +104,27 @@ export interface Team {
 export interface NavItem {
   title: string;
   path: string;
-  icon: IconName;
+  icon: IconName | string; // Support both predefined and dynamic icon names
   isActive?: boolean;
+  menuType?: string; // Type of menu item (e.g., "setting", "main", "navigation")
   children?: {
     title: string;
     path: string;
     contentId?: string;
   }[];
 }
+
+// Helper function to get icon component with fallback
+export const getIconComponent = (iconName: string | IconName) => {
+  // First try to get from iconMap
+  if (iconName in iconMap) {
+    return iconMap[iconName as keyof typeof iconMap];
+  }
+  
+  // Fallback to default icon for unknown icons
+  console.warn(`Icon "${iconName}" not found in iconMap, using default FileStack icon`);
+  return FileStack;
+};
 
 export interface SidebarDataState {
   teams: Team[];
@@ -224,6 +304,37 @@ const initialState: SidebarDataState = {
           path: "/dashboard/course-management",
         },
       ],
+    },
+    // Setting menu items for NavUser dropdown
+    {
+      title: "Profile Settings",
+      path: "/dashboard/profile",
+      icon: "User",
+      menuType: "setting",
+    },
+    {
+      title: "Account Settings",
+      path: "/dashboard/account-settings",
+      icon: "Settings",
+      menuType: "setting",
+    },
+    {
+      title: "Preferences",
+      path: "/dashboard/preferences",
+      icon: "Calendar",
+      menuType: "setting",
+    },
+    {
+      title: "Billing",
+      path: "/dashboard/billing",
+      icon: "DollarSign",
+      menuType: "setting",
+    },
+    {
+      title: "Fee Details",
+      path: "/dashboard/fee-details",
+      icon: "Receipt",
+      menuType: "setting",
     },
   ],
 };

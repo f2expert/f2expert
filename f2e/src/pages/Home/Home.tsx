@@ -166,7 +166,7 @@ export const Home: React.FC = () => {
         </div>
 
         {/* Scroll down indicator */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 animate-bounce z-10">
+        <div className="absolute bottom-4 mb-6 left-1/2 transform -translate-x-1/2 animate-bounce z-10">
           <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
             <div className="w-1 h-3 bg-white rounded-full mt-2"></div>
           </div>

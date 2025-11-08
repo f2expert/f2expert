@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "../Sidebar/sidebar";
-import { iconMap, type IconName } from "../../../store/slices/sidebarDataSlice";
+import { getIconComponent, type IconName } from "../../../store/slices/sidebarDataSlice";
 
 export function NavMain({
   items,
@@ -18,8 +18,9 @@ export function NavMain({
   items: {
     title: string;
     path: string;
-    icon?: IconName;
+    icon?: IconName | string; // Support dynamic icon names
     isActive?: boolean;
+    menuType?: string; // Type of menu item (e.g., "setting", "main", "navigation")
     children?: {
       title: string;
       path: string;
@@ -29,7 +30,9 @@ export function NavMain({
   return (
     <SidebarGroup>
       <SidebarMenu>
-        {items.map((item) => (
+        {items
+          .filter((item) => item.menuType === "main")
+          .map((item) => (
           <Collapsible
             key={item.title}
             asChild
@@ -43,14 +46,10 @@ export function NavMain({
                     tooltip={item.title}
                     className="hover:text-yellow-500"
                   >
-                    {item.icon &&
-                      (() => {
-                        const IconComponent =
-                          iconMap[item.icon as keyof typeof iconMap];
-                        return IconComponent ? (
-                          <IconComponent className="size-3.5" />
-                        ) : null;
-                      })()}
+                    {item.icon && (() => {
+                      const IconComponent = getIconComponent(item.icon);
+                      return <IconComponent className="size-3.5" />;
+                    })()}
                     {item.title}
                   </SidebarMenuButton>
                 </Link>

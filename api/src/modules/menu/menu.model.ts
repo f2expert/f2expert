@@ -7,6 +7,11 @@ const MenuSchema = new Schema({
   roles: [{ type: String, required: true }], // e.g., ['admin', 'user']
   parentId: { type: Schema.Types.ObjectId, ref: 'Menu', default: null },
   order: { type: Number, default: 0 },
+  menuType: { 
+    type: String, 
+    enum: ["main", "submenu", "setting", "link", "action"], 
+    default: 'main' 
+  },
 }, { timestamps: true });
 
 export const MenuModel = model('Menu', MenuSchema);
