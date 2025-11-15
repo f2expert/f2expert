@@ -61,21 +61,7 @@ const DeleteCourseModal: React.FC<DeleteCourseModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Warning Icon and Message */}
-          <div className="flex items-center justify-center p-6 bg-red-50 rounded-lg">
-            <AlertTriangle className="h-12 w-12 text-red-500" />
-          </div>
-
-          {/* Confirmation Message */}
-          <div className="text-center space-y-2">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Are you sure you want to archive this course?
-            </h3>
-            <p className="text-gray-600">
-              You are about to archive:
-            </p>
-          </div>
-
+         
           {/* Course Details Card */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="space-y-3">
@@ -85,9 +71,6 @@ const DeleteCourseModal: React.FC<DeleteCourseModalProps> = ({
                   <h4 className="font-semibold text-gray-900 text-lg">
                     {course.title}
                   </h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    ID: {course._id}
-                  </p>
                   <p className="text-sm text-gray-600">
                     Instructor: {course.instructor}
                   </p>
@@ -134,15 +117,6 @@ const DeleteCourseModal: React.FC<DeleteCourseModalProps> = ({
                   <p className="text-xs text-gray-500">Rating</p>
                 </div>
               </div>
-
-              {/* Course Description Preview */}
-              {course.shortDescription && (
-                <div className="pt-2 border-t border-gray-200">
-                  <p className="text-sm text-gray-700 italic">
-                    "{course.shortDescription}"
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
